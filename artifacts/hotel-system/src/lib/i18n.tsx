@@ -243,6 +243,10 @@ const vi: Dict = {
   "auth.heroTitle.register": "Gia Nhập Grand Palace",
   "auth.heroSub.signin": "Đăng nhập để tiếp tục trải nghiệm dịch vụ hoàng gia của chúng tôi.",
   "auth.heroSub.register": "Tạo tài khoản và khám phá thế giới xa hoa tại Việt Nam.",
+  "auth.feature1": "Đặt phòng dễ dàng tại 3 điểm đến sang trọng",
+  "auth.feature2": "Ưu đãi độc quyền dành riêng cho thành viên",
+  "auth.feature3": "Tích điểm thưởng hoàng gia mỗi lần đặt phòng",
+  "auth.quote": "\"Nơi xa hoa gặp gỡ di sản Việt Nam\"",
 };
 
 const en: Dict = {
@@ -461,6 +465,10 @@ const en: Dict = {
   "auth.heroTitle.register": "Join Grand Palace",
   "auth.heroSub.signin": "Sign in to continue your royal experience with us.",
   "auth.heroSub.register": "Create an account and explore a world of luxury in Vietnam.",
+  "auth.feature1": "Easy booking at 3 prestigious destinations",
+  "auth.feature2": "Exclusive member-only privileges and rates",
+  "auth.feature3": "Earn royal reward points with every stay",
+  "auth.quote": "\"Where luxury meets Vietnamese heritage\"",
 };
 
 const zh: Dict = {
@@ -679,6 +687,10 @@ const zh: Dict = {
   "auth.heroTitle.register": "加入格兰宫殿",
   "auth.heroSub.signin": "登录以继续您的皇家体验。",
   "auth.heroSub.register": "创建账户，探索越南奢华世界。",
+  "auth.feature1": "轻松预订三大奢华目的地",
+  "auth.feature2": "会员专属特权与优惠价格",
+  "auth.feature3": "每次入住累积皇家奖励积分",
+  "auth.quote": "\"奢华与越南文化遗产的完美融合\"",
 };
 
 const ko: Dict = {
@@ -897,6 +909,10 @@ const ko: Dict = {
   "auth.heroTitle.register": "그랜드 팰리스에 참여하세요",
   "auth.heroSub.signin": "로그인하여 왕실 경험을 계속하세요.",
   "auth.heroSub.register": "계정을 만들고 베트남의 럭셔리 세계를 탐험하세요.",
+  "auth.feature1": "3개의 명성 높은 목적지에서 간편한 예약",
+  "auth.feature2": "회원 전용 특별 혜택 및 요금",
+  "auth.feature3": "매 숙박마다 로열 포인트 적립",
+  "auth.quote": "\"럭셔리와 베트남 문화유산의 만남\"",
 };
 
 const dictionaries: Record<Language, Dict> = { vi, en, zh, ko };
