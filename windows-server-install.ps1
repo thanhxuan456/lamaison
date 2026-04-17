@@ -22,14 +22,14 @@ $Config = @{
     FrontendPort        = 3000
 
     # PostgreSQL settings
-    PgSuperPassword     = "ChangeMe123!"
+    PgSuperPassword     = "ZeroCode123@#!~"
     PgDbName            = "grandpalace"
     PgDbUser            = "grandpalace"
-    PgDbPassword        = "ChangeMe456!"
+    PgDbPassword        = "ZeroCode123@#!~"
 
     # Clerk authentication keys (https://dashboard.clerk.com)
-    ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
-    ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
+    ClerkPublishableKey = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
+    ClerkSecretKey      = "sk_test_cPh6CPPBJ9oRO9qmRahsEHOLH9IOYUUwdUyJw11se6"
 
     # Versions
     NodeVersion         = "22.14.0"
@@ -64,6 +64,61 @@ function Update-EnvPath {
     $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
     $userPath    = [System.Environment]::GetEnvironmentVariable("Path", "User")
     $env:Path    = $machinePath + ";" + $userPath
+}
+
+# URL-encode a string so special chars (@, #, !, ~, etc.) are safe in connection URLs
+function ConvertTo-UrlEncoded([string]$str) {
+    return [System.Uri]::EscapeDataString($str)
+}
+
+# Temporarily set pg_hba.conf to trust (no password) so we can reset the postgres password
+function Reset-PgSuperPassword([string]$pgBinPath, [string]$newPassword) {
+    Write-Info "Attempting automatic password recovery..."
+    $pgData = Join-Path (Split-Path $pgBinPath -Parent) "data"
+    $hbaFile = Join-Path $pgData "pg_hba.conf"
+
+    if (-not (Test-Path $hbaFile)) {
+        # Try to find pg_hba.conf in common locations
+        $found = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "pg_hba.conf" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($found) { $hbaFile = $found.FullName } else {
+            Write-Host "  [ERROR] Cannot find pg_hba.conf - cannot auto-recover." -ForegroundColor Red
+            return $false
+        }
+    }
+
+    $hbaBackup = $hbaFile + ".bak"
+    Copy-Item $hbaFile $hbaBackup -Force
+
+    # Prepend a trust rule for localhost so we can connect without password
+    $trustRule = "host    all             all             127.0.0.1/32            trust"
+    $original  = Get-Content $hbaFile -Raw
+    Set-Content $hbaFile ($trustRule + "`n" + $original) -Encoding UTF8
+
+    # Restart PostgreSQL to apply trust rule
+    $svcName = (Get-Service -Name "postgresql*" | Select-Object -First 1).Name
+    Restart-Service -Name $svcName -Force
+    Start-Sleep -Seconds 5
+
+    # Now reset the password without needing the old one
+    $env:PGPASSWORD = ""
+    & "$pgBinPath\psql.exe" -U postgres -h 127.0.0.1 -c "ALTER USER postgres PASSWORD '$newPassword';" 2>&1 | Out-Null
+
+    # Restore original pg_hba.conf
+    Copy-Item $hbaBackup $hbaFile -Force
+    Remove-Item $hbaBackup -Force
+
+    # Restart again to apply original auth rules
+    Restart-Service -Name $svcName -Force
+    Start-Sleep -Seconds 5
+
+    $env:PGPASSWORD = $newPassword
+    $verify = & "$pgBinPath\psql.exe" -U postgres -h 127.0.0.1 -tAc "SELECT 1" 2>&1
+    if ($verify -match "1") {
+        Write-OK "Password reset successfully"
+        return $true
+    }
+    Write-Host "  [ERROR] Password reset failed. Please reset manually via pgAdmin." -ForegroundColor Red
+    return $false
 }
 
 $TempDir = Join-Path $env:TEMP "GrandPalaceSetup"
@@ -134,8 +189,14 @@ if ($pgService) {
     $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-" + $Config.PgVersion + ".4-1-windows-x64.exe"
     Invoke-Download $pgUrl $pgInstaller
     Write-Info "Installing PostgreSQL silently (this takes a few minutes)..."
-    $pgArgs = "--mode unattended --unattendedmodeui none --superpassword " + $Config.PgSuperPassword + " --serverport 5432"
-    Start-Process $pgInstaller -ArgumentList $pgArgs -Wait -NoNewWindow
+    # Pass arguments as array so special characters in password are handled safely
+    $pgArgList = @(
+        "--mode", "unattended",
+        "--unattendedmodeui", "none",
+        "--superpassword", $Config.PgSuperPassword,
+        "--serverport", "5432"
+    )
+    Start-Process $pgInstaller -ArgumentList $pgArgList -Wait -NoNewWindow
     Update-EnvPath
     $pgBin = "C:\Program Files\PostgreSQL\" + $Config.PgVersion + "\bin"
     Write-OK "PostgreSQL $($Config.PgVersion) installed"
@@ -154,14 +215,24 @@ $env:PGPASSWORD = $Config.PgSuperPassword
 
 # Verify we can connect before proceeding
 Write-Info "Testing PostgreSQL connection..."
-$testConn = & psql -U postgres -tAc "SELECT 1" 2>&1
+$testConn = & psql -U postgres -h 127.0.0.1 -tAc "SELECT 1" 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "  [ERROR] Cannot connect to PostgreSQL with that password." -ForegroundColor Red
-    Write-Host "  Please check the password and run the script again." -ForegroundColor Red
+    Write-Host "  [WARN] Cannot connect with the configured password." -ForegroundColor Yellow
+    Write-Host "  This usually happens when PostgreSQL was previously installed" -ForegroundColor Yellow
+    Write-Host "  with a different password. Attempting automatic recovery..." -ForegroundColor Yellow
     Write-Host ""
-    Read-Host "Press Enter to exit"
-    exit 1
+
+    $recovered = Reset-PgSuperPassword -pgBinPath $pgBin -newPassword $Config.PgSuperPassword
+    if (-not $recovered) {
+        Write-Host ""
+        Write-Host "  Automatic recovery failed. Options:" -ForegroundColor Red
+        Write-Host "    1. Run remove.ps1 to fully uninstall PostgreSQL, then retry." -ForegroundColor Red
+        Write-Host "    2. Reset the postgres password manually in pgAdmin." -ForegroundColor Red
+        Write-Host ""
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
 }
 Write-OK "PostgreSQL connection successful"
 
@@ -176,7 +247,9 @@ if ($checkDb -match "1") {
     Write-OK "Database '$($Config.PgDbName)' created"
 }
 
-$DatabaseUrl = "postgresql://" + $Config.PgDbUser + ":" + $Config.PgDbPassword + "@localhost:5432/" + $Config.PgDbName
+# URL-encode the password so special chars like @ # ! don't break the connection string
+$pgPasswordEncoded = ConvertTo-UrlEncoded $Config.PgDbPassword
+$DatabaseUrl = "postgresql://" + $Config.PgDbUser + ":" + $pgPasswordEncoded + "@localhost:5432/" + $Config.PgDbName
 
 # ===========================================================
 # 5. COPY APP FILES
@@ -207,6 +280,7 @@ $envContent = @(
     "CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
     "CLERK_SECRET_KEY=" + $Config.ClerkSecretKey,
     "VITE_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
     "PORT=" + $Config.ApiPort,
     "FRONTEND_PORT=" + $Config.FrontendPort,
     "BASE_PATH=/",
