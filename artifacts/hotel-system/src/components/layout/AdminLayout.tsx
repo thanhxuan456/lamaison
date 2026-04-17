@@ -4,7 +4,7 @@ import { Navbar } from "./Navbar";
 import { BackToTop } from "@/components/BackToTop";
 import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
-  Palette, ChevronRight, Menu, ShieldCheck,
+  Palette, ChevronRight, Menu, ShieldCheck, FileText,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { icon: BedDouble,       labelKey: "admin.nav.rooms",     path: "/admin/rooms" },
   { icon: Users,           labelKey: "admin.nav.users",     path: "/admin/users" },
   { icon: MessageSquare,   labelKey: "admin.nav.chat",      path: "/admin/chat" },
+  { icon: FileText,        labelKey: "admin.nav.pages",     path: "/admin/pages" },
   { icon: Palette,         labelKey: "admin.nav.theme",     path: "/admin/theme" },
 ];
 
@@ -33,12 +34,9 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
 
   return (
     <>
-      {/* Fixed site navbar — sits in normal flow via top spacer below */}
       <Navbar />
 
-      {/* Full-viewport shell that sits below the fixed navbar */}
       <div className="fixed inset-0 flex flex-col" style={{ top: 68 }}>
-
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
@@ -48,25 +46,32 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
         )}
 
         <div className="flex flex-1 overflow-hidden min-h-0">
-
-          {/* Sidebar — scrolls independently */}
+          {/* Sidebar */}
           <aside
             className={[
-              "absolute inset-y-0 left-0 z-40 w-64 bg-card border-r border-primary/20 flex flex-col transition-transform duration-300 overflow-y-auto",
+              "absolute inset-y-0 left-0 z-40 w-64 bg-card border-r border-primary/20 flex flex-col transition-transform duration-300",
               "lg:relative lg:translate-x-0 lg:flex lg:shrink-0",
               sidebarOpen ? "translate-x-0" : "-translate-x-full",
             ].join(" ")}
           >
-            {/* Sidebar brand header */}
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-primary/15 bg-primary/5 shrink-0">
-              <ShieldCheck size={13} className="text-primary" />
-              <span className="text-[10px] tracking-[0.35em] uppercase text-primary font-serif font-medium">
-                {t("admin.label")}
-              </span>
+            {/* Logo header */}
+            <div className="flex flex-col items-center gap-2 px-5 py-5 border-b border-primary/15 bg-gradient-to-b from-primary/10 to-transparent shrink-0">
+              <img
+                src="/logo.svg"
+                alt="Grand Palace"
+                className="h-12 w-auto object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+              <div className="text-center">
+                <div className="font-serif text-[13px] tracking-[0.2em] text-foreground leading-tight">Grand Palace</div>
+                <div className="text-[9px] tracking-[0.35em] uppercase text-primary mt-0.5">
+                  {t("admin.label")}
+                </div>
+              </div>
             </div>
 
             {/* Nav items */}
-            <nav className="flex-1 py-3">
+            <nav className="flex-1 py-3 overflow-y-auto">
               {NAV_ITEMS.map(({ icon: Icon, labelKey, path }) => {
                 const active = isActive(path);
                 return (
@@ -105,10 +110,9 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
             </div>
           </aside>
 
-          {/* Main content — scrolls independently within viewport */}
+          {/* Main content */}
           <main className="flex-1 min-w-0 overflow-y-auto">
-
-            {/* Page title bar — sticky within the scrolling main, no overlap possible */}
+            {/* Page title bar */}
             <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-4 border-b border-primary/15 bg-background/95 backdrop-blur-sm">
               <button
                 className="lg:hidden p-1.5 text-muted-foreground hover:text-primary transition-colors"

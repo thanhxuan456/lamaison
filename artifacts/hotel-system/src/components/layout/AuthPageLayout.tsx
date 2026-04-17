@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link } from "wouter";
 import { Navbar } from "./Navbar";
 import { BackToTop } from "@/components/BackToTop";
-import { LiveChat } from "@/components/LiveChat";
+import { SocialChat } from "@/components/SocialChat";
 import { useT } from "@/lib/i18n";
 
 interface AuthPageLayoutProps {
@@ -152,7 +152,7 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
       </div>
 
       <BackToTop />
-      <LiveChat />
+      <SocialChat />
     </div>
   );
 }
