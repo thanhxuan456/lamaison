@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { PageLayout } from "@/components/layout/PageLayout";
 import NotFound from "@/pages/not-found";
 
 import Home from "@/pages/home";
@@ -89,16 +90,18 @@ function SignInPage() {
   // To update login providers, app branding, or OAuth settings use the Auth
   // pane in the workspace toolbar. More information can be found in the Replit docs.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-20">
-      <div className="w-full max-w-md">
-        <SignIn
-          routing="path"
-          path={`${basePath}/sign-in`}
-          signUpUrl={`${basePath}/register`}
-          fallbackRedirectUrl={`${basePath}/profile`}
-        />
+    <PageLayout>
+      <div className="flex-1 flex items-center justify-center px-4 py-16 bg-gradient-to-b from-background to-secondary/20">
+        <div className="w-full max-w-md">
+          <SignIn
+            routing="path"
+            path={`${basePath}/sign-in`}
+            signUpUrl={`${basePath}/register`}
+            fallbackRedirectUrl={`${basePath}/profile`}
+          />
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
@@ -106,16 +109,18 @@ function RegisterPage() {
   // To update login providers, app branding, or OAuth settings use the Auth
   // pane in the workspace toolbar. More information can be found in the Replit docs.
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-20">
-      <div className="w-full max-w-md">
-        <SignUp
-          routing="path"
-          path={`${basePath}/register`}
-          signInUrl={`${basePath}/sign-in`}
-          fallbackRedirectUrl={`${basePath}/profile`}
-        />
+    <PageLayout>
+      <div className="flex-1 flex items-center justify-center px-4 py-16 bg-gradient-to-b from-background to-secondary/20">
+        <div className="w-full max-w-md">
+          <SignUp
+            routing="path"
+            path={`${basePath}/register`}
+            signInUrl={`${basePath}/sign-in`}
+            fallbackRedirectUrl={`${basePath}/profile`}
+          />
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
