@@ -124,18 +124,28 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
 
         {/* ── Main content ── */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-background">
-          {/* Sticky page header */}
-          <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-4 border-b border-primary/15 bg-background/95 backdrop-blur-sm">
+          {/* Sticky page header — luxury treatment with gold accent */}
+          <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-5 border-b border-primary/20 bg-gradient-to-r from-primary/5 via-background to-background backdrop-blur-sm shadow-sm">
             <button
               className="lg:hidden p-1.5 text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={18} />
             </button>
+            {/* Vertical gold accent bar */}
+            <div aria-hidden className="hidden sm:block w-1 h-10 bg-gradient-to-b from-primary via-primary/80 to-primary/40 rounded-sm shrink-0" />
             <div className="flex-1 min-w-0">
-              <h1 className="font-serif text-xl text-foreground truncate">{title}</h1>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <h1 className="font-serif text-2xl md:text-[26px] font-semibold text-foreground tracking-wide truncate">
+                  {title}
+                </h1>
+                <span className="hidden md:inline-block w-8 h-px bg-primary/60" />
+                <span className="text-[10px] tracking-[0.35em] uppercase text-primary font-medium hidden md:inline">
+                  {t("admin.label")}
+                </span>
+              </div>
               {subtitle && (
-                <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+                <p className="text-[13px] text-muted-foreground/90 mt-1 leading-snug">{subtitle}</p>
               )}
             </div>
           </div>
