@@ -395,6 +395,148 @@ function RenamePageModal({ page, onConfirm, onClose }: { page: SitePage; onConfi
 }
 
 /* ──────────────────────────────────────────────
+   Quick Edit Modal — WordPress-style page editor
+   (no full Page Builder needed)
+────────────────────────────────────────────── */
+function QuickEditModal({
+  page,
+  onSave,
+  onClose,
+  onOpenBuilder,
+}: {
+  page: SitePage;
+  onSave: (next: SitePage) => void;
+  onClose: () => void;
+  onOpenBuilder: () => void;
+}) {
+  const [title, setTitle] = useState(page.title);
+  const [slug, setSlug] = useState(page.slug);
+  const [category, setCategory] = useState<PageCategory>(page.category ?? "custom");
+  const [blocks, setBlocks] = useState<PageBlock[]>(page.blocks);
+
+  const toggleVisible = (id: string) =>
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, visible: !b.visible } : b));
+
+  const move = (id: string, dir: "up" | "down") => {
+    setBlocks(prev => {
+      const idx = prev.findIndex(b => b.id === id);
+      const swap = dir === "up" ? idx - 1 : idx + 1;
+      if (idx < 0 || swap < 0 || swap >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next;
+    });
+  };
+
+  const removeBlock = (id: string) => {
+    if (!confirm("Xóa block này?")) return;
+    setBlocks(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+    onSave({ ...page, title: title.trim(), slug: slug.trim() || page.slug, category, blocks });
+    onClose();
+  };
+
+  const visibleCount = blocks.filter(b => b.visible).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-card border border-primary/40 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-primary/20 bg-primary/5 shrink-0">
+          <div className="flex items-center gap-2">
+            <Pencil size={14} className="text-primary" />
+            <h3 className="font-serif text-sm">Sửa nhanh — {page.title}</h3>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-luxury p-5 space-y-5">
+          {/* Metadata */}
+          <section className="space-y-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium border-b border-primary/10 pb-1">Thông tin trang</div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Tên trang</label>
+                <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" value={title} onChange={e => setTitle(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Đường dẫn</label>
+                <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none font-mono" value={slug} onChange={e => setSlug(e.target.value)} disabled={page.id === "home"} />
+              </div>
+            </div>
+            <CategoryPicker value={category} onChange={setCategory} />
+          </section>
+
+          {/* Blocks list (no settings — quick toggle/reorder/delete) */}
+          <section className="space-y-2">
+            <div className="flex items-center justify-between border-b border-primary/10 pb-1">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Khối nội dung ({blocks.length} · {visibleCount} hiển thị)</div>
+              <button onClick={onOpenBuilder} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                <PaletteIcon size={10} /> Thêm/chỉnh chi tiết
+              </button>
+            </div>
+            {blocks.length === 0 ? (
+              <div className="text-center py-8 border border-dashed border-primary/20 text-muted-foreground text-xs">
+                Trang chưa có block nào. Mở Page Builder để thêm.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {blocks.map((block, idx) => {
+                  const def = BLOCK_DEFINITIONS.find(d => d.type === block.type);
+                  return (
+                    <div key={block.id}
+                      className={`flex items-center gap-2 px-3 py-2 border transition-colors ${block.visible ? "border-primary/20 bg-background" : "border-primary/10 bg-muted/30 opacity-60"}`}>
+                      <span className="text-[10px] font-mono text-muted-foreground w-5 text-right">{idx + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium truncate">{def?.label ?? block.type}</div>
+                        <div className="text-[10px] text-muted-foreground">{def?.description ?? block.type}</div>
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button onClick={() => move(block.id, "up")} disabled={idx === 0}
+                          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed" title="Lên">
+                          <ChevronUp size={12} />
+                        </button>
+                        <button onClick={() => move(block.id, "down")} disabled={idx === blocks.length - 1}
+                          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed" title="Xuống">
+                          <ChevronDown size={12} />
+                        </button>
+                        <button onClick={() => toggleVisible(block.id)}
+                          className={`p-1.5 transition-colors ${block.visible ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-foreground"}`}
+                          title={block.visible ? "Đang hiện — bấm để ẩn" : "Đang ẩn — bấm để hiện"}>
+                          {block.visible ? <Eye size={12} /> : <EyeOff size={12} />}
+                        </button>
+                        <button onClick={() => removeBlock(block.id)}
+                          className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Xóa">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-primary/20 bg-card shrink-0">
+          <button onClick={onOpenBuilder} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1.5">
+            <PaletteIcon size={11} /> Mở Page Builder để chỉnh chi tiết
+          </button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="rounded-none border-primary/30 text-xs uppercase tracking-widest" onClick={onClose}>Hủy</Button>
+            <Button size="sm" className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest gap-1.5" disabled={!title.trim()} onClick={handleSave}>
+              <Save size={11} /> Lưu thay đổi
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
    Image Picker (URL + file upload + preview)
 ────────────────────────────────────────────── */
 function ImagePicker({ label, hint, value, onChange, previewClass = "h-20", accept = "image/*", maxKB = 1024 }: {
@@ -815,7 +957,17 @@ function PagesPanel() {
   const [localPages, setLocalPages] = useState<SitePage[]>(pages);
   const [showNewModal, setShowNewModal] = useState(false);
   const [renamingPage, setRenamingPage] = useState<SitePage | null>(null);
+  const [quickEditPage, setQuickEditPage] = useState<SitePage | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const handleQuickSave = (next: SitePage) => {
+    savePage(next);
+    setLocalPages(prev => prev.map(p => p.id === next.id ? next : p));
+    if (next.title !== quickEditPage?.title || next.slug !== quickEditPage?.slug || next.category !== quickEditPage?.category) {
+      renamePage(next.id, next.title, next.slug, next.category ?? "custom");
+    }
+    toast({ title: `Đã lưu "${next.title}"`, description: `${next.blocks.filter(b => b.visible).length} blocks đang hiển thị` });
+  };
 
   const selectedPage = selectedPageId ? localPages.find(p => p.id === selectedPageId) : null;
 
@@ -987,25 +1139,29 @@ function PagesPanel() {
                       <span className="flex items-center gap-1"><Eye size={9} /> {visibleBlocks} hiển thị</span>
                     </div>
                   </div>
-                  <div className="px-4 py-3 border-t border-primary/10 flex items-center gap-1.5 bg-muted/10">
-                    <Button onClick={() => setSelectedPageId(page.id)} size="sm"
-                      className="rounded-none flex-1 text-[10px] uppercase tracking-widest h-8 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30">
-                      <PaletteIcon size={10} className="mr-1" /> Mở Page Builder
-                    </Button>
-                    <a href={page.slug} target="_blank" rel="noopener noreferrer"
-                      className="p-2 text-muted-foreground hover:text-primary border border-primary/20 transition-colors" title="Xem trang">
-                      <ExternalLink size={11} />
-                    </a>
-                    <button onClick={() => setRenamingPage(page)}
-                      className="p-2 text-muted-foreground hover:text-primary border border-primary/20 transition-colors" title="Đổi tên / phân loại">
-                      <Pencil size={11} />
-                    </button>
-                    {page.id !== "home" && (
-                      <button onClick={() => handleDeletePage(page.id)}
-                        className="p-2 text-muted-foreground hover:text-red-500 border border-primary/20 hover:border-red-500/40 transition-colors" title="Xóa trang">
-                        <Trash2 size={11} />
-                      </button>
-                    )}
+                  <div className="px-4 py-3 border-t border-primary/10 flex flex-col gap-1.5 bg-muted/10">
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button onClick={() => setQuickEditPage(page)} size="sm"
+                        className="rounded-none text-[10px] uppercase tracking-widest h-8 bg-background hover:bg-primary/10 text-foreground border border-primary/30">
+                        <Pencil size={10} className="mr-1" /> Sửa nhanh
+                      </Button>
+                      <Button onClick={() => setSelectedPageId(page.id)} size="sm"
+                        className="rounded-none text-[10px] uppercase tracking-widest h-8 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30">
+                        <PaletteIcon size={10} className="mr-1" /> Page Builder
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <a href={page.slug} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 p-2 text-center text-muted-foreground hover:text-primary border border-primary/20 transition-colors" title="Xem trang">
+                        <ExternalLink size={11} className="inline" />
+                      </a>
+                      {page.id !== "home" && (
+                        <button onClick={() => handleDeletePage(page.id)}
+                          className="flex-1 p-2 text-muted-foreground hover:text-red-500 border border-primary/20 hover:border-red-500/40 transition-colors" title="Xóa trang">
+                          <Trash2 size={11} className="inline" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1016,6 +1172,14 @@ function PagesPanel() {
 
       {showNewModal && <NewPageModal onConfirm={handleAddPage} onClose={() => setShowNewModal(false)} />}
       {renamingPage && <RenamePageModal page={renamingPage} onConfirm={(t, s, c) => handleRename(renamingPage.id, t, s, c)} onClose={() => setRenamingPage(null)} />}
+      {quickEditPage && (
+        <QuickEditModal
+          page={quickEditPage}
+          onSave={handleQuickSave}
+          onClose={() => setQuickEditPage(null)}
+          onOpenBuilder={() => { const id = quickEditPage.id; setQuickEditPage(null); setSelectedPageId(id); }}
+        />
+      )}
     </div>
   );
 }
