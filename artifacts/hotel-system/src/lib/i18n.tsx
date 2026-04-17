@@ -1,13 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-
-export type Language = "vi" | "en" | "zh" | "ko";
-
-export const LANGUAGES: { code: Language; label: string; flag: string }[] = [
-  { code: "vi", label: "Tiếng Việt", flag: "VI" },
-  { code: "en", label: "English", flag: "EN" },
-  { code: "zh", label: "中文", flag: "ZH" },
-  { code: "ko", label: "한국어", flag: "KO" },
-];
+import type { Language } from "@/lib/languages";
+export type { Language } from "@/lib/languages";
 
 type Dict = Record<string, string>;
 
@@ -990,8 +983,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const fallbackT = (key: string) => key;
+const fallbackCtx = { lang: "vi" as Language, setLang: () => {}, t: fallbackT };
+
 export function useT() {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useT must be used within LanguageProvider");
-  return ctx;
+  return ctx ?? fallbackCtx;
 }

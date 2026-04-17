@@ -5,7 +5,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LANGUAGES, useT } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/languages";
+import { useT } from "@/lib/i18n";
 
 export function LanguageSwitcher() {
   const { lang, setLang, t } = useT();
