@@ -40,13 +40,13 @@ waitForPort = 8080
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=22660 BASE_PATH=/ pnpm --filter @workspace/hotel-system run dev"
-waitForPort = 22660
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=22660 BASE_PATH=/ VITE_CLERK_PUBLISHABLE_KEY=pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA pnpm --filter @workspace/hotel-system run dev"
+waitForPort = 22660
 
 [agent]
 stack = "PNPM_WORKSPACE"
