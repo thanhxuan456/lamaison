@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
+/* ──────────────────────────────────────────────
+   Block Types & Field Schema
+────────────────────────────────────────────── */
+
 export type BlockType =
   | "hero"
   | "destinations"
@@ -41,15 +45,15 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     type: "hero",
     label: "Hero Banner",
     icon: "🖼",
-    description: "Banner toàn màn hình với ảnh nền, tiêu đề và nút CTA",
+    description: "Banner toàn màn hình với ảnh nền, tiêu đề và CTA",
     color: "#8B5CF6",
     fields: [
       { key: "imageUrl", label: "Ảnh nền URL", type: "url", placeholder: "/images/hero.png" },
-      { key: "kicker", label: "Tagline phía trên", type: "text", placeholder: "Tinh hoa của sự xa hoa" },
-      { key: "title1", label: "Tiêu đề dòng 1", type: "text", placeholder: "Trải Nghiệm Hoàng Gia" },
-      { key: "title2", label: "Tiêu đề dòng 2", type: "text", placeholder: "Tại Việt Nam" },
+      { key: "kicker", label: "Tagline phía trên", type: "text" },
+      { key: "title1", label: "Tiêu đề dòng 1", type: "text" },
+      { key: "title2", label: "Tiêu đề dòng 2", type: "text" },
       { key: "subtitle", label: "Mô tả phụ", type: "textarea" },
-      { key: "cta", label: "Nội dung nút CTA", type: "text", placeholder: "Khám phá điểm đến" },
+      { key: "cta", label: "Nội dung nút CTA", type: "text" },
     ],
     defaultSettings: {
       imageUrl: "/images/hero.png",
@@ -67,22 +71,19 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     description: "Hiển thị danh sách khách sạn từ cơ sở dữ liệu",
     color: "#F59E0B",
     fields: [
-      { key: "kicker", label: "Tagline", type: "text", placeholder: "Các điểm đến" },
-      { key: "title", label: "Tiêu đề", type: "text", placeholder: "Nơi cảm xúc thăng hoa" },
+      { key: "kicker", label: "Tagline", type: "text" },
+      { key: "title", label: "Tiêu đề chính", type: "text" },
     ],
-    defaultSettings: {
-      kicker: "Các điểm đến",
-      title: "Nơi cảm xúc thăng hoa",
-    },
+    defaultSettings: { kicker: "Các điểm đến", title: "Nơi cảm xúc thăng hoa" },
   },
   {
     type: "experiences",
     label: "Trải Nghiệm",
     icon: "✨",
-    description: "Phần giới thiệu trải nghiệm với ảnh + nội dung text",
+    description: "Phần trải nghiệm với ảnh + nội dung text",
     color: "#10B981",
     fields: [
-      { key: "imageUrl", label: "Ảnh minh họa", type: "url", placeholder: "/images/restaurant.png" },
+      { key: "imageUrl", label: "Ảnh minh họa", type: "url" },
       { key: "kicker", label: "Tagline", type: "text" },
       { key: "title", label: "Tiêu đề", type: "text" },
       { key: "body", label: "Nội dung", type: "textarea" },
@@ -97,7 +98,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       imageUrl: "/images/restaurant.png",
       kicker: "Trải nghiệm",
       title: "Dấu ấn khó phai",
-      body: "Tại Grand Palace, mỗi khoảnh khắc đều được thiết kế để trở thành một kỷ niệm vô giá. Từ nghệ thuật ẩm thực tinh tế tại các nhà hàng đạt sao Michelin, đến những liệu trình spa phục hồi sinh lực.",
+      body: "Tại Grand Palace, mỗi khoảnh khắc đều được thiết kế để trở thành một kỷ niệm vô giá.",
       quote: "\"Nghệ thuật ẩm thực đỉnh cao\"",
       item1: "Nhà hàng ẩm thực đạt chuẩn quốc tế",
       item2: "Spa & Wellness cao cấp",
@@ -110,7 +111,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     type: "features",
     label: "Tiện Nghi & Dịch Vụ",
     icon: "⭐",
-    description: "Lưới cards tiện nghi với icon emoji và mô tả",
+    description: "Lưới cards tiện nghi với icon và mô tả",
     color: "#3B82F6",
     fields: [
       { key: "kicker", label: "Tagline", type: "text" },
@@ -143,7 +144,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     type: "text_block",
     label: "Khối Văn Bản",
     icon: "📝",
-    description: "Phần nội dung text tự do, căn giữa",
+    description: "Phần nội dung text tự do",
     color: "#6B7280",
     fields: [
       { key: "kicker", label: "Tagline nhỏ", type: "text" },
@@ -159,12 +160,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
         ],
       },
     ],
-    defaultSettings: {
-      kicker: "",
-      title: "Tiêu đề mới",
-      body: "Nhập nội dung của bạn vào đây...",
-      background: "light",
-    },
+    defaultSettings: { kicker: "", title: "Tiêu đề mới", body: "Nhập nội dung...", background: "light" },
   },
   {
     type: "cta_banner",
@@ -211,9 +207,6 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
         { url: "/images/hero.png", caption: "Lobby sang trọng" },
         { url: "/images/restaurant.png", caption: "Nhà hàng đẳng cấp" },
         { url: "/images/hotel-hanoi.png", caption: "Grand Palace Hà Nội" },
-        { url: "/images/hotel-danang.png", caption: "Grand Palace Đà Nẵng" },
-        { url: "/images/hotel-hcmc.png", caption: "Grand Palace TP.HCM" },
-        { url: "/images/hero.png", caption: "Không gian nghỉ dưỡng" },
       ],
     },
   },
@@ -239,59 +232,132 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
   },
 ];
 
-const STORAGE_KEY = "grand-palace-page-blocks";
+/* ──────────────────────────────────────────────
+   Multi-Page Data Model
+────────────────────────────────────────────── */
 
-let _seqId = 0;
-function genId() {
-  return `blk_${Date.now()}_${++_seqId}`;
-}
-
-export const DEFAULT_PAGE_BLOCKS: PageBlock[] = BLOCK_DEFINITIONS.filter(
-  (d) => d.type === "hero" || d.type === "destinations" || d.type === "experiences"
-).map((d) => ({
-  id: genId(),
-  type: d.type,
-  visible: true,
-  settings: { ...d.defaultSettings },
-}));
-
-function loadBlocks(): PageBlock[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch {}
-  return DEFAULT_PAGE_BLOCKS.map((b) => ({ ...b, id: genId() }));
-}
-
-interface PageBlocksContextType {
+export interface SitePage {
+  id: string;
+  slug: string;
+  title: string;
   blocks: PageBlock[];
-  setBlocks: React.Dispatch<React.SetStateAction<PageBlock[]>>;
-  saveBlocks: (b: PageBlock[]) => void;
 }
 
-const PageBlocksContext = createContext<PageBlocksContextType | null>(null);
+const PAGES_STORAGE_KEY = "grand-palace-site-pages";
+
+let _seq = 0;
+export function genBlockId(): string {
+  return `blk_${Date.now()}_${++_seq}`;
+}
+function genPageId(): string {
+  return `pg_${Date.now()}_${++_seq}`;
+}
+
+const HOME_BLOCKS: PageBlock[] = [
+  { id: genBlockId(), type: "hero", visible: true, settings: { ...BLOCK_DEFINITIONS.find(d => d.type === "hero")!.defaultSettings } },
+  { id: genBlockId(), type: "destinations", visible: true, settings: { ...BLOCK_DEFINITIONS.find(d => d.type === "destinations")!.defaultSettings } },
+  { id: genBlockId(), type: "experiences", visible: true, settings: { ...BLOCK_DEFINITIONS.find(d => d.type === "experiences")!.defaultSettings } },
+];
+
+export const DEFAULT_PAGES: SitePage[] = [
+  { id: "home", slug: "/", title: "Trang Chủ", blocks: HOME_BLOCKS },
+];
+
+function loadPages(): SitePage[] {
+  try {
+    // Migrate old single-page data if needed
+    const legacy = localStorage.getItem("grand-palace-page-blocks");
+    const stored = localStorage.getItem(PAGES_STORAGE_KEY);
+
+    if (stored) return JSON.parse(stored);
+
+    if (legacy) {
+      const oldBlocks: PageBlock[] = JSON.parse(legacy);
+      const pages: SitePage[] = [{ id: "home", slug: "/", title: "Trang Chủ", blocks: oldBlocks }];
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(pages));
+      return pages;
+    }
+  } catch {}
+  return DEFAULT_PAGES.map(p => ({ ...p, blocks: p.blocks.map(b => ({ ...b, id: genBlockId() })) }));
+}
+
+/* ──────────────────────────────────────────────
+   Context & Provider
+────────────────────────────────────────────── */
+
+interface SitePagesContextType {
+  pages: SitePage[];
+  savePage: (page: SitePage) => void;
+  addPage: (title: string, slug: string) => SitePage;
+  deletePage: (id: string) => void;
+  renamePage: (id: string, title: string, slug: string) => void;
+  getPage: (id: string) => SitePage | undefined;
+  getHomeBlocks: () => PageBlock[];
+}
+
+const SitePagesContext = createContext<SitePagesContextType | null>(null);
 
 export function PageBlocksProvider({ children }: { children: ReactNode }) {
-  const [blocks, setBlocks] = useState<PageBlock[]>(loadBlocks);
+  const [pages, setPages] = useState<SitePage[]>(loadPages);
 
-  const saveBlocks = useCallback((b: PageBlock[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
-    setBlocks(b);
+  const persist = useCallback((next: SitePage[]) => {
+    localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(next));
+    setPages(next);
   }, []);
 
+  const savePage = useCallback((page: SitePage) => {
+    setPages(prev => {
+      const next = prev.map(p => p.id === page.id ? page : p);
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const addPage = useCallback((title: string, slug: string): SitePage => {
+    const newPage: SitePage = { id: genPageId(), slug, title, blocks: [] };
+    setPages(prev => {
+      const next = [...prev, newPage];
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+    return newPage;
+  }, []);
+
+  const deletePage = useCallback((id: string) => {
+    setPages(prev => {
+      const next = prev.filter(p => p.id !== id);
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const renamePage = useCallback((id: string, title: string, slug: string) => {
+    setPages(prev => {
+      const next = prev.map(p => p.id === id ? { ...p, title, slug } : p);
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const getPage = useCallback((id: string) => pages.find(p => p.id === id), [pages]);
+  const getHomeBlocks = useCallback(() => pages.find(p => p.id === "home")?.blocks ?? [], [pages]);
+
   return (
-    <PageBlocksContext.Provider value={{ blocks, setBlocks, saveBlocks }}>
+    <SitePagesContext.Provider value={{ pages, savePage, addPage, deletePage, renamePage, getPage, getHomeBlocks }}>
       {children}
-    </PageBlocksContext.Provider>
+    </SitePagesContext.Provider>
   );
 }
 
-export function usePageBlocks() {
-  const ctx = useContext(PageBlocksContext);
-  if (!ctx) return { blocks: loadBlocks(), setBlocks: () => {}, saveBlocks: () => {} };
+export function useSitePages() {
+  const ctx = useContext(SitePagesContext);
+  if (!ctx) throw new Error("useSitePages must be used inside PageBlocksProvider");
   return ctx;
 }
 
-export function genBlockId() {
-  return genId();
+/** Convenience hook for home.tsx — returns visible blocks for the home page */
+export function usePageBlocks() {
+  const ctx = useContext(SitePagesContext);
+  if (!ctx) return { blocks: loadPages().find(p => p.id === "home")?.blocks ?? [] };
+  return { blocks: ctx.pages.find(p => p.id === "home")?.blocks ?? [] };
 }
