@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MapPin, User, Phone, Mail, FileText } from "lucide-react";
+import { MapPin, User, Phone, Mail, FileText, UtensilsCrossed, Receipt, Plus, Minus, ShoppingBag, Eye } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useEffect, useState } from "react";
+import { Link } from "wouter";
+
+const API = import.meta.env.VITE_API_URL ?? "";
 
 export default function BookingDetail() {
   const [, params] = useRoute("/bookings/:id");
@@ -148,6 +152,11 @@ export default function BookingDetail() {
                 </div>
               </div>
 
+              {/* Room Service + Invoice */}
+              {!isCancelled && (
+                <RoomServiceSection bookingId={booking.id} hotelId={booking.hotelId} />
+              )}
+
               {!isCancelled && (
                 <div className="border-t border-primary/20 pt-8 flex justify-end">
                   <AlertDialog>
@@ -178,5 +187,184 @@ export default function BookingDetail() {
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+interface MenuItem { id: number; name: string; description: string; price: string; imageUrl: string; category: string; available: boolean; hotelId: number | null; }
+interface RoomOrder { id: number; items: { name: string; quantity: number; subtotal: number }[]; total: string; status: string; createdAt: string; }
+
+function RoomServiceSection({ bookingId, hotelId }: { bookingId: number; hotelId: number }) {
+  const { toast } = useToast();
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [orders, setOrders] = useState<RoomOrder[]>([]);
+  const [invoiceId, setInvoiceId] = useState<number | null>(null);
+  const [cart, setCart] = useState<Record<number, number>>({});
+  const [activeCat, setActiveCat] = useState("food");
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadAll = async () => {
+    const [m, o, inv] = await Promise.all([
+      fetch(`${API}/api/menu-items?hotelId=${hotelId}`).then(r => r.json()),
+      fetch(`${API}/api/room-orders?bookingId=${bookingId}`).then(r => r.json()),
+      fetch(`${API}/api/invoices?bookingId=${bookingId}`).then(r => r.json()),
+    ]);
+    // Fall back to all menu items if no items for this hotel
+    setMenu(m.length > 0 ? m : await fetch(`${API}/api/menu-items`).then(r => r.json()));
+    setOrders(o);
+    setInvoiceId(inv?.[0]?.id ?? null);
+  };
+
+  useEffect(() => { loadAll(); }, [bookingId, hotelId]);
+
+  const cats = Array.from(new Set(menu.filter(m => m.available).map(m => m.category)));
+  const filtered = menu.filter(m => m.available && m.category === activeCat);
+  const cartLines = Object.entries(cart).map(([id, qty]) => {
+    const item = menu.find(m => m.id === Number(id))!;
+    return { item, qty: qty as number };
+  }).filter(l => l.item && l.qty > 0);
+  const cartTotal = cartLines.reduce((s, l) => s + Number(l.item.price) * l.qty, 0);
+
+  const setQty = (id: number, delta: number) => {
+    setCart(c => ({ ...c, [id]: Math.max(0, (c[id] ?? 0) + delta) }));
+  };
+
+  const placeOrder = async () => {
+    if (cartLines.length === 0) return;
+    setSubmitting(true);
+    try {
+      const items = cartLines.map(l => ({
+        menuItemId: l.item.id, name: l.item.name, unitPrice: Number(l.item.price), quantity: l.qty,
+      }));
+      const r = await fetch(`${API}/api/room-orders`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, items }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      // regenerate invoice to include new orders
+      await fetch(`${API}/api/invoices/generate/${bookingId}`, { method: "POST" });
+      toast({ title: "Đã đặt món thành công", description: "Phòng sẽ phục vụ trong giây lát." });
+      setCart({});
+      loadAll();
+    } catch (e: any) {
+      toast({ title: "Lỗi", description: e.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const fmt = (n: number | string) => Number(n).toLocaleString("vi-VN");
+  const catLabels: Record<string, string> = {
+    food: "Món chính", drink: "Đồ uống", dessert: "Tráng miệng", breakfast: "Bữa sáng", spa: "Spa", other: "Khác",
+  };
+
+  return (
+    <div className="border-t border-primary/20 pt-10 mb-12">
+      <div className="flex flex-wrap items-center gap-4 mb-8">
+        <h3 className="font-serif text-2xl text-foreground flex items-center gap-3">
+          <UtensilsCrossed className="text-primary" /> Room Service
+        </h3>
+        <div className="ml-auto flex flex-wrap gap-2">
+          {invoiceId && (
+            <Link href={`/invoices/${invoiceId}`}>
+              <Button variant="outline" className="rounded-none border-primary text-primary hover:bg-primary hover:text-primary-foreground uppercase tracking-widest text-xs">
+                <Receipt size={14} className="mr-2" /> Xem hóa đơn
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {menu.length === 0 ? (
+        <div className="text-center py-10 border border-dashed border-primary/30 bg-card/50">
+          <UtensilsCrossed size={28} className="text-primary/40 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Hiện chưa có món trong menu. Vui lòng quay lại sau.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Menu */}
+          <div className="lg:col-span-2">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {cats.map(c => (
+                <button key={c} onClick={() => setActiveCat(c)}
+                  className={`px-4 h-9 text-xs uppercase tracking-widest border transition-colors ${activeCat === c ? "bg-primary text-primary-foreground border-primary" : "border-primary/30 text-foreground hover:bg-primary/10"}`}>
+                  {catLabels[c] ?? c}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {filtered.map(item => (
+                <div key={item.id} className="flex gap-3 p-3 bg-card border border-primary/15 hover:border-primary/40 transition-colors">
+                  <div className="w-20 h-20 bg-muted shrink-0 overflow-hidden">
+                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" /> :
+                      <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed size={20} className="text-primary/30" /></div>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-serif text-base text-foreground truncate">{item.name}</div>
+                    {item.description && <div className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{item.description}</div>}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="font-serif text-primary">{fmt(item.price)} ₫</span>
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => setQty(item.id, -1)} className="w-7 h-7 border border-primary/30 hover:bg-primary/10 flex items-center justify-center"><Minus size={11} /></button>
+                        <span className="w-6 text-center text-sm">{cart[item.id] ?? 0}</span>
+                        <button onClick={() => setQty(item.id, 1)} className="w-7 h-7 border border-primary/30 hover:bg-primary/10 flex items-center justify-center"><Plus size={11} /></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cart + history */}
+          <div>
+            <div className="bg-card border border-primary/30 p-5 sticky top-4">
+              <div className="text-[10px] uppercase tracking-[0.3em] text-primary/70 mb-3 flex items-center gap-2">
+                <ShoppingBag size={12} /> Giỏ hàng
+              </div>
+              {cartLines.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic py-4 text-center">Chưa có món nào.</p>
+              ) : (
+                <div className="space-y-2 mb-4">
+                  {cartLines.map(l => (
+                    <div key={l.item.id} className="flex justify-between text-sm">
+                      <span className="text-foreground truncate pr-2">{l.item.name} × {l.qty}</span>
+                      <span className="text-primary shrink-0">{fmt(Number(l.item.price) * l.qty)} ₫</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="border-t border-primary/15 pt-3 flex justify-between items-baseline mb-4">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Tổng</span>
+                <span className="font-serif text-xl text-primary">{fmt(cartTotal)} ₫</span>
+              </div>
+              <Button onClick={placeOrder} disabled={cartLines.length === 0 || submitting}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none uppercase tracking-widest text-xs h-10">
+                {submitting ? "Đang gửi..." : "Đặt món"}
+              </Button>
+            </div>
+
+            {orders.length > 0 && (
+              <div className="mt-5 bg-card border border-primary/15 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-primary/70 mb-3">Lịch sử đặt</div>
+                <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-luxury">
+                  {orders.map(o => (
+                    <div key={o.id} className="text-xs border-b border-primary/10 pb-2 last:border-0">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{new Date(o.createdAt).toLocaleString("vi-VN")}</span>
+                        <span className="text-primary font-medium">{fmt(o.total)} ₫</span>
+                      </div>
+                      <div className="text-foreground/80 mt-1">
+                        {o.items.map(i => `${i.name} ×${i.quantity}`).join(", ")}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-widest text-primary/60 mt-1">{o.status}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

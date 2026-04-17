@@ -30,6 +30,9 @@ import AdminPages from "@/pages/admin/pages";
 import AdminSettings from "@/pages/admin/settings";
 import AdminSeo from "@/pages/admin/seo";
 import AdminBuilder from "@/pages/admin/builder";
+import AdminMenu from "@/pages/admin/menu";
+import AdminInvoices from "@/pages/admin/invoices";
+import InvoiceView from "@/pages/invoice-view";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -168,6 +171,9 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/seo" component={AdminSeo} />
       <Route path="/admin/builder" component={AdminBuilder} />
+      <Route path="/admin/menu" component={AdminMenu} />
+      <Route path="/admin/invoices" component={AdminInvoices} />
+      <Route path="/invoices/:id" component={InvoiceView} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/error" component={() => <ServerError code={500} />} />
       <Route path="/forbidden" component={() => <ServerError code={403} />} />

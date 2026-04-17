@@ -81,6 +81,14 @@ router.post("/bookings", async (req, res) => {
 
     await db.update(roomsTable).set({ isAvailable: false }).where(eq(roomsTable.id, roomId));
 
+    // Auto-generate invoice for the new booking (idempotent upsert)
+    try {
+      const { upsertInvoiceForBooking } = await import("./invoices");
+      await upsertInvoiceForBooking(booking.id);
+    } catch (invErr) {
+      req.log.warn({ err: invErr }, "Auto-invoice generation failed (non-fatal)");
+    }
+
     const enriched = await enrichBooking(booking);
     res.status(201).json(enriched);
   } catch (err) {
