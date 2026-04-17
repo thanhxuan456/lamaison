@@ -679,14 +679,14 @@ function OtaTab() {
   const [syncing, setSyncing] = useState<string | null>(null);
 
   const OTA_LOGOS: Record<string, string> = {
-    booking_com: "https://logo.clearbit.com/booking.com",
-    agoda:        "https://logo.clearbit.com/agoda.com",
-    expedia:      "https://logo.clearbit.com/expedia.com",
-    airbnb:       "https://logo.clearbit.com/airbnb.com",
-    traveloka:    "https://logo.clearbit.com/traveloka.com",
-    tripadvisor:  "https://logo.clearbit.com/tripadvisor.com",
-    trip_com:     "https://logo.clearbit.com/trip.com",
-    klook:        "https://logo.clearbit.com/klook.com",
+    booking_com: "https://cdn.simpleicons.org/bookingdotcom/003580",
+    agoda:        "https://icon.horse/icon/agoda.com",
+    expedia:      "https://cdn.simpleicons.org/expedia/f5a623",
+    airbnb:       "https://cdn.simpleicons.org/airbnb/ff5a5f",
+    traveloka:    "https://icon.horse/icon/traveloka.com",
+    tripadvisor:  "https://cdn.simpleicons.org/tripadvisor/00af87",
+    trip_com:     "https://cdn.simpleicons.org/tripdotcom/006fd9",
+    klook:        "https://icon.horse/icon/klook.com",
   };
   const OTA_COLORS: Record<string, string> = {
     booking_com: "#003580", agoda: "#e31837", expedia: "#f5a623", airbnb: "#ff5a5f",

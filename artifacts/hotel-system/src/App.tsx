@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
 import { SiteContentProvider } from "@/lib/site-content";
+import { PageBlocksProvider } from "@/lib/page-blocks";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
@@ -28,6 +29,7 @@ import AdminTheme from "@/pages/admin/theme";
 import AdminPages from "@/pages/admin/pages";
 import AdminSettings from "@/pages/admin/settings";
 import AdminSeo from "@/pages/admin/seo";
+import AdminBuilder from "@/pages/admin/builder";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -165,6 +167,7 @@ function Router() {
       <Route path="/admin/pages" component={AdminPages} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/seo" component={AdminSeo} />
+      <Route path="/admin/builder" component={AdminBuilder} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/error" component={() => <ServerError code={500} />} />
       <Route path="/forbidden" component={() => <ServerError code={403} />} />
@@ -202,10 +205,12 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="grand-palace-theme">
       <LanguageProvider>
         <SiteContentProvider>
-          <WouterRouter base={basePath}>
-            <ClerkProviderWithRoutes />
-          </WouterRouter>
-          <Toaster />
+          <PageBlocksProvider>
+            <WouterRouter base={basePath}>
+              <ClerkProviderWithRoutes />
+            </WouterRouter>
+            <Toaster />
+          </PageBlocksProvider>
         </SiteContentProvider>
       </LanguageProvider>
     </ThemeProvider>
