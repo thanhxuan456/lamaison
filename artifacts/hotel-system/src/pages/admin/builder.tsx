@@ -959,6 +959,58 @@ export function BrandingPanel() {
               </div>
             </div>
 
+            {/* Logo size */}
+            <div>
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2">
+                Kích thước logo — {local.logoHeight ?? 48}px
+              </label>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {[
+                  { label: "Nhỏ", value: 32 },
+                  { label: "Vừa", value: 48 },
+                  { label: "Lớn", value: 64 },
+                  { label: "XL", value: 80 },
+                ].map(({ label, value }) => (
+                  <button
+                    key={value}
+                    onClick={() => set("logoHeight", value)}
+                    className={`py-2 border text-xs transition-all ${
+                      (local.logoHeight ?? 48) === value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-primary/20 hover:border-primary/50 text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="range"
+                min={24}
+                max={120}
+                step={4}
+                value={local.logoHeight ?? 48}
+                onChange={e => set("logoHeight", Number(e.target.value))}
+                className="w-full accent-primary h-1.5 cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                <span>24px</span>
+                <span>120px</span>
+              </div>
+              {local.useImageLogo && local.logoUrl && (
+                <div className="mt-3 p-3 bg-secondary/30 border border-primary/10 flex items-center gap-3">
+                  <span className="text-[10px] text-muted-foreground tracking-widest uppercase shrink-0">Xem trước:</span>
+                  <img
+                    src={local.logoUrl}
+                    alt="Logo preview"
+                    style={{ height: `${local.logoHeight ?? 48}px` }}
+                    className="w-auto object-contain max-w-[200px]"
+                    onError={e => (e.currentTarget.style.display = "none")}
+                  />
+                </div>
+              )}
+            </div>
+
             <ImagePicker
               label="Logo trang web (Navbar/Footer)"
               hint="SVG/PNG · Khuyên dùng nền trong suốt"

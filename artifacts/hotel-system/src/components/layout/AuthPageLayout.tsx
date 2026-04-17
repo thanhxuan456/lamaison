@@ -24,7 +24,7 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
       <Navbar />
 
       {/* Main split layout */}
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col lg:flex-row pt-16 lg:pt-20">
 
         {/* ── LEFT PANEL ─────────────────────────────────────── */}
         <div className="relative lg:w-[45%] min-h-[280px] lg:min-h-0 overflow-hidden">

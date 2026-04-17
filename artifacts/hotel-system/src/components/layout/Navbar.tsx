@@ -124,7 +124,8 @@ export function Navbar() {
               <img
                 src={branding.logoUrl}
                 alt={branding.brandName}
-                className="h-10 md:h-12 w-auto object-contain group-hover:opacity-90 transition-opacity"
+                style={{ height: `${branding.logoHeight ?? 48}px` }}
+                className="w-auto object-contain group-hover:opacity-90 transition-opacity"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
             ) : (

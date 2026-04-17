@@ -10,6 +10,7 @@ export interface Branding {
   starRating: number;
   useImageLogo: boolean;
   logoUrl: string;
+  logoHeight: number;
   adminLogoUrl: string;
   faviconUrl: string;
   pageTitle: string;
@@ -22,6 +23,7 @@ export const DEFAULT_BRANDING: Branding = {
   starRating: 5,
   useImageLogo: false,
   logoUrl: "/logo.svg",
+  logoHeight: 48,
   adminLogoUrl: "/logo.svg",
   faviconUrl: "/favicon.svg",
   pageTitle: "Grand Palace Hotels & Resorts — Luxury Vietnam",
