@@ -8,3 +8,4 @@ export * from "./menu-items";
 export * from "./room-orders";
 export * from "./invoices";
 export * from "./app-settings";
+export * from "./contact-messages";

@@ -11,6 +11,7 @@ import menuItemsRouter from "./menu-items";
 import roomOrdersRouter from "./room-orders";
 import invoicesRouter from "./invoices";
 import settingsRouter from "./settings";
+import contactMessagesRouter from "./contact-messages";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(menuItemsRouter);
 router.use(roomOrdersRouter);
 router.use(invoicesRouter);
 router.use(settingsRouter);
+router.use(contactMessagesRouter);
 
 export default router;
