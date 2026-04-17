@@ -4,6 +4,7 @@ import hotelsRouter from "./hotels";
 import roomsRouter from "./rooms";
 import bookingsRouter from "./bookings";
 import chatRouter from "./chat";
+import usersRouter from "./users";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(hotelsRouter);
 router.use(roomsRouter);
 router.use(bookingsRouter);
 router.use(chatRouter);
+router.use(usersRouter);
 
 export default router;

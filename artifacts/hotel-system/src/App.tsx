@@ -23,6 +23,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminChat from "@/pages/admin/chat";
 import AdminTheme from "@/pages/admin/theme";
 import AdminPages from "@/pages/admin/pages";
+import AdminSettings from "@/pages/admin/settings";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -158,6 +159,7 @@ function Router() {
       <Route path="/admin/chat" component={AdminChat} />
       <Route path="/admin/theme" component={AdminTheme} />
       <Route path="/admin/pages" component={AdminPages} />
+      <Route path="/admin/settings" component={AdminSettings} />
       <Route component={NotFound} />
     </Switch>
   );
