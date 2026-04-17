@@ -611,13 +611,12 @@ function SocialTab() {
 }
 
 /* ──────────── MAIN ──────────── */
-type Tab = "pages" | "posts" | "menus" | "social";
+type Tab = "posts" | "menus" | "social";
 
 export default function AdminPages() {
-  const [tab, setTab] = useState<Tab>("pages");
+  const [tab, setTab] = useState<Tab>("posts");
 
   const TABS: { key: Tab; icon: any; label: string }[] = [
-    { key: "pages",  icon: FileText,        label: "Trang nội dung" },
     { key: "posts",  icon: Newspaper,       label: "Bài viết / Blog" },
     { key: "menus",  icon: Navigation,      label: "Menu điều hướng" },
     { key: "social", icon: Share2,          label: "Mạng xã hội" },
@@ -625,7 +624,7 @@ export default function AdminPages() {
 
   return (
     <AdminGuard>
-      <AdminLayout title="Quản lý Nội dung" subtitle="Trang nội dung, bài viết, menu điều hướng và mạng xã hội">
+      <AdminLayout title="Blog & Menu" subtitle="Bài viết, menu điều hướng và mạng xã hội (cấu trúc trang quản lý ở Page Builder)">
         <div className="flex gap-0 mb-6 border-b border-primary/20 overflow-x-auto">
           {TABS.map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
@@ -637,7 +636,6 @@ export default function AdminPages() {
             </button>
           ))}
         </div>
-        {tab === "pages"  && <PagesTab />}
         {tab === "posts"  && <PostsTab />}
         {tab === "menus"  && <MenusTab />}
         {tab === "social" && <SocialTab />}
