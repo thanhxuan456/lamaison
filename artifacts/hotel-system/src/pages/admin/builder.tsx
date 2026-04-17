@@ -463,7 +463,7 @@ function ImagePicker({ label, hint, value, onChange, previewClass = "h-20", acce
 /* ──────────────────────────────────────────────
    Branding Tab
 ────────────────────────────────────────────── */
-function BrandingPanel() {
+export function BrandingPanel() {
   const { branding, updateBranding, resetBranding } = useBranding();
   const { toast } = useToast();
   const [local, setLocal] = useState<Branding>(branding);
@@ -810,13 +810,14 @@ function PagesPanel() {
   const { pages, savePage, addPage, deletePage, renamePage } = useSitePages();
   const { toast } = useToast();
 
-  const [selectedPageId, setSelectedPageId] = useState<string>(pages[0]?.id ?? "home");
+  // null = list view (default). When set, we're editing that page.
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [localPages, setLocalPages] = useState<SitePage[]>(pages);
   const [showNewModal, setShowNewModal] = useState(false);
   const [renamingPage, setRenamingPage] = useState<SitePage | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const selectedPage = localPages.find(p => p.id === selectedPageId) ?? localPages[0];
+  const selectedPage = selectedPageId ? localPages.find(p => p.id === selectedPageId) : null;
 
   const handleBlocksChange = useCallback((blocks: PageBlock[]) => {
     setLocalPages(prev => prev.map(p => p.id === selectedPageId ? { ...p, blocks } : p));
@@ -847,7 +848,7 @@ function PagesPanel() {
     if (!confirm(`Xóa trang "${page?.title}"? Hành động này không thể hoàn tác.`)) return;
     deletePage(id);
     setLocalPages(prev => prev.filter(p => p.id !== id));
-    if (selectedPageId === id) setSelectedPageId("home");
+    if (selectedPageId === id) setSelectedPageId(null);
     toast({ title: `Đã xóa trang "${page?.title}"` });
   };
 
@@ -864,112 +865,151 @@ function PagesPanel() {
     toast({ title: "Đã xóa tất cả blocks" });
   };
 
-  return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Action bar */}
-      <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/15 bg-card shrink-0">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <FileText size={12} className="text-primary" />
-          <span>{localPages.length} trang</span>
-          {selectedPage && (<><span className="text-muted-foreground/40">·</span><span>Đang chỉnh: <span className="text-foreground font-medium">{selectedPage.title}</span></span></>)}
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedPage && (
+  // ── EDITOR VIEW (a page is selected) ─────────────────────────────────
+  if (selectedPage) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/15 bg-card shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setSelectedPageId(null)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary border border-primary/20 px-3 py-1.5 transition-colors shrink-0">
+              ← Quay lại
+            </button>
+            <div className="flex items-center gap-2 text-xs min-w-0">
+              <FileText size={12} className="text-primary shrink-0" />
+              <span className="text-foreground font-medium truncate">{selectedPage.title}</span>
+              <span className="text-muted-foreground/40 shrink-0">·</span>
+              <span className="text-muted-foreground font-mono text-[11px] truncate">{selectedPage.slug}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <a href={selectedPage.slug} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary border border-primary/20 px-3 py-1.5 transition-colors">
               <ExternalLink size={10} /> Xem trang
             </a>
-          )}
-          <button onClick={handleResetPage} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-primary/20 px-3 py-1.5 transition-colors">
-            <RotateCcw size={10} /> Xóa blocks
-          </button>
-          <Button onClick={handleSave} size="sm"
-            className={`rounded-none text-xs uppercase tracking-widest h-8 px-4 gap-1.5 ${saved ? "bg-green-600" : "bg-primary"} text-primary-foreground`}>
-            {saved ? <Check size={10} /> : <Save size={10} />}
-            {saved ? "Đã lưu!" : "Lưu trang"}
-          </Button>
+            <button onClick={() => setRenamingPage(selectedPage)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-primary/20 px-3 py-1.5 transition-colors">
+              <Pencil size={10} /> Sửa
+            </button>
+            <button onClick={handleResetPage} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-primary/20 px-3 py-1.5 transition-colors">
+              <RotateCcw size={10} /> Xóa blocks
+            </button>
+            <Button onClick={handleSave} size="sm"
+              className={`rounded-none text-xs uppercase tracking-widest h-8 px-4 gap-1.5 ${saved ? "bg-green-600" : "bg-primary"} text-primary-foreground`}>
+              {saved ? <Check size={10} /> : <Save size={10} />}
+              {saved ? "Đã lưu!" : "Lưu trang"}
+            </Button>
+          </div>
         </div>
+
+        <PageCanvas key={selectedPage.id} page={selectedPage} onBlocksChange={handleBlocksChange} />
+
+        {renamingPage && <RenamePageModal page={renamingPage} onConfirm={(t, s, c) => handleRename(renamingPage.id, t, s, c)} onClose={() => setRenamingPage(null)} />}
+      </div>
+    );
+  }
+
+  // ── LIST VIEW (default) ──────────────────────────────────────────────
+  const filteredPages = localPages.filter(p => filterCat === "all" || (p.category ?? "custom") === filterCat);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 bg-background">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-primary/15 bg-card shrink-0">
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-primary" />
+          <div>
+            <h2 className="font-serif text-base text-foreground">Quản lý trang</h2>
+            <p className="text-[11px] text-muted-foreground">{localPages.length} trang · chọn một trang để mở Page Builder</p>
+          </div>
+        </div>
+        <Button onClick={() => setShowNewModal(true)} size="sm"
+          className="rounded-none text-xs uppercase tracking-widest h-9 px-4 gap-1.5 bg-primary text-primary-foreground">
+          <Plus size={12} /> Tạo trang mới
+        </Button>
       </div>
 
-      <div className="flex flex-1 min-h-0">
-        {/* Pages list */}
-        <div className="w-56 shrink-0 border-r border-primary/15 bg-muted/20 flex flex-col">
-          <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Danh sách trang</div>
-            <button onClick={() => setShowNewModal(true)} title="Tạo trang mới" className="p-1 text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors">
-              <Plus size={13} />
+      <div className="px-6 py-3 border-b border-primary/10 bg-card/40 flex flex-wrap gap-1.5">
+        <button onClick={() => setFilterCat("all")}
+          className={`px-3 py-1 text-[10px] uppercase tracking-wider border transition-all ${filterCat === "all" ? "border-primary bg-primary/10 text-primary" : "border-primary/15 text-muted-foreground hover:text-foreground"}`}>
+          Tất cả ({localPages.length})
+        </button>
+        {PAGE_CATEGORIES.map(cat => {
+          const count = localPages.filter(p => (p.category ?? "custom") === cat.value).length;
+          if (count === 0) return null;
+          const active = filterCat === cat.value;
+          return (
+            <button key={cat.value} onClick={() => setFilterCat(cat.value)}
+              className="px-3 py-1 text-[10px] uppercase tracking-wider border transition-all"
+              style={{
+                borderColor: active ? cat.color : "rgba(212,175,55,0.15)",
+                color: active ? cat.color : "#9CA3AF",
+                backgroundColor: active ? `${cat.color}15` : "transparent",
+              }}>
+              {cat.label} ({count})
             </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-luxury p-6">
+        {filteredPages.length === 0 ? (
+          <div className="text-center py-24 text-muted-foreground">
+            <FileText size={40} className="mx-auto opacity-20 mb-4" />
+            <p className="text-sm">Chưa có trang nào trong phân loại này</p>
           </div>
-          {/* Category filter */}
-          <div className="px-2 py-2 border-b border-primary/10 flex flex-wrap gap-1">
-            <button onClick={() => setFilterCat("all")}
-              className={`px-2 py-0.5 text-[9px] uppercase tracking-wider border transition-all ${filterCat === "all" ? "border-primary bg-primary/10 text-primary" : "border-primary/15 text-muted-foreground hover:text-foreground"}`}>
-              Tất cả
-            </button>
-            {PAGE_CATEGORIES.map(cat => {
-              const active = filterCat === cat.value;
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+            {filteredPages.map(page => {
+              const cat = PAGE_CATEGORIES.find(c => c.value === (page.category ?? "custom"));
+              const visibleBlocks = page.blocks.filter(b => b.visible).length;
               return (
-                <button key={cat.value} onClick={() => setFilterCat(cat.value)}
-                  className="px-2 py-0.5 text-[9px] uppercase tracking-wider border transition-all"
-                  style={{
-                    borderColor: active ? cat.color : "rgba(212,175,55,0.15)",
-                    color: active ? cat.color : "#9CA3AF",
-                    backgroundColor: active ? `${cat.color}15` : "transparent",
-                  }}>
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex-1 overflow-y-auto scrollbar-luxury py-1.5">
-            {localPages
-              .filter(p => filterCat === "all" || (p.category ?? "custom") === filterCat)
-              .map(page => {
-                const cat = PAGE_CATEGORIES.find(c => c.value === (page.category ?? "custom"));
-                return (
-                  <div key={page.id}
-                    className={["mx-1.5 mb-0.5 flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-all group border",
-                      selectedPageId === page.id ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent hover:bg-primary/5 hover:border-primary/15 text-foreground"
-                    ].join(" ")} onClick={() => setSelectedPageId(page.id)}>
-                    {page.id === "home"
-                      ? <Home size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
-                      : <FileText size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
-                    }
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium truncate">{page.title}</span>
-                        {cat && (
-                          <span className="text-[8px] uppercase tracking-wider px-1 py-px shrink-0"
-                            style={{ color: cat.color, borderLeft: `2px solid ${cat.color}` }}>
-                            {cat.label}
-                          </span>
-                        )}
-                      </div>
-                      <div className={`text-[9px] font-mono truncate ${selectedPageId === page.id ? "text-primary/70" : "text-muted-foreground"}`}>{page.slug}</div>
+                <div key={page.id}
+                  className="group border border-primary/15 bg-card hover:border-primary/40 hover:shadow-lg transition-all flex flex-col">
+                  <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2 border-b border-primary/10">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {page.id === "home"
+                        ? <Home size={14} className="text-primary shrink-0" />
+                        : <FileText size={14} className="text-primary shrink-0" />}
+                      <h3 className="font-serif text-sm text-foreground truncate">{page.title}</h3>
                     </div>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => setRenamingPage(page)} className="p-0.5 text-muted-foreground hover:text-primary transition-colors" title="Đổi tên"><Pencil size={10} /></button>
-                      {page.id !== "home" && (
-                        <button onClick={() => handleDeletePage(page.id)} className="p-0.5 text-muted-foreground hover:text-red-500 transition-colors" title="Xóa trang"><Trash2 size={10} /></button>
-                      )}
+                    {cat && (
+                      <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 shrink-0 border-l-2"
+                        style={{ color: cat.color, borderColor: cat.color }}>
+                        {cat.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="px-4 py-3 space-y-2 flex-1">
+                    <div className="text-[10px] font-mono text-muted-foreground truncate">{page.slug}</div>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Layers size={9} /> {page.blocks.length} block{page.blocks.length !== 1 ? "s" : ""}</span>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="flex items-center gap-1"><Eye size={9} /> {visibleBlocks} hiển thị</span>
                     </div>
                   </div>
-                );
-              })}
-          </div>
-          <div className="p-2 border-t border-primary/10">
-            <button onClick={() => setShowNewModal(true)}
-              className="w-full border border-dashed border-primary/25 text-primary/60 hover:text-primary hover:border-primary/50 text-xs py-2 flex items-center justify-center gap-1.5 transition-all hover:bg-primary/5">
-              <Plus size={11} /> Tạo trang mới
-            </button>
-          </div>
-        </div>
-
-        {selectedPage ? (
-          <PageCanvas key={selectedPage.id} page={selectedPage} onBlocksChange={handleBlocksChange} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <p>Chọn một trang để bắt đầu chỉnh sửa</p>
+                  <div className="px-4 py-3 border-t border-primary/10 flex items-center gap-1.5 bg-muted/10">
+                    <Button onClick={() => setSelectedPageId(page.id)} size="sm"
+                      className="rounded-none flex-1 text-[10px] uppercase tracking-widest h-8 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30">
+                      <PaletteIcon size={10} className="mr-1" /> Mở Page Builder
+                    </Button>
+                    <a href={page.slug} target="_blank" rel="noopener noreferrer"
+                      className="p-2 text-muted-foreground hover:text-primary border border-primary/20 transition-colors" title="Xem trang">
+                      <ExternalLink size={11} />
+                    </a>
+                    <button onClick={() => setRenamingPage(page)}
+                      className="p-2 text-muted-foreground hover:text-primary border border-primary/20 transition-colors" title="Đổi tên / phân loại">
+                      <Pencil size={11} />
+                    </button>
+                    {page.id !== "home" && (
+                      <button onClick={() => handleDeletePage(page.id)}
+                        className="p-2 text-muted-foreground hover:text-red-500 border border-primary/20 hover:border-red-500/40 transition-colors" title="Xóa trang">
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -980,54 +1020,13 @@ function PagesPanel() {
   );
 }
 
-/* ──────────────────────────────────────────────
-   Main Builder w/ top tabs
-────────────────────────────────────────────── */
-type BuilderTab = "pages" | "branding";
-
-function BuilderContent() {
-  const [tab, setTab] = useState<BuilderTab>("pages");
-
-  const TABS: { key: BuilderTab; icon: any; label: string; sub: string }[] = [
-    { key: "pages",    icon: Layers,    label: "Pages",    sub: "Thiết kế trang" },
-    { key: "branding", icon: Sparkles,  label: "Branding", sub: "Logo · Favicon · Tên" },
-  ];
-
-  return (
-    <div className="flex flex-col h-full min-h-screen">
-      {/* Top header w/ tabs */}
-      <div className="border-b border-primary/20 bg-card sticky top-0 z-20 shrink-0">
-        <div className="flex items-stretch">
-          {TABS.map(({ key, icon: Icon, label, sub }) => {
-            const active = tab === key;
-            return (
-              <button key={key} onClick={() => setTab(key)}
-                className={["flex items-center gap-3 px-6 py-3 border-b-2 transition-all -mb-px relative",
-                  active ? "border-primary bg-primary/5" : "border-transparent hover:bg-primary/5"
-                ].join(" ")}>
-                <div className={`w-8 h-8 flex items-center justify-center transition-colors ${active ? "bg-primary/15 text-primary" : "bg-muted/50 text-muted-foreground"}`}>
-                  <Icon size={14} />
-                </div>
-                <div className="text-left">
-                  <div className={`text-xs uppercase tracking-[0.2em] font-medium ${active ? "text-primary" : "text-foreground"}`}>{label}</div>
-                  <div className="text-[10px] text-muted-foreground">{sub}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {tab === "pages" ? <PagesPanel /> : <BrandingPanel />}
-    </div>
-  );
-}
-
 export default function AdminBuilder() {
   return (
     <AdminGuard>
-      <AdminLayout title="Page Builder" subtitle="Thiết kế trang chủ, các trang con và quản lý nhận diện thương hiệu">
-        <BuilderContent />
+      <AdminLayout title="Page Builder" subtitle="Thiết kế và chỉnh sửa các trang của website">
+        <div className="flex flex-col h-full min-h-screen">
+          <PagesPanel />
+        </div>
       </AdminLayout>
     </AdminGuard>
   );

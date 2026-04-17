@@ -7,7 +7,9 @@ import {
   CreditCard, Save, Settings, Globe, Link2,
   Eye, EyeOff, Building, RefreshCw, CheckCircle2,
   XCircle, Loader2, Wifi, WifiOff, Shield, QrCode, Copy, Download,
+  Sparkles,
 } from "lucide-react";
+import { BrandingPanel } from "./builder";
 
 const PAYMENT_KEY = "grand-palace-payment-settings";
 const GENERAL_KEY  = "grand-palace-general-settings";
@@ -923,12 +925,13 @@ function OtaTab() {
 /* ──────────────────────────────────────────
    MAIN PAGE
 ────────────────────────────────────────── */
-type Tab = "payment" | "general" | "affiliate" | "oauth" | "ota";
+type Tab = "branding" | "payment" | "general" | "affiliate" | "oauth" | "ota";
 
 export default function AdminSettings() {
-  const [tab, setTab] = useState<Tab>("payment");
+  const [tab, setTab] = useState<Tab>("branding");
 
   const TABS: { key: Tab; icon: any; label: string }[] = [
+    { key: "branding",  icon: Sparkles,   label: "Nhận diện thương hiệu" },
     { key: "payment",   icon: CreditCard, label: "Thanh toán" },
     { key: "general",   icon: Settings,   label: "Cài đặt chung" },
     { key: "affiliate", icon: Link2,      label: "Affiliate" },
@@ -938,7 +941,7 @@ export default function AdminSettings() {
 
   return (
     <AdminGuard>
-      <AdminLayout title="Cài đặt Hệ thống" subtitle="Thanh toán, OAuth, OTA, affiliate và cấu hình chung">
+      <AdminLayout title="Cài đặt Hệ thống" subtitle="Branding, thanh toán, OAuth, OTA, affiliate và cấu hình chung">
         <div className="flex gap-0 mb-6 border-b border-primary/20 overflow-x-auto">
           {TABS.map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
@@ -949,6 +952,7 @@ export default function AdminSettings() {
             </button>
           ))}
         </div>
+        {tab === "branding"  && <BrandingPanel />}
         {tab === "payment"   && <PaymentTab />}
         {tab === "general"   && <GeneralTab />}
         {tab === "affiliate" && <AffiliateTab />}
