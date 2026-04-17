@@ -9,7 +9,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { SiteContentProvider } from "@/lib/site-content";
 import { PageBlocksProvider } from "@/lib/page-blocks";
 import { BrandingProvider } from "@/lib/branding";
-import { MainMenuProvider, FooterConfigProvider } from "@/lib/site-config";
+import { MainMenuProvider, FooterConfigProvider, ContactMapProvider } from "@/lib/site-config";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
@@ -227,10 +227,12 @@ function App() {
           <PageBlocksProvider>
             <MainMenuProvider>
               <FooterConfigProvider>
-                <WouterRouter base={basePath}>
-                  <ClerkProviderWithRoutes />
-                </WouterRouter>
-                <Toaster />
+                <ContactMapProvider>
+                  <WouterRouter base={basePath}>
+                    <ClerkProviderWithRoutes />
+                  </WouterRouter>
+                  <Toaster />
+                </ContactMapProvider>
               </FooterConfigProvider>
             </MainMenuProvider>
           </PageBlocksProvider>

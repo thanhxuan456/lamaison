@@ -122,6 +122,54 @@ export function useMainMenu(): MainMenuCtx {
   return useContext(MainMenuContext) ?? { menu: DEFAULT_MAIN_MENU, save: async (m) => m, loaded: false };
 }
 
+// ---------- Contact Map ----------
+export interface ContactMap {
+  enabled: boolean;
+  provider: "openstreetmap" | "google" | "custom";
+  title: string;
+  address: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+  embedUrl: string;
+  height: number;
+}
+
+export const DEFAULT_CONTACT_MAP: ContactMap = {
+  enabled: true,
+  provider: "openstreetmap",
+  title: "Tìm chúng tôi",
+  address: "Hà Nội · Đà Nẵng · TP.HCM",
+  lat: 21.0285,
+  lng: 105.8542,
+  zoom: 14,
+  embedUrl: "",
+  height: 420,
+};
+
+interface MapCtx { map: ContactMap; save: (m: ContactMap) => Promise<ContactMap>; loaded: boolean }
+const ContactMapContext = createContext<MapCtx | null>(null);
+export function ContactMapProvider({ children }: { children: ReactNode }) {
+  const { value, save, loaded } = useServerSetting<ContactMap>("contactMap", DEFAULT_CONTACT_MAP);
+  return <ContactMapContext.Provider value={{ map: value, save, loaded }}>{children}</ContactMapContext.Provider>;
+}
+export function useContactMap(): MapCtx {
+  return useContext(ContactMapContext) ?? { map: DEFAULT_CONTACT_MAP, save: async (m) => m, loaded: false };
+}
+
+/** Build the iframe src for the configured provider. Only http(s) URLs allowed. */
+export function buildMapEmbedUrl(m: ContactMap): string {
+  if (m.provider === "custom" || m.provider === "google") {
+    const url = m.embedUrl.trim();
+    if (!/^https?:\/\//i.test(url)) return ""; // reject javascript:, data:, etc.
+    return url;
+  }
+  // OpenStreetMap embed
+  const d = 0.01 / Math.max(1, m.zoom / 14);
+  const bbox = `${m.lng - d},${m.lat - d / 2},${m.lng + d},${m.lat + d / 2}`;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${m.lat},${m.lng}`;
+}
+
 // ---------- Footer ----------
 interface FooterCtx { footer: FooterConfig; save: (f: FooterConfig) => Promise<FooterConfig>; loaded: boolean }
 const FooterContext = createContext<FooterCtx | null>(null);

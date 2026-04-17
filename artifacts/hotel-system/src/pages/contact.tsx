@@ -1,14 +1,16 @@
 import { useState, FormEvent } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useFooterConfig } from "@/lib/site-config";
+import { useFooterConfig, useContactMap, buildMapEmbedUrl } from "@/lib/site-config";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, MapPin, Crown, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Crown, Send, Loader2, CheckCircle2, Lock } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
 export default function ContactPage() {
   const { footer } = useFooterConfig();
+  const { map } = useContactMap();
   const { toast } = useToast();
+  const mapSrc = map.enabled ? buildMapEmbedUrl(map) : "";
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -136,17 +138,54 @@ export default function ContactPage() {
                     placeholder="Vui lòng cho biết yêu cầu của quý khách..." />
                 </Field>
 
-                <div className="md:col-span-2 flex justify-center pt-2">
+                <div className="md:col-span-2 flex flex-col items-center gap-3 pt-2">
                   <button type="submit" disabled={submitting}
                     className="inline-flex items-center gap-3 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed px-10 h-14 uppercase tracking-[0.25em] text-xs font-medium border border-primary transition-colors">
                     {submitting ? (<><Loader2 size={14} className="animate-spin" /> Đang gửi…</>) : (<>Gửi tin nhắn <Send size={14} /></>)}
                   </button>
+                  <p className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <Lock size={12} className="text-primary" />
+                    Tin nhắn được mã hoá AES-256 trước khi lưu trữ.
+                  </p>
                 </div>
               </form>
             )}
           </div>
         </div>
       </section>
+
+      {/* Map */}
+      {map.enabled && mapSrc && (
+        <section className="bg-secondary py-20">
+          <div className="container mx-auto px-4 md:px-8 max-w-6xl">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-3 mb-4">
+                <span className="w-8 h-px bg-primary" />
+                <MapPin size={14} className="text-primary" />
+                <span className="text-primary text-[10px] tracking-[0.4em] uppercase">{map.title}</span>
+                <MapPin size={14} className="text-primary" />
+                <span className="w-8 h-px bg-primary" />
+              </div>
+              <h2 className="font-serif text-3xl md:text-4xl text-white mb-3">{map.address}</h2>
+            </div>
+            <div className="border border-primary/30 bg-card overflow-hidden relative">
+              <div className="absolute -top-2 -left-2 w-4 h-4 border-t border-l border-primary z-10" />
+              <div className="absolute -top-2 -right-2 w-4 h-4 border-t border-r border-primary z-10" />
+              <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b border-l border-primary z-10" />
+              <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b border-r border-primary z-10" />
+              <iframe
+                title="Bản đồ"
+                src={mapSrc}
+                style={{ height: map.height, border: 0 }}
+                className="w-full block"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </section>
+      )}
     </PageLayout>
   );
 }

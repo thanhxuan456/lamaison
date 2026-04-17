@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, contactMessagesTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
+import { encryptString, decryptString } from "../lib/crypto";
 
 const router = Router();
 
@@ -15,14 +16,17 @@ router.post("/contact-messages", async (req, res) => {
     if (!messageStr || messageStr.length < 5) return res.status(400).json({ error: "Nội dung quá ngắn" });
     if (messageStr.length > 5000) return res.status(400).json({ error: "Nội dung quá dài" });
 
+    const phoneStr = typeof phone === "string" ? phone.trim().slice(0, 50) : "";
+    const subjectStr = typeof subject === "string" ? subject.trim().slice(0, 300) : "";
+
     const [row] = await db
       .insert(contactMessagesTable)
       .values({
-        name: nameStr.slice(0, 200),
-        email: emailStr.slice(0, 200),
-        phone: typeof phone === "string" ? phone.trim().slice(0, 50) : null,
-        subject: typeof subject === "string" ? subject.trim().slice(0, 300) : null,
-        message: messageStr,
+        name: encryptString(nameStr.slice(0, 200)),
+        email: encryptString(emailStr.slice(0, 200)),
+        phone: phoneStr ? encryptString(phoneStr) : null,
+        subject: subjectStr ? encryptString(subjectStr) : null,
+        message: encryptString(messageStr),
       })
       .returning();
     res.status(201).json({ id: row.id, ok: true });
@@ -39,7 +43,16 @@ router.get("/contact-messages", async (_req, res) => {
       .from(contactMessagesTable)
       .orderBy(desc(contactMessagesTable.createdAt))
       .limit(500);
-    res.json(rows);
+    // Decrypt for admin viewing. Plaintext never leaves the server in the DB.
+    const decoded = rows.map((r) => ({
+      ...r,
+      name: decryptString(r.name),
+      email: decryptString(r.email),
+      phone: r.phone ? decryptString(r.phone) : null,
+      subject: r.subject ? decryptString(r.subject) : null,
+      message: decryptString(r.message),
+    }));
+    res.json(decoded);
   } catch {
     res.status(500).json({ error: "Internal server error" });
   }

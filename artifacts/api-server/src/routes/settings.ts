@@ -93,11 +93,26 @@ const DEFAULT_FOOTER = {
   },
 };
 
+const DEFAULT_CONTACT_MAP = {
+  enabled: true,
+  provider: "openstreetmap" as "openstreetmap" | "google" | "custom",
+  title: "Tìm chúng tôi",
+  address: "Hà Nội · Đà Nẵng · TP.HCM",
+  // OpenStreetMap defaults: Hà Nội Old Quarter
+  lat: 21.0285,
+  lng: 105.8542,
+  zoom: 14,
+  // Optional custom embed (Google Maps "Embed a map" iframe URL, or any iframe src)
+  embedUrl: "",
+  height: 420,
+};
+
 // Safelist of keys that may be read/written via the generic endpoint and their defaults.
 const KEY_DEFAULTS: Record<string, unknown> = {
   theme: DEFAULT_THEME,
   mainMenu: DEFAULT_MAIN_MENU,
   footer: DEFAULT_FOOTER,
+  contactMap: DEFAULT_CONTACT_MAP,
 };
 
 function defaultFor(key: string): any {

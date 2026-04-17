@@ -9,26 +9,41 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useMainMenu, useFooterConfig,
+  useMainMenu, useFooterConfig, useContactMap, buildMapEmbedUrl,
   type MainMenu, type MenuItem,
   type FooterConfig, type FooterColumn, type FooterLink, type FooterSocial,
+  type ContactMap,
 } from "@/lib/site-config";
-import { ArrowUp, ArrowDown, Trash2, Plus, Save, ListTree, PanelBottom } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2, Plus, Save, ListTree, PanelBottom, MapPin } from "lucide-react";
 
 const genId = () => Math.random().toString(36).slice(2, 10);
 
 export default function AdminMenusPage() {
   const { menu, save: saveMenu } = useMainMenu();
   const { footer, save: saveFooter } = useFooterConfig();
+  const { map, save: saveMap } = useContactMap();
   const { toast } = useToast();
 
   const [m, setM] = useState<MainMenu>(menu);
   const [f, setF] = useState<FooterConfig>(footer);
+  const [mp, setMp] = useState<ContactMap>(map);
   const [savingM, setSavingM] = useState(false);
   const [savingF, setSavingF] = useState(false);
+  const [savingMp, setSavingMp] = useState(false);
 
   useEffect(() => setM(menu), [menu]);
   useEffect(() => setF(footer), [footer]);
+  useEffect(() => setMp(map), [map]);
+
+  const onSaveMap = async () => {
+    setSavingMp(true);
+    try {
+      await saveMap(mp);
+      toast({ title: "Đã lưu", description: "Cấu hình bản đồ đã được cập nhật." });
+    } catch (e: any) {
+      toast({ title: "Lỗi", description: e.message ?? "Không lưu được", variant: "destructive" });
+    } finally { setSavingMp(false); }
+  };
 
   const onSaveMenu = async () => {
     setSavingM(true);
@@ -103,6 +118,7 @@ export default function AdminMenusPage() {
         <TabsList>
           <TabsTrigger value="menu"><ListTree size={14} className="mr-2" /> Menu chính</TabsTrigger>
           <TabsTrigger value="footer"><PanelBottom size={14} className="mr-2" /> Footer Widgets</TabsTrigger>
+          <TabsTrigger value="map"><MapPin size={14} className="mr-2" /> Bản đồ liên hệ</TabsTrigger>
         </TabsList>
 
         {/* ============ MAIN MENU ============ */}
@@ -260,6 +276,83 @@ export default function AdminMenusPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        {/* ============ MAP ============ */}
+        <TabsContent value="map" className="space-y-6 mt-6">
+          <div className="flex justify-end">
+            <Button onClick={onSaveMap} disabled={savingMp}><Save size={14} className="mr-1" /> {savingMp ? "Đang lưu…" : "Lưu bản đồ"}</Button>
+          </div>
+
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>Hiển thị bản đồ trên trang Liên hệ</CardTitle>
+              <Switch checked={mp.enabled} onCheckedChange={(c) => setMp({ ...mp, enabled: c })} />
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><Label>Tiêu đề</Label><Input value={mp.title} onChange={(e) => setMp({ ...mp, title: e.target.value })} /></div>
+              <div><Label>Địa chỉ hiển thị</Label><Input value={mp.address} onChange={(e) => setMp({ ...mp, address: e.target.value })} /></div>
+              <div>
+                <Label>Nhà cung cấp bản đồ</Label>
+                <select className="w-full h-10 px-3 border border-input rounded bg-background text-sm"
+                  value={mp.provider}
+                  onChange={(e) => setMp({ ...mp, provider: e.target.value as ContactMap["provider"] })}>
+                  <option value="openstreetmap">OpenStreetMap (miễn phí, không cần key)</option>
+                  <option value="google">Google Maps Embed (dán URL iframe)</option>
+                  <option value="custom">Tùy chỉnh (URL iframe bất kỳ)</option>
+                </select>
+              </div>
+              <div>
+                <Label>Chiều cao (px)</Label>
+                <Input type="number" min={200} max={1000} value={mp.height}
+                  onChange={(e) => setMp({ ...mp, height: Number(e.target.value) || 420 })} />
+              </div>
+
+              {mp.provider === "openstreetmap" ? (
+                <>
+                  <div><Label>Vĩ độ (Latitude)</Label><Input type="number" step="0.0001" value={mp.lat}
+                    onChange={(e) => setMp({ ...mp, lat: Number(e.target.value) || 0 })} /></div>
+                  <div><Label>Kinh độ (Longitude)</Label><Input type="number" step="0.0001" value={mp.lng}
+                    onChange={(e) => setMp({ ...mp, lng: Number(e.target.value) || 0 })} /></div>
+                  <div><Label>Mức zoom (1-20)</Label><Input type="number" min={1} max={20} value={mp.zoom}
+                    onChange={(e) => setMp({ ...mp, zoom: Number(e.target.value) || 14 })} /></div>
+                  <div className="flex items-end">
+                    <p className="text-xs text-muted-foreground">
+                      Mẹo: mở openstreetmap.org, click chuột phải vào vị trí → "Hiển thị địa chỉ" để lấy lat/lng.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="md:col-span-2">
+                  <Label>URL iframe nhúng</Label>
+                  <Textarea rows={3} value={mp.embedUrl}
+                    placeholder='Ví dụ: https://www.google.com/maps/embed?pb=...'
+                    onChange={(e) => setMp({ ...mp, embedUrl: e.target.value })} />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Trên Google Maps: Chia sẻ → Nhúng bản đồ → sao chép phần <code>src="..."</code> trong thẻ iframe.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {mp.enabled && (
+            <Card>
+              <CardHeader><CardTitle>Xem trước</CardTitle></CardHeader>
+              <CardContent>
+                {buildMapEmbedUrl(mp) ? (
+                  <iframe
+                    title="Xem trước bản đồ"
+                    src={buildMapEmbedUrl(mp)}
+                    style={{ height: Math.min(mp.height, 360), border: 0 }}
+                    className="w-full block border border-border rounded"
+                    loading="lazy"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground p-6 text-center">Vui lòng nhập URL iframe để xem trước.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </AdminLayout>
