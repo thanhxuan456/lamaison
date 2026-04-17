@@ -60,7 +60,13 @@ Luxury Vietnamese hotel booking system. pnpm workspace monorepo using TypeScript
 - `PUT /api/ota/channels/:id` — update OTA channel config
 - `POST /api/ota/channels/:id/test` — test OTA connection
 - `POST /api/ota/channels/:id/sync` — trigger OTA sync
+- `POST /api/ota/channels/:id/ingest` — ingest a real booking from an OTA (idempotent on `(source, externalRef)`; auto-dedups guest by normalized email; sets room → reserved)
 - `GET/POST /api/bookings` — booking management
+- `POST /api/bookings/:id/check-in` — flips booking → `checked_in` + `checkedInAt`; room → `occupied`
+- `POST /api/bookings/:id/check-out` — flips booking → `checked_out` + `checkedOutAt`; room → `cleaning`
+- `GET /api/guests` — merged guest list (one row per normalized email) with totalBookings + sources + lastStayAt
+- `GET /api/guests/:id` — single guest with full booking history across all OTA sources
+- `GET /api/guests/export.csv` · `POST /api/guests/bulk-checkout` · `DELETE /api/guests` (refuses guests with active bookings)
 - `GET/POST /api/chat/sessions` — live chat sessions
 - `WS /api/chat/ws/:sessionId` — WebSocket for live chat
 

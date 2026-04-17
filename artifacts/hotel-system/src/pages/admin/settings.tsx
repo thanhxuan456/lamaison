@@ -729,6 +729,50 @@ function OtaTab() {
     }
   };
 
+  const [ingesting, setIngesting] = useState<string | null>(null);
+  const testIngest = async (ch: OtaChannel) => {
+    setIngesting(ch.id);
+    try {
+      const roomsRes = await fetch(`${API}/api/rooms`);
+      const rooms = await roomsRes.json();
+      if (!Array.isArray(rooms) || rooms.length === 0) {
+        toast({ title: "Chưa có phòng nào để demo ingest", variant: "destructive" });
+        setIngesting(null);
+        return;
+      }
+      const room = rooms[0];
+      const externalRef = `DEMO-${ch.id.toUpperCase()}-${Date.now()}`;
+      const today = new Date();
+      const tomorrow = new Date(today.getTime() + 86400000);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      const res = await fetch(`${API}/api/ota/channels/${ch.id}/ingest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          externalRef,
+          roomId: room.id,
+          guestName: `Demo Guest ${ch.name}`,
+          guestEmail: `demo+${ch.id}@grand-palace-test.vn`,
+          guestPhone: "+84900000000",
+          checkInDate: fmt(today),
+          checkOutDate: fmt(tomorrow),
+          numberOfGuests: 2,
+          totalPrice: parseFloat(room.pricePerNight ?? "200"),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      toast({
+        title: data.duplicate ? `↺ Đã có booking trước (idempotent)` : `✅ Đã nhận booking #${data.id} từ ${ch.name}`,
+        description: `Ref: ${externalRef}`,
+      });
+    } catch (e: any) {
+      toast({ title: "Ingest thất bại", description: e?.message ?? "", variant: "destructive" });
+    } finally {
+      setIngesting(null);
+    }
+  };
+
   const syncNow = async (ch: OtaChannel) => {
     setSyncing(ch.id);
     try {
@@ -805,6 +849,12 @@ function OtaTab() {
                     className="text-[10px] tracking-wide text-muted-foreground hover:text-primary border border-primary/20 px-2.5 py-1 transition-colors flex items-center gap-1 disabled:opacity-50">
                     {syncing === ch.id ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
                     Sync
+                  </button>
+                  <button onClick={() => testIngest(ch)} disabled={!!ingesting}
+                    title="Tạo một booking demo từ kênh này để kiểm tra luồng ingest + dedup khách"
+                    className="text-[10px] tracking-wide text-primary hover:bg-primary/10 border border-primary/40 px-2.5 py-1 transition-colors flex items-center gap-1 disabled:opacity-50">
+                    {ingesting === ch.id ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
+                    Test Ingest
                   </button>
                 </>
               )}
