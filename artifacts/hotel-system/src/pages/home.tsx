@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { MapPin, Star, ChevronRight } from "lucide-react";
 import { usePageBlocks, PageBlock } from "@/lib/page-blocks";
+import { RichText } from "@/components/admin/RichTextEditor";
 
 /* ────────────────────────────────────────
    Block Renderers
@@ -37,7 +38,7 @@ function HeroBlock({ s }: { s: Record<string, any> }) {
           </h1>
           <div className="w-24 h-[1px] bg-primary mx-auto mb-8" />
           <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto mb-12 leading-relaxed">
-            {s.subtitle}
+            <RichText html={s.subtitle} as="span" />
           </p>
           <Button
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-8 py-6 text-sm tracking-widest uppercase border border-transparent hover:border-white transition-all"
@@ -144,7 +145,7 @@ function ExperiencesBlock({ s }: { s: Record<string, any> }) {
             <h2 className="text-primary font-serif tracking-[0.2em] text-sm uppercase mb-4">{s.kicker || "Trải nghiệm"}</h2>
             <h3 className="text-3xl md:text-5xl font-serif text-white mb-6 leading-tight">{s.title || "Dấu ấn khó phai"}</h3>
             <div className="w-16 h-[2px] bg-primary mb-8" />
-            <p className="text-white/70 text-lg font-light leading-relaxed mb-8">{s.body}</p>
+            <RichText html={s.body} as="div" className="text-white/70 text-lg font-light leading-relaxed mb-8" />
             {items.length > 0 && (
               <ul className="space-y-4 mb-10">
                 {items.map((item, i) => (
@@ -208,7 +209,7 @@ function TextBlock({ s }: { s: Record<string, any> }) {
         )}
         <h3 className={`text-3xl md:text-4xl font-serif mb-6 ${isDark ? "text-white" : "text-foreground"}`}>{s.title}</h3>
         <div className="w-16 h-[2px] bg-primary mx-auto mb-8" />
-        <p className={`text-lg font-light leading-relaxed ${isDark ? "text-white/75" : "text-muted-foreground"}`}>{s.body}</p>
+        <RichText html={s.body} as="div" className={`text-lg font-light leading-relaxed ${isDark ? "text-white/75" : "text-muted-foreground"}`} />
       </div>
     </section>
   );
@@ -226,7 +227,7 @@ function CtaBannerBlock({ s }: { s: Record<string, any> }) {
       )}
       <div className={`relative z-10 container mx-auto px-4 text-center ${s.imageUrl ? "" : "bg-secondary py-20"}`}>
         <h2 className="text-3xl md:text-5xl font-serif text-white mb-4">{s.title}</h2>
-        <p className="text-white/80 text-lg mb-8">{s.subtitle}</p>
+        <p className="text-white/80 text-lg mb-8"><RichText html={s.subtitle} as="span" /></p>
         {s.ctaText && (
           <Button
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-10 py-6 text-sm tracking-widest uppercase"

@@ -32,7 +32,7 @@ export interface PageBlock {
 export interface BlockField {
   key: string;
   label: string;
-  type: "text" | "textarea" | "url" | "image" | "select" | "repeater" | "color";
+  type: "text" | "textarea" | "richtext" | "url" | "image" | "select" | "repeater" | "color";
   placeholder?: string;
   options?: { value: string; label: string }[];
   itemFields?: BlockField[];

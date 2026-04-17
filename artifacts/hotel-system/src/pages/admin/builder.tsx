@@ -19,16 +19,35 @@ import {
   genBlockId,
 } from "@/lib/page-blocks";
 import { useBranding, DEFAULT_BRANDING, Branding } from "@/lib/branding";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 /* ──────────────────────────────────────────────
    Field Editor
 ────────────────────────────────────────────── */
 function FieldEditor({ field, value, onChange }: { field: BlockField; value: any; onChange: (v: any) => void }) {
   const base = "w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none";
+  // textarea fields get a "rich" toggle; richtext fields are always rich.
+  const [richMode, setRichMode] = useState(field.type === "richtext" || /<[a-z][\s\S]*>/i.test(value ?? ""));
 
   if (field.type === "text") return <input className={base} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={field.placeholder} />;
-  if (field.type === "textarea") return <textarea className={`${base} resize-y min-h-[80px]`} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={field.placeholder} />;
-  if (field.type === "url") return <input className={`${base} font-mono text-xs`} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={field.placeholder ?? "/images/... hoặc https://"} />;
+  if (field.type === "richtext") return <RichTextEditor value={value ?? ""} onChange={onChange} placeholder={field.placeholder} />;
+  if (field.type === "textarea") {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex justify-end">
+          <button type="button" onClick={() => setRichMode(m => !m)}
+            className={`text-[9px] uppercase tracking-widest px-2 py-0.5 border transition-colors ${richMode ? "bg-primary/10 border-primary/40 text-primary" : "border-primary/20 text-muted-foreground hover:text-foreground"}`}>
+            {richMode ? "✦ Đang dùng Rich Text" : "✦ Bật Rich Text"}
+          </button>
+        </div>
+        {richMode
+          ? <RichTextEditor value={value ?? ""} onChange={onChange} placeholder={field.placeholder} />
+          : <textarea className={`${base} resize-y min-h-[80px]`} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={field.placeholder} />
+        }
+      </div>
+    );
+  }
+  if (field.type === "url") return <input className={base + " font-mono text-xs"} value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={field.placeholder ?? "/images/... hoặc https://"} />;
   if (field.type === "select" && field.options) {
     return (
       <select className={base} value={value ?? ""} onChange={e => onChange(e.target.value)}>
