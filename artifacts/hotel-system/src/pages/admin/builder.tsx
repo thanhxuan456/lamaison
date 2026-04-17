@@ -888,9 +888,27 @@ export function BrandingPanel() {
                 className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="Grand Palace" />
             </div>
             <div>
-              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tagline / Phụ đề</label>
-              <input value={local.tagline} onChange={e => set("tagline", e.target.value)}
-                className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="5 Sao Đẳng Cấp" />
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Số sao hiển thị</label>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 10 }).map((_, i) => {
+                    const val = i + 1;
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => set("starRating", val)}
+                        className={`text-xl leading-none transition-colors ${val <= (local.starRating ?? 5) ? "text-primary" : "text-primary/20 hover:text-primary/50"}`}
+                        title={`${val} sao`}
+                      >
+                        ★
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-xs text-muted-foreground ml-1">{local.starRating ?? 5} sao</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground/70 mt-1.5">Hiển thị trên logo ở navbar và footer (1–10 sao)</p>
             </div>
             <div className="sm:col-span-2">
               <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tiêu đề trang (Browser tab)</label>
@@ -1006,7 +1024,11 @@ export function BrandingPanel() {
                 ) : (
                   <div className="flex flex-col">
                     <span className="font-serif text-lg text-primary uppercase tracking-[0.1em]">{local.brandName || "—"}</span>
-                    <span className="text-[9px] text-primary/70 tracking-[0.3em] uppercase mt-0.5">{local.tagline || "—"}</span>
+                    <span className="flex items-center gap-0.5 mt-0.5">
+                      {Array.from({ length: Math.min(Math.max(local.starRating ?? 5, 1), 10) }).map((_, i) => (
+                        <span key={i} className="text-primary text-[9px] leading-none">★</span>
+                      ))}
+                    </span>
                   </div>
                 )}
               </div>

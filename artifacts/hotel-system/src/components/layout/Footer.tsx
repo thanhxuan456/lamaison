@@ -96,8 +96,10 @@ export function Footer() {
                   <span className="text-3xl font-serif text-primary tracking-[0.1em] uppercase">
                     {branding.brandName}
                   </span>
-                  <span className="text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
-                    {branding.tagline || t("brand.tagline")}
+                  <span className="flex items-center gap-0.5 mt-1">
+                    {Array.from({ length: Math.min(Math.max(branding.starRating ?? 5, 1), 10) }).map((_, i) => (
+                      <span key={i} className="text-primary text-sm leading-none">★</span>
+                    ))}
                   </span>
                 </>
               )}

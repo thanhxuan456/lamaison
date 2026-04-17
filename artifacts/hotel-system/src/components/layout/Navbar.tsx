@@ -132,8 +132,10 @@ export function Navbar() {
                 <span className="text-2xl md:text-3xl font-serif text-primary tracking-[0.1em] uppercase group-hover:text-primary/80 transition-colors">
                   {branding.brandName}
                 </span>
-                <span className="text-[10px] md:text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
-                  {branding.tagline || t("brand.tagline")}
+                <span className="flex items-center gap-0.5 mt-1">
+                  {Array.from({ length: Math.min(Math.max(branding.starRating ?? 5, 1), 10) }).map((_, i) => (
+                    <span key={i} className="text-primary text-[10px] md:text-[11px] leading-none">★</span>
+                  ))}
                 </span>
               </div>
             )}

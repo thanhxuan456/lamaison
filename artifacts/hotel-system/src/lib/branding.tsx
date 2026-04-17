@@ -7,6 +7,7 @@ export type Currency = "VND" | "USD";
 export interface Branding {
   brandName: string;
   tagline: string;
+  starRating: number;
   useImageLogo: boolean;
   logoUrl: string;
   adminLogoUrl: string;
@@ -18,6 +19,7 @@ export interface Branding {
 export const DEFAULT_BRANDING: Branding = {
   brandName: "Grand Palace",
   tagline: "5 Sao Đẳng Cấp",
+  starRating: 5,
   useImageLogo: false,
   logoUrl: "/logo.svg",
   adminLogoUrl: "/logo.svg",
