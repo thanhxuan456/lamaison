@@ -125,7 +125,7 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
         {/* ── Main content ── */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-background">
           {/* Sticky page header — luxury treatment with gold accent */}
-          <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-5 border-b border-primary/20 bg-gradient-to-r from-primary/5 via-background to-background backdrop-blur-sm shadow-sm">
+          <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-5 border-b-2 border-primary/40 bg-card shadow-sm">
             <button
               className="lg:hidden p-1.5 text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setSidebarOpen(true)}
