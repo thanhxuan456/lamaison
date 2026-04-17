@@ -99,9 +99,11 @@ function Reset-PgSuperPassword([string]$pgBinPath, [string]$newPassword) {
     Restart-Service -Name $svcName -Force
     Start-Sleep -Seconds 5
 
-    # Now reset the password without needing the old one
+    # Now reset the password without needing the old one (trust is active)
     $env:PGPASSWORD = ""
+    $ErrorActionPreference = "Continue"
     & "$pgBinPath\psql.exe" -U postgres -h 127.0.0.1 -c "ALTER USER postgres PASSWORD '$newPassword';" 2>&1 | Out-Null
+    $ErrorActionPreference = "Stop"
 
     # Restore original pg_hba.conf
     Copy-Item $hbaBackup $hbaFile -Force
@@ -111,9 +113,14 @@ function Reset-PgSuperPassword([string]$pgBinPath, [string]$newPassword) {
     Restart-Service -Name $svcName -Force
     Start-Sleep -Seconds 5
 
+    # Verify the new password works
     $env:PGPASSWORD = $newPassword
+    $ErrorActionPreference = "Continue"
     $verify = & "$pgBinPath\psql.exe" -U postgres -h 127.0.0.1 -tAc "SELECT 1" 2>&1
-    if ($verify -match "1") {
+    $verifyFailed = ($LASTEXITCODE -ne 0)
+    $ErrorActionPreference = "Stop"
+
+    if (-not $verifyFailed) {
         Write-OK "Password reset successfully"
         return $true
     }
@@ -215,20 +222,30 @@ $env:PGPASSWORD = $Config.PgSuperPassword
 
 # Verify we can connect before proceeding
 Write-Info "Testing PostgreSQL connection..."
+
+# Temporarily allow non-zero exit codes so we can handle the failure ourselves
+$ErrorActionPreference = "Continue"
 $testConn = & psql -U postgres -h 127.0.0.1 -tAc "SELECT 1" 2>&1
-if ($LASTEXITCODE -ne 0) {
+$pgConnFailed = ($LASTEXITCODE -ne 0)
+$ErrorActionPreference = "Stop"
+
+if ($pgConnFailed) {
     Write-Host ""
     Write-Host "  [WARN] Cannot connect with the configured password." -ForegroundColor Yellow
-    Write-Host "  This usually happens when PostgreSQL was previously installed" -ForegroundColor Yellow
-    Write-Host "  with a different password. Attempting automatic recovery..." -ForegroundColor Yellow
+    Write-Host "  PostgreSQL has a different password from a previous install." -ForegroundColor Yellow
+    Write-Host "  NOTE: This is NOT your Windows Server password - it is a" -ForegroundColor Yellow
+    Write-Host "  separate password set when PostgreSQL was first installed." -ForegroundColor Yellow
+    Write-Host "  Attempting automatic password reset..." -ForegroundColor Yellow
     Write-Host ""
 
     $recovered = Reset-PgSuperPassword -pgBinPath $pgBin -newPassword $Config.PgSuperPassword
     if (-not $recovered) {
         Write-Host ""
-        Write-Host "  Automatic recovery failed. Options:" -ForegroundColor Red
-        Write-Host "    1. Run remove.ps1 to fully uninstall PostgreSQL, then retry." -ForegroundColor Red
-        Write-Host "    2. Reset the postgres password manually in pgAdmin." -ForegroundColor Red
+        Write-Host "  Automatic reset failed. To fix this:" -ForegroundColor Red
+        Write-Host "    Option 1: Run remove.ps1, choose YES to uninstall PostgreSQL," -ForegroundColor Red
+        Write-Host "              then run this installer again." -ForegroundColor Red
+        Write-Host "    Option 2: Open pgAdmin, connect as postgres, and manually" -ForegroundColor Red
+        Write-Host "              change the password to: $($Config.PgSuperPassword)" -ForegroundColor Red
         Write-Host ""
         Read-Host "Press Enter to exit"
         exit 1
