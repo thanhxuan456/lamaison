@@ -76,3 +76,11 @@ Only `tthanhxuan456@gmail.com` can access `/admin`. Guard is client-side via Cle
 - API routes are mounted at `/api/` by Express, so route handlers use paths WITHOUT `/api/` prefix (e.g. `/hotels` not `/api/hotels`)
 - Dark mode: `--secondary` color is inverted (cream in dark mode) — intentional for alternating section contrast
 - Navbar scrolled state uses `dark:bg-card/95` since secondary is cream in dark mode
+
+## Customizable Site Config (Menu / Footer)
+
+- Server-backed via `app_settings` table. Generic safelisted endpoints `/api/settings/:key` (`theme`, `mainMenu`, `footer`).
+- Client providers in `src/lib/site-config.tsx`: `MainMenuProvider`, `FooterConfigProvider` + hooks `useMainMenu()`, `useFooterConfig()`. localStorage cache + server fetch + save.
+- `Navbar.tsx` and `Footer.tsx` consume these hooks (no more hardcoded links).
+- Admin editor at `/admin/menus`: drag-order menu items, add/toggle/edit, optional CTA button, footer widget editor (brand about, newsletter, columns w/ links, socials, contact, bottom bar).
+- `/contact` route registered in App.tsx, page at `src/pages/contact.tsx`.

@@ -7,6 +7,7 @@ import { LocationSwitcher } from "@/components/LocationSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
+import { useMainMenu } from "@/lib/site-config";
 import { useUser, useClerk, Show } from "@clerk/react";
 import {
   DropdownMenu,
@@ -99,6 +100,8 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useT();
   const { branding } = useBranding();
+  const { menu } = useMainMenu();
+  const visibleItems = menu.items.filter((i) => i.enabled);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -138,12 +141,25 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-8">
-            <Link href="/" className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
-              {t("nav.home")}
-            </Link>
-            <Link href="/bookings" className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
-              {t("nav.bookings")}
-            </Link>
+            {visibleItems.map((item) => (
+              item.target === "_blank" ? (
+                <a key={item.id} href={item.href} target="_blank" rel="noreferrer"
+                  className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
+                  {item.label}
+                </a>
+              ) : (
+                <Link key={item.id} href={item.href}
+                  className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
+                  {item.label}
+                </Link>
+              )
+            ))}
+            {menu.ctaEnabled && menu.ctaLabel && (
+              <Link href={menu.ctaHref}
+                className="text-xs font-medium tracking-[0.2em] uppercase bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 transition-colors">
+                {menu.ctaLabel}
+              </Link>
+            )}
           </div>
 
           {/* Right cluster */}
@@ -188,12 +204,13 @@ export function Navbar() {
             <div className="sm:hidden"><LanguageSwitcher /></div>
             <div className="sm:hidden"><ThemeToggle /></div>
           </div>
-          <Link href="/" className="text-lg font-medium text-primary tracking-wider uppercase border-b border-primary/10 pb-4" onClick={() => setMobileMenuOpen(false)}>
-            {t("nav.home")}
-          </Link>
-          <Link href="/bookings" className="text-lg font-medium text-primary tracking-wider uppercase border-b border-primary/10 pb-4" onClick={() => setMobileMenuOpen(false)}>
-            {t("nav.bookings")}
-          </Link>
+          {visibleItems.map((item) => (
+            <Link key={item.id} href={item.href}
+              className="text-lg font-medium text-primary tracking-wider uppercase border-b border-primary/10 pb-4"
+              onClick={() => setMobileMenuOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
           <Show when="signed-in">
             <Link href="/profile" className="text-lg font-medium text-primary tracking-wider uppercase border-b border-primary/10 pb-4" onClick={() => setMobileMenuOpen(false)}>
               {t("profile.title")}

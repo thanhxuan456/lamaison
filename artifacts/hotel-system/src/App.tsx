@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { SiteContentProvider } from "@/lib/site-content";
 import { PageBlocksProvider } from "@/lib/page-blocks";
 import { BrandingProvider } from "@/lib/branding";
+import { MainMenuProvider, FooterConfigProvider } from "@/lib/site-config";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
@@ -36,6 +37,8 @@ import AdminMenu from "@/pages/admin/menu";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminBookings from "@/pages/admin/bookings";
 import AdminGuests from "@/pages/admin/guests";
+import AdminMenus from "@/pages/admin/menus";
+import ContactPage from "@/pages/contact";
 import InvoiceView from "@/pages/invoice-view";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -162,6 +165,7 @@ function Router() {
       <Route path="/rooms/:id" component={RoomDetail} />
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/:id" component={BookingDetail} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/register/*?" component={RegisterPage} />
       <Route path="/profile/*?" component={Profile} />
@@ -179,6 +183,7 @@ function Router() {
       <Route path="/admin/invoices" component={AdminInvoices} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/guests" component={AdminGuests} />
+      <Route path="/admin/menus" component={AdminMenus} />
       <Route path="/invoices/:id" component={InvoiceView} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/error" component={() => <ServerError code={500} />} />
@@ -220,10 +225,14 @@ function App() {
        <BrandingProvider>
         <SiteContentProvider>
           <PageBlocksProvider>
-            <WouterRouter base={basePath}>
-              <ClerkProviderWithRoutes />
-            </WouterRouter>
-            <Toaster />
+            <MainMenuProvider>
+              <FooterConfigProvider>
+                <WouterRouter base={basePath}>
+                  <ClerkProviderWithRoutes />
+                </WouterRouter>
+                <Toaster />
+              </FooterConfigProvider>
+            </MainMenuProvider>
           </PageBlocksProvider>
         </SiteContentProvider>
        </BrandingProvider>
