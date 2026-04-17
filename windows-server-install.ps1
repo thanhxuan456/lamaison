@@ -194,9 +194,25 @@ foreach ($line in $envContent) {
 }
 
 # ===========================================================
-# 7. INSTALL & BUILD
+# 7. PATCH package.json FOR WINDOWS COMPATIBILITY
 # ===========================================================
-Write-Step "Step 7: Installing dependencies (may take several minutes)"
+Write-Step "Step 7: Patching package.json for Windows"
+
+$rootPkg = Join-Path $Config.InstallDir "package.json"
+$pkgJson = Get-Content $rootPkg -Raw | ConvertFrom-Json
+
+if ($pkgJson.scripts.PSObject.Properties.Name -contains "preinstall") {
+    $pkgJson.scripts.PSObject.Properties.Remove("preinstall")
+    $pkgJson | ConvertTo-Json -Depth 10 | Set-Content $rootPkg -Encoding UTF8
+    Write-OK "Removed Linux-only preinstall script from package.json"
+} else {
+    Write-OK "No preinstall script found, nothing to patch"
+}
+
+# ===========================================================
+# 8. INSTALL & BUILD
+# ===========================================================
+Write-Step "Step 8: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
@@ -226,9 +242,9 @@ Write-OK "Frontend built"
 Pop-Location
 
 # ===========================================================
-# 8. WINDOWS SERVICES (NSSM)
+# 9. WINDOWS SERVICES (NSSM)
 # ===========================================================
-Write-Step "Step 8: Installing Windows Services"
+Write-Step "Step 9: Installing Windows Services"
 
 $nssmPath = Join-Path $TempDir "nssm.exe"
 if (-not (Test-Path $nssmPath)) {
@@ -305,9 +321,9 @@ Install-NssmService `
     )
 
 # ===========================================================
-# 9. START SERVICES
+# 10. START SERVICES
 # ===========================================================
-Write-Step "Step 9: Starting services"
+Write-Step "Step 10: Starting services"
 
 Start-Service -Name "GrandPalaceAPI"
 Start-Sleep -Seconds 3
@@ -321,9 +337,9 @@ Write-OK "GrandPalaceAPI:      $apiStatus"
 Write-OK "GrandPalaceFrontend: $frontendStatus"
 
 # ===========================================================
-# 10. FIREWALL
+# 11. FIREWALL
 # ===========================================================
-Write-Step "Step 10: Firewall rules"
+Write-Step "Step 11: Firewall rules"
 
 netsh advfirewall firewall add rule name="Grand Palace API" dir=in action=allow protocol=TCP localport=$($Config.ApiPort) | Out-Null
 netsh advfirewall firewall add rule name="Grand Palace Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
