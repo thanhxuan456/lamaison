@@ -29,3 +29,4 @@ to = "/index.html"
 [services.env]
 PORT = "22660"
 BASE_PATH = "/"
+VITE_CLERK_PUBLISHABLE_KEY = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
