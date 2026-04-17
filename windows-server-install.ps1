@@ -22,13 +22,13 @@ $Config = @{
     FrontendPort        = 3000
 
     # PostgreSQL settings
-    PgSuperPassword     = "ZeroCode123#!!"
+    PgSuperPassword     = "ChangeMe123!"
     PgDbName            = "grandpalace"
     PgDbUser            = "grandpalace"
-    PgDbPassword        = "ZeroCode123#!!"
+    PgDbPassword        = "ChangeMe456!"
 
     # Clerk authentication keys (https://dashboard.clerk.com)
-    ClerkPublishableKey = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
+    ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
     ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
 
     # Versions
@@ -106,7 +106,6 @@ if (Test-CommandExists "pnpm") {
 # ===========================================================
 Write-Step "Step 3: PostgreSQL $($Config.PgVersion)"
 
-$pgBin = $null
 $pgService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
 if ($pgService) {
     Write-OK "PostgreSQL already installed: $($pgService.Name)"
@@ -302,8 +301,8 @@ function Install-NssmService {
     & $nssmPath set $svcName AppRotateFiles 1
     & $nssmPath set $svcName AppRotateBytes 10485760
 
-    if ($envLines.Count -gt 0) {
-        & $nssmPath set $svcName AppEnvironmentExtra @envLines
+    foreach ($envLine in $envLines) {
+        & $nssmPath set $svcName AppEnvironmentExtra $envLine
     }
 
     Write-OK "Service registered: $svcName"
