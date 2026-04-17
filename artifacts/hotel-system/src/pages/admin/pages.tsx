@@ -553,8 +553,14 @@ function SocialTab() {
   const { toast } = useToast();
   const [socials, setSocials] = useState<SocialLink[]>(() => load(SOCIAL_KEY, DEFAULT_SOCIALS));
 
+  // Auto-persist on every edit so users never lose changes if they navigate away
+  // before clicking "Lưu cài đặt". The button still gives visual confirmation.
   const update = (id: string, k: keyof SocialLink, v: any) =>
-    setSocials((s) => s.map((x) => x.id === id ? { ...x, [k]: v } : x));
+    setSocials((s) => {
+      const next = s.map((x) => x.id === id ? { ...x, [k]: v } : x);
+      save(SOCIAL_KEY, next);
+      return next;
+    });
 
   const saveAll = () => {
     save(SOCIAL_KEY, socials);

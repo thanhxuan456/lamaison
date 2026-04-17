@@ -499,6 +499,10 @@ const CONTACT_BLOCKS: PageBlock[] = [
 export const DEFAULT_PAGES: SitePage[] = [
   { id: "home", slug: "/", title: "Trang Chủ", blocks: HOME_BLOCKS },
   { id: "contact", slug: "/contact", title: "Liên Hệ", blocks: CONTACT_BLOCKS },
+  { id: "cancellation", slug: "/cancellation-policy", title: "Chính sách huỷ phòng", blocks: [] },
+  { id: "membership", slug: "/membership", title: "Chương trình thành viên", blocks: [] },
+  { id: "privacy", slug: "/privacy", title: "Bảo mật thông tin", blocks: [] },
+  { id: "terms", slug: "/terms", title: "Điều khoản sử dụng", blocks: [] },
 ];
 
 function loadPages(): SitePage[] {

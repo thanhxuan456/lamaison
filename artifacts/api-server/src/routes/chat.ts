@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { chatSessionsTable, chatMessagesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { WebSocketServer, WebSocket } from "ws";
 
 const router = Router();
@@ -86,6 +86,44 @@ router.get("/chat/sessions", async (req, res) => {
     res.json(allSessions);
   } catch (err) {
     req.log.error({ err }, "Failed to list sessions");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/chat/sessions/:id — remove a single chat session and its messages
+router.delete("/chat/sessions/:id", async (req, res) => {
+  try {
+    const sessionId = parseInt(req.params.id);
+    if (Number.isNaN(sessionId)) return res.status(400).json({ error: "Invalid id" });
+    await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, String(sessionId)));
+    await db.delete(chatSessionsTable).where(eq(chatSessionsTable.id, sessionId));
+    // disconnect any active WS clients for this session
+    const clients = sessions.get(String(sessionId));
+    if (clients) { for (const ws of clients) try { ws.close(); } catch {} sessions.delete(String(sessionId)); }
+    res.json({ ok: true, id: sessionId });
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete chat session");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/chat/sessions/bulk-delete — delete many sessions at once
+router.post("/chat/sessions/bulk-delete", async (req, res) => {
+  try {
+    const ids: unknown = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids[] required" });
+    if (ids.length > 200) return res.status(400).json({ error: "too many ids (max 200)" });
+    const numericIds = ids.map(Number).filter(n => Number.isFinite(n));
+    if (numericIds.length === 0) return res.status(400).json({ error: "no valid ids" });
+    await db.delete(chatMessagesTable).where(inArray(chatMessagesTable.sessionId, numericIds.map(String)));
+    await db.delete(chatSessionsTable).where(inArray(chatSessionsTable.id, numericIds));
+    for (const id of numericIds) {
+      const clients = sessions.get(String(id));
+      if (clients) { for (const ws of clients) try { ws.close(); } catch {} sessions.delete(String(id)); }
+    }
+    res.json({ ok: true, count: numericIds.length });
+  } catch (err) {
+    req.log.error({ err }, "Failed to bulk-delete chat sessions");
     res.status(500).json({ error: "Internal server error" });
   }
 });

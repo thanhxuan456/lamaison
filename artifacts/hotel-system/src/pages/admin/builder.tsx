@@ -7,7 +7,7 @@ import {
   Eye, EyeOff, Trash2, ChevronUp, ChevronDown, Plus, Save,
   ExternalLink, Settings2, RotateCcw, GripVertical, X, Check,
   Layers, FileText, Pencil, Globe, Home, Image as ImageIcon, Upload,
-  Palette as PaletteIcon, Sparkles, Type,
+  Palette as PaletteIcon, Sparkles, Type, Copy,
 } from "lucide-react";
 import {
   useSitePages,
@@ -89,12 +89,25 @@ function FieldEditor({ field, value, onChange }: { field: BlockField; value: any
 /* ──────────────────────────────────────────────
    Block Settings Panel
 ────────────────────────────────────────────── */
-function BlockSettings({ block, onUpdate, onClose }: { block: PageBlock | null; onUpdate: (id: string, s: Record<string, any>) => void; onClose: () => void }) {
+function BlockSettings({ block, onUpdate, onClose, onDuplicate, onResetDefaults, onToggleVisible, onDelete, index, total }: {
+  block: PageBlock | null;
+  onUpdate: (id: string, s: Record<string, any>) => void;
+  onClose: () => void;
+  onDuplicate?: (id: string) => void;
+  onResetDefaults?: (id: string) => void;
+  onToggleVisible?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  index?: number;
+  total?: number;
+}) {
   if (!block) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-3 py-12">
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-12">
         <Settings2 size={32} className="opacity-15" />
         <p className="text-xs">Chọn block để chỉnh sửa</p>
+        <p className="text-[10px] text-muted-foreground/70 max-w-[200px] text-center leading-relaxed">
+          Click vào một block trong danh sách bên trái để mở panel cài đặt, hoặc nhấn "Thêm block" để tạo mới.
+        </p>
       </div>
     );
   }
@@ -102,31 +115,121 @@ function BlockSettings({ block, onUpdate, onClose }: { block: PageBlock | null; 
   if (!def) return null;
   const update = (key: string, v: any) => onUpdate(block.id, { ...block.settings, [key]: v });
 
+  // Group fields by repeater vs simple to give visual separation
+  const simpleFields = def.fields.filter(f => f.type !== "repeater");
+  const repeaterFields = def.fields.filter(f => f.type === "repeater");
+  const fieldCount = def.fields.length;
+
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-primary/15 bg-primary/5 sticky top-0">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{def.icon}</span>
-          <div>
-            <div className="text-xs font-medium">{def.label}</div>
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Block Settings</div>
+      {/* Header — block info */}
+      <div className="px-4 py-3 border-b border-primary/15 bg-primary/5 sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 flex items-center justify-center text-base shrink-0"
+              style={{ backgroundColor: def.color + "18", border: `1px solid ${def.color}44` }}>
+              {def.icon}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium truncate">{def.label}</div>
+              <div className="text-[9px] text-muted-foreground uppercase tracking-wide">
+                {typeof index === "number" && typeof total === "number" ? `Block #${index + 1} / ${total} · ` : ""}
+                {fieldCount} {fieldCount === 1 ? "trường" : "trường"}
+              </div>
+            </div>
           </div>
+          <button onClick={onClose} title="Đóng panel"
+            className="text-muted-foreground hover:text-foreground p-1 transition-colors shrink-0">
+            <X size={13} />
+          </button>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 transition-colors"><X size={13} /></button>
+
+        {/* Action toolbar */}
+        <div className="grid grid-cols-4 gap-1 mt-2">
+          <button onClick={() => onToggleVisible?.(block.id)}
+            title={block.visible ? "Ẩn block" : "Hiện block"}
+            className={`flex flex-col items-center gap-0.5 py-1.5 border text-[9px] uppercase tracking-wide transition-colors ${
+              block.visible
+                ? "border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40"
+                : "border-amber-400/40 bg-amber-50/50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400"
+            }`}>
+            {block.visible ? <Eye size={11} /> : <EyeOff size={11} />}
+            <span>{block.visible ? "Hiện" : "Ẩn"}</span>
+          </button>
+          <button onClick={() => onDuplicate?.(block.id)}
+            title="Nhân bản block"
+            className="flex flex-col items-center gap-0.5 py-1.5 border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 text-[9px] uppercase tracking-wide transition-colors">
+            <Copy size={11} />
+            <span>Nhân bản</span>
+          </button>
+          <button onClick={() => {
+              if (confirm("Đặt lại block về cài đặt mặc định? Mọi chỉnh sửa của block này sẽ mất.")) onResetDefaults?.(block.id);
+            }}
+            title="Đặt lại mặc định"
+            className="flex flex-col items-center gap-0.5 py-1.5 border border-primary/20 text-muted-foreground hover:text-primary hover:border-primary/40 text-[9px] uppercase tracking-wide transition-colors">
+            <RotateCcw size={11} />
+            <span>Mặc định</span>
+          </button>
+          <button onClick={() => {
+              if (confirm("Xoá block này khỏi trang?")) onDelete?.(block.id);
+            }}
+            title="Xoá block"
+            className="flex flex-col items-center gap-0.5 py-1.5 border border-red-300/30 text-muted-foreground hover:text-red-500 hover:border-red-500/40 text-[9px] uppercase tracking-wide transition-colors">
+            <Trash2 size={11} />
+            <span>Xoá</span>
+          </button>
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-luxury">
-        {def.fields.map(field => (
-          <div key={field.key}>
-            <label className="block text-[10px] tracking-[0.18em] uppercase text-muted-foreground mb-1.5">{field.label}</label>
-            <FieldEditor field={field} value={block.settings[field.key]} onChange={v => update(field.key, v)} />
-          </div>
-        ))}
-        {block.settings.imageUrl && (
-          <div>
-            <label className="block text-[10px] tracking-[0.18em] uppercase text-muted-foreground mb-1.5">Xem trước ảnh</label>
-            <img src={block.settings.imageUrl} alt="preview" className="w-full h-20 object-cover border border-primary/20" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+
+      {/* Fields */}
+      <div className="flex-1 overflow-y-auto scrollbar-luxury">
+        {simpleFields.length > 0 && (
+          <div className="p-4 space-y-4 border-b border-primary/10">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-primary/70 font-medium flex items-center gap-1.5">
+              <Type size={9} /> Nội dung
+            </div>
+            {simpleFields.map(field => (
+              <div key={field.key}>
+                <label className="block text-[10px] tracking-[0.18em] uppercase text-muted-foreground mb-1.5">{field.label}</label>
+                <FieldEditor field={field} value={block.settings[field.key]} onChange={v => update(field.key, v)} />
+              </div>
+            ))}
+            {block.settings.imageUrl && !simpleFields.some(f => f.key === "imageUrl" && f.type === "image") && (
+              <div>
+                <label className="block text-[10px] tracking-[0.18em] uppercase text-muted-foreground mb-1.5">Xem trước ảnh</label>
+                <img src={block.settings.imageUrl} alt="preview" className="w-full h-20 object-cover border border-primary/20"
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              </div>
+            )}
           </div>
         )}
+
+        {repeaterFields.length > 0 && (
+          <div className="p-4 space-y-4">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-primary/70 font-medium flex items-center gap-1.5">
+              <Layers size={9} /> Danh sách items
+            </div>
+            {repeaterFields.map(field => (
+              <div key={field.key}>
+                <label className="block text-[10px] tracking-[0.18em] uppercase text-muted-foreground mb-1.5">
+                  {field.label}
+                  {Array.isArray(block.settings[field.key]) && (
+                    <span className="ml-2 text-[9px] text-primary/60 normal-case tracking-normal">
+                      ({(block.settings[field.key] as any[]).length})
+                    </span>
+                  )}
+                </label>
+                <FieldEditor field={field} value={block.settings[field.key]} onChange={v => update(field.key, v)} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer — block ID for debugging */}
+        <div className="px-4 py-3 border-t border-primary/10 bg-muted/20">
+          <div className="text-[9px] text-muted-foreground/60 font-mono break-all">ID: {block.id}</div>
+          <div className="text-[9px] text-muted-foreground/60 mt-0.5">Type: <span className="font-mono">{block.type}</span></div>
+        </div>
       </div>
     </div>
   );
@@ -584,6 +687,32 @@ function PageCanvas({ page, onBlocksChange }: { page: SitePage; onBlocksChange: 
     setSelectedId(newBlock.id);
   };
 
+  const duplicateBlock = (id: string) => {
+    const idx = blocks.findIndex(b => b.id === id);
+    if (idx < 0) return;
+    const src = blocks[idx];
+    const copy: PageBlock = {
+      id: genBlockId(),
+      type: src.type,
+      visible: src.visible,
+      settings: JSON.parse(JSON.stringify(src.settings)),
+    };
+    const next = [...blocks];
+    next.splice(idx + 1, 0, copy);
+    onBlocksChange(next);
+    setSelectedId(copy.id);
+  };
+
+  const resetBlockDefaults = (id: string) => {
+    const block = blocks.find(b => b.id === id);
+    if (!block) return;
+    const def = BLOCK_DEFINITIONS.find(d => d.type === block.type);
+    if (!def) return;
+    onBlocksChange(blocks.map(b => b.id === id ? { ...b, settings: JSON.parse(JSON.stringify(def.defaultSettings)) } : b));
+  };
+
+  const selectedIdx = selectedBlock ? blocks.findIndex(b => b.id === selectedBlock.id) : -1;
+
   const visibleCount = blocks.filter(b => b.visible).length;
 
   return (
@@ -630,7 +759,17 @@ function PageCanvas({ page, onBlocksChange }: { page: SitePage; onBlocksChange: 
       </div>
 
       <div className="w-72 shrink-0 border-l border-primary/15 overflow-y-auto scrollbar-luxury bg-card">
-        <BlockSettings block={selectedBlock} onUpdate={updateBlock} onClose={() => setSelectedId(null)} />
+        <BlockSettings
+          block={selectedBlock}
+          onUpdate={updateBlock}
+          onClose={() => setSelectedId(null)}
+          onDuplicate={duplicateBlock}
+          onResetDefaults={resetBlockDefaults}
+          onToggleVisible={toggleVisible}
+          onDelete={deleteBlock}
+          index={selectedIdx >= 0 ? selectedIdx : undefined}
+          total={blocks.length}
+        />
       </div>
 
       {showAddModal && <AddBlockModal onAdd={addBlock} onClose={() => setShowAddModal(false)} />}
