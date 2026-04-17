@@ -17,6 +17,8 @@ import {
   BlockType,
   BlockField,
   genBlockId,
+  PAGE_CATEGORIES,
+  PageCategory,
 } from "@/lib/page-blocks";
 import { useBranding, DEFAULT_BRANDING, Branding } from "@/lib/branding";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
@@ -301,9 +303,30 @@ function AddBlockModal({ onAdd, onClose }: { onAdd: (type: BlockType) => void; o
 /* ──────────────────────────────────────────────
    New Page Modal
 ────────────────────────────────────────────── */
-function NewPageModal({ onConfirm, onClose }: { onConfirm: (title: string, slug: string) => void; onClose: () => void }) {
+function CategoryPicker({ value, onChange }: { value: PageCategory; onChange: (v: PageCategory) => void }) {
+  return (
+    <div>
+      <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Phân loại</label>
+      <div className="grid grid-cols-3 gap-1.5">
+        {PAGE_CATEGORIES.map(cat => {
+          const active = value === cat.value;
+          return (
+            <button key={cat.value} type="button" onClick={() => onChange(cat.value)}
+              className={`px-2 py-1.5 text-[10px] uppercase tracking-wider border transition-all ${active ? "border-primary bg-primary/10 text-primary" : "border-primary/15 text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}
+              style={active ? { borderColor: cat.color, color: cat.color, backgroundColor: `${cat.color}15` } : undefined}>
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function NewPageModal({ onConfirm, onClose }: { onConfirm: (title: string, slug: string, category: PageCategory) => void; onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
+  const [category, setCategory] = useState<PageCategory>("custom");
   const autoSlug = (t: string) => "/" + t.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   const handleTitleChange = (v: string) => { setTitle(v); if (!slug || slug === autoSlug(title)) setSlug(autoSlug(v)); };
 
@@ -325,9 +348,10 @@ function NewPageModal({ onConfirm, onClose }: { onConfirm: (title: string, slug:
             <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none font-mono"
               value={slug} onChange={e => setSlug(e.target.value)} placeholder="/about" />
           </div>
+          <CategoryPicker value={category} onChange={setCategory} />
           <div className="flex gap-2 pt-1">
             <Button variant="outline" size="sm" className="rounded-none flex-1 border-primary/30 text-xs uppercase tracking-widest" onClick={onClose}>Hủy</Button>
-            <Button size="sm" className="rounded-none flex-1 bg-primary text-primary-foreground text-xs uppercase tracking-widest" disabled={!title.trim() || !slug.trim()} onClick={() => { onConfirm(title.trim(), slug.trim()); onClose(); }}>Tạo</Button>
+            <Button size="sm" className="rounded-none flex-1 bg-primary text-primary-foreground text-xs uppercase tracking-widest" disabled={!title.trim() || !slug.trim()} onClick={() => { onConfirm(title.trim(), slug.trim(), category); onClose(); }}>Tạo</Button>
           </div>
         </div>
       </div>
@@ -338,9 +362,10 @@ function NewPageModal({ onConfirm, onClose }: { onConfirm: (title: string, slug:
 /* ──────────────────────────────────────────────
    Rename Page Modal
 ────────────────────────────────────────────── */
-function RenamePageModal({ page, onConfirm, onClose }: { page: SitePage; onConfirm: (title: string, slug: string) => void; onClose: () => void }) {
+function RenamePageModal({ page, onConfirm, onClose }: { page: SitePage; onConfirm: (title: string, slug: string, category: PageCategory) => void; onClose: () => void }) {
   const [title, setTitle] = useState(page.title);
   const [slug, setSlug] = useState(page.slug);
+  const [category, setCategory] = useState<PageCategory>(page.category ?? "custom");
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card border border-primary/40 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -358,9 +383,10 @@ function RenamePageModal({ page, onConfirm, onClose }: { page: SitePage; onConfi
             <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none font-mono" value={slug} onChange={e => setSlug(e.target.value)} disabled={page.id === "home"} />
             {page.id === "home" && <p className="text-[9px] text-muted-foreground mt-1">Đường dẫn trang chủ không thể thay đổi</p>}
           </div>
+          <CategoryPicker value={category} onChange={setCategory} />
           <div className="flex gap-2 pt-1">
             <Button variant="outline" size="sm" className="rounded-none flex-1 border-primary/30 text-xs uppercase tracking-widest" onClick={onClose}>Hủy</Button>
-            <Button size="sm" className="rounded-none flex-1 bg-primary text-primary-foreground text-xs uppercase tracking-widest" disabled={!title.trim()} onClick={() => { onConfirm(title.trim(), slug.trim()); onClose(); }}>Lưu</Button>
+            <Button size="sm" className="rounded-none flex-1 bg-primary text-primary-foreground text-xs uppercase tracking-widest" disabled={!title.trim()} onClick={() => { onConfirm(title.trim(), slug.trim(), category); onClose(); }}>Lưu</Button>
           </div>
         </div>
       </div>
@@ -806,8 +832,10 @@ function PagesPanel() {
     }
   };
 
-  const handleAddPage = (title: string, slug: string) => {
-    const newPage = addPage(title, slug);
+  const [filterCat, setFilterCat] = useState<PageCategory | "all">("all");
+
+  const handleAddPage = (title: string, slug: string, category: PageCategory) => {
+    const newPage = addPage(title, slug, category);
     setLocalPages(prev => [...prev, newPage]);
     setSelectedPageId(newPage.id);
     toast({ title: `Tạo trang "${title}" thành công` });
@@ -823,9 +851,9 @@ function PagesPanel() {
     toast({ title: `Đã xóa trang "${page?.title}"` });
   };
 
-  const handleRename = (id: string, title: string, slug: string) => {
-    renamePage(id, title, slug);
-    setLocalPages(prev => prev.map(p => p.id === id ? { ...p, title, slug } : p));
+  const handleRename = (id: string, title: string, slug: string, category: PageCategory) => {
+    renamePage(id, title, slug, category);
+    setLocalPages(prev => prev.map(p => p.id === id ? { ...p, title, slug, category } : p));
     setRenamingPage(null);
     toast({ title: "Đã cập nhật trang" });
   };
@@ -872,28 +900,62 @@ function PagesPanel() {
               <Plus size={13} />
             </button>
           </div>
+          {/* Category filter */}
+          <div className="px-2 py-2 border-b border-primary/10 flex flex-wrap gap-1">
+            <button onClick={() => setFilterCat("all")}
+              className={`px-2 py-0.5 text-[9px] uppercase tracking-wider border transition-all ${filterCat === "all" ? "border-primary bg-primary/10 text-primary" : "border-primary/15 text-muted-foreground hover:text-foreground"}`}>
+              Tất cả
+            </button>
+            {PAGE_CATEGORIES.map(cat => {
+              const active = filterCat === cat.value;
+              return (
+                <button key={cat.value} onClick={() => setFilterCat(cat.value)}
+                  className="px-2 py-0.5 text-[9px] uppercase tracking-wider border transition-all"
+                  style={{
+                    borderColor: active ? cat.color : "rgba(212,175,55,0.15)",
+                    color: active ? cat.color : "#9CA3AF",
+                    backgroundColor: active ? `${cat.color}15` : "transparent",
+                  }}>
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
           <div className="flex-1 overflow-y-auto scrollbar-luxury py-1.5">
-            {localPages.map(page => (
-              <div key={page.id}
-                className={["mx-1.5 mb-0.5 flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-all group border",
-                  selectedPageId === page.id ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent hover:bg-primary/5 hover:border-primary/15 text-foreground"
-                ].join(" ")} onClick={() => setSelectedPageId(page.id)}>
-                {page.id === "home"
-                  ? <Home size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
-                  : <FileText size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
-                }
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{page.title}</div>
-                  <div className={`text-[9px] font-mono truncate ${selectedPageId === page.id ? "text-primary/70" : "text-muted-foreground"}`}>{page.slug}</div>
-                </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setRenamingPage(page)} className="p-0.5 text-muted-foreground hover:text-primary transition-colors" title="Đổi tên"><Pencil size={10} /></button>
-                  {page.id !== "home" && (
-                    <button onClick={() => handleDeletePage(page.id)} className="p-0.5 text-muted-foreground hover:text-red-500 transition-colors" title="Xóa trang"><Trash2 size={10} /></button>
-                  )}
-                </div>
-              </div>
-            ))}
+            {localPages
+              .filter(p => filterCat === "all" || (p.category ?? "custom") === filterCat)
+              .map(page => {
+                const cat = PAGE_CATEGORIES.find(c => c.value === (page.category ?? "custom"));
+                return (
+                  <div key={page.id}
+                    className={["mx-1.5 mb-0.5 flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-all group border",
+                      selectedPageId === page.id ? "bg-primary/10 border-primary/30 text-primary" : "border-transparent hover:bg-primary/5 hover:border-primary/15 text-foreground"
+                    ].join(" ")} onClick={() => setSelectedPageId(page.id)}>
+                    {page.id === "home"
+                      ? <Home size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
+                      : <FileText size={12} className={selectedPageId === page.id ? "text-primary" : "text-muted-foreground"} />
+                    }
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium truncate">{page.title}</span>
+                        {cat && (
+                          <span className="text-[8px] uppercase tracking-wider px-1 py-px shrink-0"
+                            style={{ color: cat.color, borderLeft: `2px solid ${cat.color}` }}>
+                            {cat.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`text-[9px] font-mono truncate ${selectedPageId === page.id ? "text-primary/70" : "text-muted-foreground"}`}>{page.slug}</div>
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setRenamingPage(page)} className="p-0.5 text-muted-foreground hover:text-primary transition-colors" title="Đổi tên"><Pencil size={10} /></button>
+                      {page.id !== "home" && (
+                        <button onClick={() => handleDeletePage(page.id)} className="p-0.5 text-muted-foreground hover:text-red-500 transition-colors" title="Xóa trang"><Trash2 size={10} /></button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
           <div className="p-2 border-t border-primary/10">
             <button onClick={() => setShowNewModal(true)}
@@ -913,7 +975,7 @@ function PagesPanel() {
       </div>
 
       {showNewModal && <NewPageModal onConfirm={handleAddPage} onClose={() => setShowNewModal(false)} />}
-      {renamingPage && <RenamePageModal page={renamingPage} onConfirm={(t, s) => handleRename(renamingPage.id, t, s)} onClose={() => setRenamingPage(null)} />}
+      {renamingPage && <RenamePageModal page={renamingPage} onConfirm={(t, s, c) => handleRename(renamingPage.id, t, s, c)} onClose={() => setRenamingPage(null)} />}
     </div>
   );
 }

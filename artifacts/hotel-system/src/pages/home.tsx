@@ -301,8 +301,38 @@ function SeparatorBlock({ s }: { s: Record<string, any> }) {
   );
 }
 
+function FaqBlock({ s }: { s: Record<string, any> }) {
+  const items: { question: string; answer: string }[] = s.items || [];
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto px-4 md:px-8 max-w-3xl">
+        {(s.kicker || s.title) && (
+          <div className="text-center mb-12">
+            {s.kicker && (
+              <h4 className="text-primary font-serif tracking-[0.2em] text-sm uppercase mb-3">{s.kicker}</h4>
+            )}
+            {s.title && <h3 className="text-3xl md:text-4xl font-serif text-foreground">{s.title}</h3>}
+            <div className="w-16 h-[2px] bg-primary mx-auto mt-6" />
+          </div>
+        )}
+        <div className="divide-y divide-primary/15 border-y border-primary/15">
+          {items.map((it, i) => (
+            <details key={i} className="group py-5 px-2 cursor-pointer">
+              <summary className="flex items-start justify-between gap-4 list-none">
+                <span className="text-foreground font-serif text-lg">{it.question}</span>
+                <span className="text-primary text-2xl leading-none transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="text-muted-foreground mt-3 leading-relaxed font-light whitespace-pre-line">{it.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── Block Dispatcher ── */
-function BlockRenderer({ block }: { block: PageBlock }) {
+export function BlockRenderer({ block }: { block: PageBlock }) {
   if (!block.visible) return null;
   const s = block.settings;
   switch (block.type) {
@@ -314,6 +344,7 @@ function BlockRenderer({ block }: { block: PageBlock }) {
     case "cta_banner":   return <CtaBannerBlock s={s} />;
     case "gallery":      return <GalleryBlock s={s} />;
     case "separator":    return <SeparatorBlock s={s} />;
+    case "faq":          return <FaqBlock s={s} />;
     default:             return null;
   }
 }

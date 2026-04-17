@@ -43,7 +43,7 @@ import ContactPage from "@/pages/contact";
 import NewsList from "@/pages/news";
 import NewsDetail from "@/pages/news-detail";
 import InvoiceView from "@/pages/invoice-view";
-import { CancellationPolicyPage, MembershipPage, PrivacyPolicyPage, TermsOfUsePage } from "@/pages/policies";
+import { CancellationPage, MembershipBuilderPage, PrivacyBuilderPage, TermsBuilderPage, FaqPage } from "@/pages/builder-page";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -172,10 +172,11 @@ function Router() {
       <Route path="/contact" component={ContactPage} />
       <Route path="/news" component={NewsList} />
       <Route path="/news/:slug" component={NewsDetail} />
-      <Route path="/cancellation-policy" component={CancellationPolicyPage} />
-      <Route path="/membership" component={MembershipPage} />
-      <Route path="/privacy" component={PrivacyPolicyPage} />
-      <Route path="/terms" component={TermsOfUsePage} />
+      <Route path="/faq" component={FaqPage} />
+      <Route path="/cancellation-policy" component={CancellationPage} />
+      <Route path="/membership" component={MembershipBuilderPage} />
+      <Route path="/privacy" component={PrivacyBuilderPage} />
+      <Route path="/terms" component={TermsBuilderPage} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/register/*?" component={RegisterPage} />
       <Route path="/profile/*?" component={Profile} />
