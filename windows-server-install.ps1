@@ -217,7 +217,7 @@ Write-Step "Step 8: Installing dependencies (may take several minutes)"
 Push-Location $Config.InstallDir
 
 Write-Info "Running pnpm install..."
-& pnpm install --frozen-lockfile
+& pnpm install --no-frozen-lockfile
 if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
 Write-OK "Dependencies installed"
 
