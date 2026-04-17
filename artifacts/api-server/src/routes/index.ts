@@ -5,6 +5,7 @@ import roomsRouter from "./rooms";
 import bookingsRouter from "./bookings";
 import chatRouter from "./chat";
 import usersRouter from "./users";
+import otaRouter from "./ota";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(roomsRouter);
 router.use(bookingsRouter);
 router.use(chatRouter);
 router.use(usersRouter);
+router.use(otaRouter);
 
 export default router;

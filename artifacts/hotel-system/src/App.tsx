@@ -8,6 +8,8 @@ import { LanguageProvider } from "@/lib/i18n";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
+import Maintenance from "@/pages/maintenance";
+import ServerError from "@/pages/server-error";
 
 import Home from "@/pages/home";
 import HotelDetail from "@/pages/hotel-detail";
@@ -160,6 +162,9 @@ function Router() {
       <Route path="/admin/theme" component={AdminTheme} />
       <Route path="/admin/pages" component={AdminPages} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/maintenance" component={Maintenance} />
+      <Route path="/error" component={() => <ServerError code={500} />} />
+      <Route path="/forbidden" component={() => <ServerError code={403} />} />
       <Route component={NotFound} />
     </Switch>
   );

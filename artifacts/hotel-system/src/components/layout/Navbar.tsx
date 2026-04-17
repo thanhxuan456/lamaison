@@ -84,7 +84,7 @@ function UserMenu() {
         <DropdownMenuSeparator className="bg-primary/10 m-0" />
         <DropdownMenuItem
           onSelect={() => signOut()}
-          className="rounded-none cursor-pointer px-4 py-3 text-sm text-red-500 focus:bg-red-50 flex items-center gap-2"
+          className="rounded-none cursor-pointer px-4 py-3 text-sm text-red-500 focus:bg-red-50 dark:focus:bg-red-950/40 flex items-center gap-2"
         >
           <LogOut size={13} /> {t("profile.signOut")}
         </DropdownMenuItem>
@@ -108,7 +108,7 @@ export function Navbar() {
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${
         isScrolled
-          ? "bg-secondary/95 backdrop-blur-md border-primary/20 shadow-sm py-3"
+          ? "bg-secondary/95 dark:bg-card/95 backdrop-blur-md border-primary/20 shadow-sm py-3"
           : "bg-transparent py-5"
       }`}
     >
@@ -169,7 +169,7 @@ export function Navbar() {
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-secondary border-b border-primary/20 shadow-lg py-6 px-4 flex flex-col gap-5 animate-in slide-in-from-top-2">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-secondary dark:bg-card border-b border-primary/20 shadow-lg py-6 px-4 flex flex-col gap-5 animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="md:hidden"><LocationSwitcher /></div>
             <div className="sm:hidden"><LanguageSwitcher /></div>

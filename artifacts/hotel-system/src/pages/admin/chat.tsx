@@ -85,7 +85,7 @@ export default function AdminChat() {
                 <div className="py-8 text-center text-muted-foreground text-xs px-4">No active chat sessions yet.</div>
               ) : sessions.map((s) => (
                 <button key={s.id} onClick={() => selectSession(s)}
-                  className={`w-full text-left px-4 py-3 border-b border-primary/10 transition-colors hover:bg-primary/8 ${selectedSession?.id === s.id ? "bg-primary/15" : ""}`}>
+                  className={`w-full text-left px-4 py-3 border-b border-primary/10 transition-colors hover:bg-primary/10 ${selectedSession?.id === s.id ? "bg-primary/15" : ""}`}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 bg-primary/20 border border-primary/40 flex items-center justify-center">
                       <User size={11} className="text-primary" />

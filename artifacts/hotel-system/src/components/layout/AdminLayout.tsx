@@ -80,7 +80,7 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
                       "group relative flex items-center gap-3 px-5 py-3 transition-all cursor-pointer select-none",
                       active
                         ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground hover:bg-primary/8 hover:text-foreground",
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-foreground",
                     ].join(" ")}
                   >
                     {active && (

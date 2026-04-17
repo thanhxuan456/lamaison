@@ -73,102 +73,104 @@ export function LocationSwitcher() {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="rounded-none border border-primary/60 bg-card min-w-[290px] p-0 shadow-[0_8px_32px_rgba(0,0,0,0.18)] relative overflow-hidden"
+        className="rounded-none border border-primary/60 bg-card min-w-[290px] p-0 shadow-[0_8px_32px_rgba(0,0,0,0.22)] relative overflow-visible"
       >
-        {/* Corner accents */}
-        <span className="pointer-events-none absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-primary z-10" />
-        <span className="pointer-events-none absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-primary z-10" />
-        <span className="pointer-events-none absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-primary z-10" />
-        <span className="pointer-events-none absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-primary z-10" />
+        {/* Corner accent lines — inset so they don't need overflow:hidden */}
+        <span className="pointer-events-none absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary z-10" />
+        <span className="pointer-events-none absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary z-10" />
+        <span className="pointer-events-none absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary z-10" />
+        <span className="pointer-events-none absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary z-10" />
 
-        {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/25 bg-primary/10">
+        {/* Sticky header */}
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/25 bg-primary/10 sticky top-0 z-[5]">
           <Building2 size={12} className="text-primary" strokeWidth={1.5} />
           <span className="text-[10px] tracking-[0.35em] uppercase text-primary font-serif font-medium">
             {t("branch.label")}
           </span>
         </div>
 
-        {/* Hotel items */}
-        {hotels?.map((h, idx) => {
-          const meta = getCityMeta(h.city);
-          const active = h.id === selectedId;
-          return (
-            <DropdownMenuItem
-              key={h.id}
-              onSelect={() => handleSelect(h.id)}
-              className={[
-                "group/item rounded-none cursor-pointer p-0 border-b border-primary/15 last:border-b-0",
-                "focus:bg-transparent data-[highlighted]:bg-transparent",
-                "transition-colors duration-200",
-              ].join(" ")}
-            >
-              <div
+        {/* Scrollable hotel items */}
+        <div className="overflow-y-auto max-h-[min(70vh,400px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--primary) / 0.5) transparent" }}>
+          {hotels?.map((h) => {
+            const meta = getCityMeta(h.city);
+            const active = h.id === selectedId;
+            return (
+              <DropdownMenuItem
+                key={h.id}
+                onSelect={() => handleSelect(h.id)}
                 className={[
-                  "flex items-center gap-3 w-full px-3 py-3 transition-all duration-200",
-                  active
-                    ? "bg-primary/15"
-                    : "hover:bg-primary/10 group-data-[highlighted]/item:bg-primary/10",
+                  "group/item rounded-none cursor-pointer p-0 border-b border-primary/15 last:border-b-0",
+                  "focus:bg-transparent data-[highlighted]:bg-transparent",
+                  "transition-colors duration-200",
                 ].join(" ")}
               >
-                {/* Thumbnail */}
-                <div className={[
-                  "relative shrink-0 w-14 h-14 overflow-hidden border transition-all duration-200",
-                  active ? "border-primary" : "border-primary/30 group-data-[highlighted]/item:border-primary/70",
-                ].join(" ")}>
-                  {meta.img ? (
-                    <img
-                      src={meta.img}
-                      alt={h.city}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  ) : null}
-                  {/* City code overlay */}
-                  <div className="absolute inset-0 flex items-end justify-start bg-gradient-to-t from-black/60 to-transparent p-1">
-                    <span className="font-serif text-[9px] tracking-[0.18em] text-white/95 font-medium">
-                      {meta.code}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Text */}
-                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={[
-                      "font-serif text-[15px] leading-tight transition-colors",
-                      active ? "text-primary font-semibold" : "text-foreground font-normal group-data-[highlighted]/item:text-primary",
-                    ].join(" ")}>
-                      {h.city}
-                    </span>
-                    {active && (
-                      <Check size={12} className="text-primary shrink-0" strokeWidth={2.5} />
-                    )}
-                  </div>
-                  <span className="text-[11px] leading-tight truncate text-foreground/60 tracking-wide">
-                    {h.name}
-                  </span>
-                  {/* Stars */}
-                  <div className="flex items-center gap-0.5 mt-0.5">
-                    {Array.from({ length: meta.stars }).map((_, i) => (
-                      <span key={i} className="text-primary text-[9px]">★</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right chevron indicator */}
-                <ChevronDown
-                  size={12}
-                  strokeWidth={2}
+                <div
                   className={[
-                    "-rotate-90 shrink-0 transition-colors",
-                    active ? "text-primary" : "text-foreground/30 group-data-[highlighted]/item:text-primary/60",
+                    "flex items-center gap-3 w-full px-3 py-3 transition-all duration-200",
+                    active
+                      ? "bg-primary/15"
+                      : "hover:bg-primary/10 group-data-[highlighted]/item:bg-primary/10",
                   ].join(" ")}
-                />
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
+                >
+                  {/* Thumbnail */}
+                  <div className={[
+                    "relative shrink-0 w-14 h-14 overflow-hidden border transition-all duration-200",
+                    active ? "border-primary" : "border-primary/30 group-data-[highlighted]/item:border-primary/70",
+                  ].join(" ")}>
+                    {meta.img ? (
+                      <img
+                        src={meta.img}
+                        alt={h.city}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : null}
+                    {/* City code overlay */}
+                    <div className="absolute inset-0 flex items-end justify-start bg-gradient-to-t from-black/60 to-transparent p-1">
+                      <span className="font-serif text-[9px] tracking-[0.18em] text-white/95 font-medium">
+                        {meta.code}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={[
+                        "font-serif text-[15px] leading-tight transition-colors",
+                        active ? "text-primary font-semibold" : "text-foreground font-normal group-data-[highlighted]/item:text-primary",
+                      ].join(" ")}>
+                        {h.city}
+                      </span>
+                      {active && (
+                        <Check size={12} className="text-primary shrink-0" strokeWidth={2.5} />
+                      )}
+                    </div>
+                    <span className="text-[11px] leading-tight truncate text-muted-foreground tracking-wide">
+                      {h.name}
+                    </span>
+                    {/* Stars */}
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      {Array.from({ length: meta.stars }).map((_, i) => (
+                        <span key={i} className="text-primary text-[9px]">★</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right chevron indicator */}
+                  <ChevronDown
+                    size={12}
+                    strokeWidth={2}
+                    className={[
+                      "-rotate-90 shrink-0 transition-colors",
+                      active ? "text-primary" : "text-muted-foreground group-data-[highlighted]/item:text-primary/60",
+                    ].join(" ")}
+                  />
+                </div>
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
