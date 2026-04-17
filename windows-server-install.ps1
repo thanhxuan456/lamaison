@@ -106,6 +106,7 @@ if (Test-CommandExists "pnpm") {
 # ===========================================================
 Write-Step "Step 3: PostgreSQL $($Config.PgVersion)"
 
+$pgBin = $null
 $pgService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
 if ($pgService) {
     Write-OK "PostgreSQL already installed: $($pgService.Name)"
@@ -113,6 +114,21 @@ if ($pgService) {
     if ($pgBinSearch) {
         $pgBin = ($pgBinSearch | Select-Object -First 1).FullName
     }
+
+    # PostgreSQL exists - ask for the existing postgres superuser password
+    Write-Host ""
+    Write-Host "  PostgreSQL is already installed on this server." -ForegroundColor Yellow
+    Write-Host "  Please enter the existing 'postgres' superuser password." -ForegroundColor Yellow
+    Write-Host "  (This is the password you set when PostgreSQL was installed)" -ForegroundColor Yellow
+    Write-Host ""
+    $pgPassSecure = Read-Host "  postgres password" -AsSecureString
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pgPassSecure)
+    $pgSuperPwd = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+
+    # Update the config so the rest of the script uses the correct password
+    $Config.PgSuperPassword = $pgSuperPwd
+
 } else {
     $pgInstaller = Join-Path $TempDir "pg-installer.exe"
     $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-" + $Config.PgVersion + ".4-1-windows-x64.exe"
@@ -135,6 +151,19 @@ if ($pgBin -and (Test-Path $pgBin)) {
 Write-Step "Step 4: Database setup"
 
 $env:PGPASSWORD = $Config.PgSuperPassword
+
+# Verify we can connect before proceeding
+Write-Info "Testing PostgreSQL connection..."
+$testConn = & psql -U postgres -tAc "SELECT 1" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "  [ERROR] Cannot connect to PostgreSQL with that password." -ForegroundColor Red
+    Write-Host "  Please check the password and run the script again." -ForegroundColor Red
+    Write-Host ""
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+Write-OK "PostgreSQL connection successful"
 
 $checkDb = & psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($Config.PgDbName)'" 2>&1
 if ($checkDb -match "1") {
