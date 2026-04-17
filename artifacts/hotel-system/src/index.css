@@ -206,8 +206,8 @@
   --primary: 46 65% 52%;
   --primary-foreground: 0 0% 0%;
   
-  --secondary: 42 33% 98%;
-  --secondary-foreground: 222 25% 10%;
+  --secondary: 222 25% 8%; /* Stay dark navy in dark mode for consistent branded bands */
+  --secondary-foreground: 42 33% 98%; /* Cream text on dark navy */
   
   --muted: 222 25% 16%;
   --muted-foreground: 42 33% 82%;
