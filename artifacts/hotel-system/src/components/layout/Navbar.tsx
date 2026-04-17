@@ -95,7 +95,11 @@ function UserMenu() {
   );
 }
 
-export function Navbar() {
+interface NavbarProps {
+  variant?: "default" | "auth";
+}
+
+export function Navbar({ variant = "default" }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useT();
@@ -109,13 +113,17 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navBg = variant === "auth"
+    ? isScrolled
+      ? "bg-[hsl(222,40%,8%)]/98 backdrop-blur-md border-primary/20 shadow-sm py-3"
+      : "bg-[hsl(222,40%,8%)]/90 backdrop-blur-sm border-primary/10 py-5"
+    : isScrolled
+      ? "bg-secondary/95 dark:bg-card/95 backdrop-blur-md border-primary/20 shadow-sm py-3"
+      : "bg-transparent py-5";
+
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${
-        isScrolled
-          ? "bg-secondary/95 dark:bg-card/95 backdrop-blur-md border-primary/20 shadow-sm py-3"
-          : "bg-transparent py-5"
-      }`}
+      className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${navBg}`}
     >
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between gap-4">

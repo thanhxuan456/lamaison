@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link } from "wouter";
 import { Navbar } from "./Navbar";
+import { Footer } from "./Footer";
 import { BackToTop } from "@/components/BackToTop";
 import { SocialChat } from "@/components/SocialChat";
 import { useT } from "@/lib/i18n";
@@ -21,7 +22,7 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
-      <Navbar />
+      <Navbar variant="auth" />
 
       {/* Main split layout */}
       <div className="flex-1 flex flex-col lg:flex-row pt-16 lg:pt-20">
@@ -151,6 +152,7 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
         </div>
       </div>
 
+      <Footer />
       <BackToTop />
       <SocialChat />
     </div>
