@@ -109,7 +109,7 @@ function AdminBlogsContent() {
       ) : (
         <div className="border border-border rounded overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-secondary text-[10px] uppercase tracking-widest text-muted-foreground">
+            <thead className="bg-primary/10 border-b border-primary/25 text-[10px] uppercase tracking-widest text-primary font-semibold">
               <tr><th className="text-left p-3">Tiêu đề</th><th className="text-left p-3">Chuyên mục</th><th className="text-left p-3">Trạng thái</th><th className="text-left p-3">Lượt xem</th><th className="text-right p-3">Thao tác</th></tr>
             </thead>
             <tbody>
