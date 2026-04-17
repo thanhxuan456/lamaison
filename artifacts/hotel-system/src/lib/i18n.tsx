@@ -239,6 +239,10 @@ const vi: Dict = {
   "chat.enter": "Enter để gửi",
   "chat.online": "Trực tuyến",
   "chat.connecting": "Đang kết nối...",
+  "auth.heroTitle.signin": "Chào Mừng Trở Lại",
+  "auth.heroTitle.register": "Gia Nhập Grand Palace",
+  "auth.heroSub.signin": "Đăng nhập để tiếp tục trải nghiệm dịch vụ hoàng gia của chúng tôi.",
+  "auth.heroSub.register": "Tạo tài khoản và khám phá thế giới xa hoa tại Việt Nam.",
 };
 
 const en: Dict = {
@@ -453,6 +457,10 @@ const en: Dict = {
   "chat.enter": "Press Enter to send",
   "chat.online": "Online",
   "chat.connecting": "Connecting...",
+  "auth.heroTitle.signin": "Welcome Back",
+  "auth.heroTitle.register": "Join Grand Palace",
+  "auth.heroSub.signin": "Sign in to continue your royal experience with us.",
+  "auth.heroSub.register": "Create an account and explore a world of luxury in Vietnam.",
 };
 
 const zh: Dict = {
@@ -667,6 +675,10 @@ const zh: Dict = {
   "chat.enter": "按 Enter 发送",
   "chat.online": "在线",
   "chat.connecting": "连接中...",
+  "auth.heroTitle.signin": "欢迎回来",
+  "auth.heroTitle.register": "加入格兰宫殿",
+  "auth.heroSub.signin": "登录以继续您的皇家体验。",
+  "auth.heroSub.register": "创建账户，探索越南奢华世界。",
 };
 
 const ko: Dict = {
@@ -881,6 +893,10 @@ const ko: Dict = {
   "chat.enter": "Enter 키로 전송",
   "chat.online": "온라인",
   "chat.connecting": "연결 중...",
+  "auth.heroTitle.signin": "다시 오신 것을 환영합니다",
+  "auth.heroTitle.register": "그랜드 팰리스에 참여하세요",
+  "auth.heroSub.signin": "로그인하여 왕실 경험을 계속하세요.",
+  "auth.heroSub.register": "계정을 만들고 베트남의 럭셔리 세계를 탐험하세요.",
 };
 
 const dictionaries: Record<Language, Dict> = { vi, en, zh, ko };
