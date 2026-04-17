@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { LocationSwitcher } from "@/components/LocationSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useT } from "@/lib/i18n";
 
@@ -54,14 +55,21 @@ export function Navbar() {
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 md:gap-3">
+            <div className="hidden md:block"><LocationSwitcher /></div>
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <div className="hidden sm:block"><ThemeToggle /></div>
+            <Link
+              href="/sign-in"
+              className="hidden lg:inline-flex items-center text-xs font-medium text-primary/90 hover:text-primary tracking-[0.2em] uppercase border-b border-transparent hover:border-primary pb-0.5 transition-colors"
+            >
+              {t("nav.signIn")}
+            </Link>
             <Button
               variant="outline"
-              className="hidden lg:inline-flex border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none px-6 h-10 tracking-widest uppercase text-xs"
+              className="hidden lg:inline-flex border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none px-5 h-10 tracking-widest uppercase text-xs"
               asChild
             >
-              <Link href="/">{t("nav.bookNow")}</Link>
+              <Link href="/register">{t("nav.register")}</Link>
             </Button>
 
             {/* Mobile Menu Toggle */}
@@ -80,9 +88,10 @@ export function Navbar() {
       {/* Mobile Nav */}
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full bg-secondary border-b border-primary/20 shadow-lg py-6 px-4 flex flex-col gap-5 animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-3 sm:hidden">
-            <LanguageSwitcher />
-            <ThemeToggle />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="md:hidden"><LocationSwitcher /></div>
+            <div className="sm:hidden"><LanguageSwitcher /></div>
+            <div className="sm:hidden"><ThemeToggle /></div>
           </div>
           <Link
             href="/"

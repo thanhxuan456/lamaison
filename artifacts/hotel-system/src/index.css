@@ -107,7 +107,7 @@
   --secondary-foreground: 46 65% 52%; /* Gold text on Navy */
   
   --muted: 46 30% 90%;
-  --muted-foreground: 222 25% 40%;
+  --muted-foreground: 222 30% 28%;
   
   --accent: 46 65% 52%;
   --accent-foreground: 0 0% 0%;
@@ -210,7 +210,7 @@
   --secondary-foreground: 222 25% 10%;
   
   --muted: 222 25% 16%;
-  --muted-foreground: 42 33% 70%;
+  --muted-foreground: 42 33% 82%;
   
   --accent: 46 65% 52%;
   --accent-foreground: 0 0% 0%;
@@ -244,6 +244,41 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* Custom luxury gold scrollbar */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-left: 1px solid hsl(var(--primary) / 0.2);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,
+      hsl(var(--primary) / 0.6) 0%,
+      hsl(var(--primary)) 50%,
+      hsl(var(--primary) / 0.6) 100%);
+    border: 2px solid hsl(var(--background));
+    border-radius: 0;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg,
+      hsl(var(--primary)) 0%,
+      hsl(46 80% 60%) 50%,
+      hsl(var(--primary)) 100%);
+    border: 2px solid hsl(var(--background));
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: hsl(var(--background));
   }
 }
 
