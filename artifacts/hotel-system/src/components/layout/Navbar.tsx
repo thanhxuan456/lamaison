@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useT } from "@/lib/i18n";
+import { useBranding } from "@/lib/branding";
 import { useUser, useClerk, Show } from "@clerk/react";
 import {
   DropdownMenu,
@@ -97,6 +98,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useT();
+  const { branding } = useBranding();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -114,13 +116,24 @@ export function Navbar() {
     >
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex flex-col items-center group cursor-pointer">
-            <span className="text-2xl md:text-3xl font-serif text-primary tracking-[0.1em] uppercase group-hover:text-primary/80 transition-colors">
-              Grand Palace
-            </span>
-            <span className="text-[10px] md:text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
-              {t("brand.tagline")}
-            </span>
+          <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+            {branding.useImageLogo && branding.logoUrl ? (
+              <img
+                src={branding.logoUrl}
+                alt={branding.brandName}
+                className="h-10 md:h-12 w-auto object-contain group-hover:opacity-90 transition-opacity"
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className="text-2xl md:text-3xl font-serif text-primary tracking-[0.1em] uppercase group-hover:text-primary/80 transition-colors">
+                  {branding.brandName}
+                </span>
+                <span className="text-[10px] md:text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
+                  {branding.tagline || t("brand.tagline")}
+                </span>
+              </div>
+            )}
           </Link>
 
           {/* Desktop Nav */}

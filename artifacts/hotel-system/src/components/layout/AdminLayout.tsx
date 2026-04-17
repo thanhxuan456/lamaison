@@ -7,6 +7,7 @@ import {
   UtensilsCrossed, Receipt,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useBranding } from "@/lib/branding";
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, labelKey: "admin.nav.dashboard", path: "/admin" },
@@ -31,6 +32,7 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
   const { t } = useT();
+  const { branding } = useBranding();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -60,14 +62,16 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
         >
           {/* Logo block */}
           <div className="flex flex-col items-center gap-2 px-5 py-6 border-b border-primary/15 bg-gradient-to-b from-primary/10 to-transparent shrink-0">
-            <img
-              src="/logo.svg"
-              alt="Grand Palace"
-              className="h-14 w-auto object-contain"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-            />
+            {branding.adminLogoUrl && (
+              <img
+                src={branding.adminLogoUrl}
+                alt={branding.brandName}
+                className="h-14 w-auto object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            )}
             <div className="text-center">
-              <div className="font-serif text-[13px] tracking-[0.2em] text-foreground leading-tight">Grand Palace</div>
+              <div className="font-serif text-[13px] tracking-[0.2em] text-foreground leading-tight">{branding.brandName}</div>
               <div className="text-[9px] tracking-[0.35em] uppercase text-primary mt-0.5">
                 {t("admin.label")}
               </div>

@@ -3,10 +3,12 @@ import { useState, FormEvent } from "react";
 import { Mail, Phone, MapPin, Facebook, Instagram, Youtube, Twitter, Send } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
+import { useBranding } from "@/lib/branding";
 
 export function Footer() {
   const { t } = useT();
   const { toast } = useToast();
+  const { branding } = useBranding();
   const [email, setEmail] = useState("");
 
   const handleSubscribe = (e: FormEvent) => {
@@ -72,12 +74,18 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-14">
           <div className="md:col-span-4">
             <Link href="/" className="flex flex-col items-start group mb-6">
-              <span className="text-3xl font-serif text-primary tracking-[0.1em] uppercase">
-                Grand Palace
-              </span>
-              <span className="text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
-                {t("brand.tagline")}
-              </span>
+              {branding.useImageLogo && branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.brandName} className="h-12 w-auto object-contain" />
+              ) : (
+                <>
+                  <span className="text-3xl font-serif text-primary tracking-[0.1em] uppercase">
+                    {branding.brandName}
+                  </span>
+                  <span className="text-xs text-primary/70 tracking-[0.3em] uppercase mt-1">
+                    {branding.tagline || t("brand.tagline")}
+                  </span>
+                </>
+              )}
             </Link>
             <p className="text-sm text-primary/80 max-w-md leading-relaxed font-light mb-6">
               {t("footer.about")}
@@ -155,7 +163,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-primary/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-primary/60 tracking-wide">
-            &copy; {new Date().getFullYear()} Grand Palace Hotels &amp; Resorts. {t("footer.rights")}
+            &copy; {new Date().getFullYear()} {branding.brandName}. {t("footer.rights")}
           </p>
           <div className="flex gap-6">
             <Link href="/" className="text-xs text-primary/60 hover:text-primary transition-colors uppercase tracking-widest">

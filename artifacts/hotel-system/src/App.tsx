@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
 import { SiteContentProvider } from "@/lib/site-content";
 import { PageBlocksProvider } from "@/lib/page-blocks";
+import { BrandingProvider } from "@/lib/branding";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
@@ -210,6 +211,7 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="grand-palace-theme">
       <LanguageProvider>
+       <BrandingProvider>
         <SiteContentProvider>
           <PageBlocksProvider>
             <WouterRouter base={basePath}>
@@ -218,6 +220,7 @@ function App() {
             <Toaster />
           </PageBlocksProvider>
         </SiteContentProvider>
+       </BrandingProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

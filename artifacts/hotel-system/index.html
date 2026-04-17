@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>Luxury Hotel System</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Apply saved branding before React paints to eliminate FOUC.
+      (function () {
+        try {
+          var raw = localStorage.getItem("grand-palace-branding");
+          if (!raw) return;
+          var b = JSON.parse(raw);
+          if (b && b.pageTitle) document.title = b.pageTitle;
+          if (b && b.faviconUrl) {
+            var link = document.querySelector('link[rel="icon"]') || document.createElement("link");
+            link.rel = "icon";
+            var u = b.faviconUrl;
+            if (u.indexOf("data:image/png") === 0) link.type = "image/png";
+            else if (u.indexOf("data:image/jpeg") === 0 || u.indexOf("data:image/jpg") === 0) link.type = "image/jpeg";
+            else if (u.indexOf(".svg") !== -1 || u.indexOf("data:image/svg") === 0) link.type = "image/svg+xml";
+            else link.type = "image/x-icon";
+            link.href = u;
+            if (!link.parentNode) document.head.appendChild(link);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
