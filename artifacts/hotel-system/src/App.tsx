@@ -17,6 +17,11 @@ import Bookings from "@/pages/bookings";
 import BookingDetail from "@/pages/booking-detail";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin/index";
+import AdminHotels from "@/pages/admin/hotels";
+import AdminRooms from "@/pages/admin/rooms";
+import AdminUsers from "@/pages/admin/users";
+import AdminChat from "@/pages/admin/chat";
+import AdminTheme from "@/pages/admin/theme";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -145,7 +150,12 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/register/*?" component={RegisterPage} />
       <Route path="/profile/*?" component={Profile} />
-      <Route path="/admin/*?" component={AdminDashboard} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/hotels" component={AdminHotels} />
+      <Route path="/admin/rooms" component={AdminRooms} />
+      <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/chat" component={AdminChat} />
+      <Route path="/admin/theme" component={AdminTheme} />
       <Route component={NotFound} />
     </Switch>
   );
