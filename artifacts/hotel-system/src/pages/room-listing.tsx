@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useMemo, useState } from "react";
+import { useFormatPrice } from "@/lib/branding";
 
 type Sort = "featured" | "priceAsc" | "priceDesc" | "capacity";
 
@@ -22,6 +23,7 @@ export default function RoomListing() {
   const [capacity, setCapacity] = useState<number | null>(null);
   const [sort, setSort] = useState<Sort>("featured");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const fmtPrice = useFormatPrice();
 
   const filtered = useMemo(() => {
     let list = (rooms ?? []).slice();
@@ -97,7 +99,7 @@ export default function RoomListing() {
           <div className="mt-12 inline-flex flex-wrap justify-center divide-x divide-primary/30 border border-primary/30 bg-secondary/40 backdrop-blur-sm">
             <Stat label="Phòng có sẵn" value={String((rooms ?? []).filter((r) => r.isAvailable).length)} />
             <Stat label="Tổng phòng" value={String(rooms?.length ?? 0)} />
-            <Stat label="Giá từ" value={`$${minPrice}`} sub="/đêm" />
+            <Stat label="Giá từ" value={fmtPrice(minPrice)} sub="/đêm" />
             <Stat label="Sức chứa tối đa" value={`${maxCap}`} sub="khách" />
           </div>
         </div>
@@ -182,7 +184,7 @@ export default function RoomListing() {
                         {/* Floating price tag */}
                         <div className={`absolute bottom-4 ${reverse ? "right-4" : "left-4"} bg-secondary/95 backdrop-blur text-primary px-4 py-3 border border-primary/40`}>
                           <div className="text-[9px] tracking-[0.3em] uppercase text-white/60">Từ</div>
-                          <div className="font-serif text-2xl">${room.pricePerNight}<span className="text-xs text-white/50">/đêm</span></div>
+                          <div className="font-serif text-2xl">{fmtPrice(room.pricePerNight)}<span className="text-xs text-white/50">/đêm</span></div>
                         </div>
 
                         {/* Status badge */}

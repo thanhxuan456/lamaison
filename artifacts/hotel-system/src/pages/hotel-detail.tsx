@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { MapPin, Star, Wifi, Coffee, Wind, Monitor, ChevronRight, Check, User } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useFormatPrice } from "@/lib/branding";
 
 export default function HotelDetail() {
   const [, params] = useRoute("/hotels/:id");
   const hotelId = params?.id ? parseInt(params.id) : 0;
   const { t } = useT();
+  const fmtPrice = useFormatPrice();
 
   const { data: hotel, isLoading: loadingHotel } = useGetHotel(hotelId);
   const { data: summary, isLoading: loadingSummary } = useGetHotelSummary(hotelId);
@@ -179,7 +181,7 @@ export default function HotelDetail() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-2xl font-serif text-primary mb-4">${room.pricePerNight}<span className="text-sm text-muted-foreground font-sans">{t("common.perNight")}</span></div>
+                      <div className="text-2xl font-serif text-primary mb-4">{fmtPrice(room.pricePerNight)}<span className="text-sm text-muted-foreground font-sans">{t("common.perNight")}</span></div>
                       <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none uppercase tracking-widest text-xs">
                         <Link href={`/rooms/${room.id}`}>{t("common.details")}</Link>
                       </Button>

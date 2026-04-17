@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { BedDouble, Plus, Edit, Trash2, X, Loader2, ChevronDown } from "lucide-react";
+import { useBranding, useFormatPrice } from "@/lib/branding";
 
 const ROOM_STATUSES = ["available", "reserved", "occupied", "cleaning", "maintenance"] as const;
 type RoomStatus = (typeof ROOM_STATUSES)[number];
@@ -116,7 +117,7 @@ function RoomModal({ room, hotels, onClose, onSaved }: { room?: any; hotels: any
           <div className="grid grid-cols-2 gap-4">
             <Field label="Room Number *" value={form.roomNumber} onChange={(v: string) => set("roomNumber", v)} placeholder="e.g. 101" />
             <Select label="Room Type" value={form.type} onChange={(v: string) => set("type", v)} options={ROOM_TYPES} />
-            <Field label="Price Per Night (USD)" value={form.pricePerNight} onChange={(v: string) => set("pricePerNight", v)} type="number" />
+            <Field label={`Giá / Đêm (${branding.currency})`} value={form.pricePerNight} onChange={(v: string) => set("pricePerNight", v)} type="number" />
             <Field label="Capacity (guests)" value={String(form.capacity)} onChange={(v: string) => set("capacity", Number(v))} type="number" />
             <Field label="Floor" value={String(form.floor)} onChange={(v: string) => set("floor", Number(v))} type="number" />
             <Select label="View" value={form.view} onChange={(v: string) => set("view", v)} options={VIEWS} />
@@ -169,6 +170,8 @@ function RoomsContent() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: hotels } = useListHotels();
+  const { branding } = useBranding();
+  const fmtPrice = useFormatPrice();
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterHotel, setFilterHotel] = useState<number | "all">("all");
@@ -262,7 +265,7 @@ function RoomsContent() {
                   <td className="px-4 py-3 text-muted-foreground">{r.floor}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{r.view}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.capacity}</td>
-                  <td className="px-4 py-3 text-foreground">${parseFloat(r.pricePerNight).toFixed(0)}</td>
+                  <td className="px-4 py-3 text-foreground">{fmtPrice(r.pricePerNight)}</td>
                   <td className="px-4 py-3">
                     {(() => {
                       const st = deriveStatus(r);

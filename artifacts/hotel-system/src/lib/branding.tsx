@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 const STORAGE_KEY = "grand-palace-branding";
 
+export type Currency = "VND" | "USD";
+
 export interface Branding {
   brandName: string;
   tagline: string;
@@ -10,6 +12,7 @@ export interface Branding {
   adminLogoUrl: string;
   faviconUrl: string;
   pageTitle: string;
+  currency: Currency;
 }
 
 export const DEFAULT_BRANDING: Branding = {
@@ -20,7 +23,22 @@ export const DEFAULT_BRANDING: Branding = {
   adminLogoUrl: "/logo.svg",
   faviconUrl: "/favicon.svg",
   pageTitle: "Grand Palace Hotels & Resorts — Luxury Vietnam",
+  currency: "VND",
 };
+
+export function formatPrice(amount: number | string | null | undefined, currency: Currency = "VND"): string {
+  const n = Number(amount ?? 0);
+  if (!isFinite(n)) return currency === "USD" ? "$0" : "0 ₫";
+  if (currency === "USD") {
+    return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  }
+  return n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }) + " ₫";
+}
+
+export function useFormatPrice() {
+  const { branding } = useBranding();
+  return (amount: number | string | null | undefined) => formatPrice(amount, branding.currency);
+}
 
 function loadBranding(): Branding {
   try {

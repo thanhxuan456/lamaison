@@ -898,6 +898,22 @@ export function BrandingPanel() {
                 className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="Grand Palace Hotels & Resorts" />
               <p className="text-[10px] text-muted-foreground/70 mt-1">Hiển thị trên tab trình duyệt và kết quả tìm kiếm Google</p>
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Đơn vị tiền tệ hiển thị</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => set("currency", "VND")}
+                  className={`p-3 border text-left transition-all ${local.currency === "VND" ? "border-primary bg-primary/5" : "border-primary/20 hover:border-primary/40"}`}>
+                  <div className="text-xs font-medium mb-0.5">VND — Việt Nam Đồng</div>
+                  <div className="text-[10px] text-muted-foreground">Vd: 2.500.000 ₫</div>
+                </button>
+                <button type="button" onClick={() => set("currency", "USD")}
+                  className={`p-3 border text-left transition-all ${local.currency === "USD" ? "border-primary bg-primary/5" : "border-primary/20 hover:border-primary/40"}`}>
+                  <div className="text-xs font-medium mb-0.5">USD — US Dollar</div>
+                  <div className="text-[10px] text-muted-foreground">Vd: $250</div>
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground/70 mt-1.5">Áp dụng cho giá phòng trên toàn bộ website (trang khách sạn, danh sách phòng, admin)</p>
+            </div>
           </div>
         </section>
 
