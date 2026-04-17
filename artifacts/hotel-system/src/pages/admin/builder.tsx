@@ -595,11 +595,11 @@ function QuickEditModal({
 
                         {/* Block card preview */}
                         <div className={[
-                          "border bg-background px-5 py-4 transition-all cursor-pointer",
+                          "border bg-background transition-all cursor-pointer",
                           isSelected ? "border-primary shadow-md" : "border-transparent hover:border-primary/30",
                           !block.visible && "opacity-50",
                         ].filter(Boolean).join(" ")}>
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-3 px-5 py-4">
                             <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
                               <Layers size={12} />
                             </div>
@@ -616,6 +616,31 @@ function QuickEditModal({
                             </div>
                             <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0">#{idx + 1}</span>
                           </div>
+
+                          {/* Inline settings — shown right below the selected block */}
+                          {isSelected && def && (
+                            <div className="border-t border-primary/20 bg-primary/5" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center justify-between px-5 py-2.5 border-b border-primary/15 bg-card/50">
+                                <div className="flex items-center gap-2">
+                                  <Settings2 size={11} className="text-primary" />
+                                  <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-medium">Chỉnh sửa nội dung</span>
+                                </div>
+                                <button onClick={() => setSelectedId(null)}
+                                  className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground flex items-center gap-1">
+                                  Thu gọn <ChevronUp size={10} />
+                                </button>
+                              </div>
+                              <div className="p-5 space-y-3">
+                                {def.fields.map(field => (
+                                  <div key={field.key}>
+                                    <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">{field.label}</label>
+                                    <FieldEditor field={field} value={block.settings[field.key]}
+                                      onChange={(v) => updateBlock(block.id, { ...block.settings, [field.key]: v })} />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
