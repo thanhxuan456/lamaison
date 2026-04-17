@@ -4,7 +4,7 @@ import { BackToTop } from "@/components/BackToTop";
 import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
   Palette, ChevronRight, Menu, FileText, ArrowLeft, Settings, Search, Layers,
-  UtensilsCrossed, Receipt, CalendarCheck, UserCircle2, ListTree,
+  UtensilsCrossed, Receipt, CalendarCheck, UserCircle2, ListTree, Newspaper,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { icon: CalendarCheck,   labelKey: "Đặt phòng",           path: "/admin/bookings" },
   { icon: UserCircle2,     labelKey: "Khách hàng",          path: "/admin/guests" },
   { icon: ListTree,        labelKey: "Menu & Footer",       path: "/admin/menus" },
+  { icon: Newspaper,       labelKey: "Tin tức & Blog",      path: "/admin/blogs" },
   { icon: Users,           labelKey: "admin.nav.users",     path: "/admin/users" },
   { icon: MessageSquare,   labelKey: "admin.nav.chat",      path: "/admin/chat" },
   { icon: UtensilsCrossed, labelKey: "admin.nav.menu",      path: "/admin/menu" },

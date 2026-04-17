@@ -9,3 +9,4 @@ export * from "./room-orders";
 export * from "./invoices";
 export * from "./app-settings";
 export * from "./contact-messages";
+export * from "./blog-posts";

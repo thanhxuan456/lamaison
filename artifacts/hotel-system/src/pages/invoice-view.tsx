@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { ArrowLeft, Printer, Download, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useBranding } from "@/lib/branding";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
@@ -38,6 +39,7 @@ export default function InvoiceView() {
   const id = params?.id;
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
+  const { branding } = useBranding();
 
   useEffect(() => {
     if (!id) return;
@@ -74,17 +76,22 @@ export default function InvoiceView() {
           <div className="absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-primary opacity-40" />
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              {/* Crown / brand mark logo */}
-              <div className="w-16 h-16 border-2 border-primary flex items-center justify-center relative">
-                <div className="absolute -top-1 -left-1 w-2 h-2 rotate-45 bg-primary" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 rotate-45 bg-primary" />
-                <div className="absolute -bottom-1 -left-1 w-2 h-2 rotate-45 bg-primary" />
-                <div className="absolute -bottom-1 -right-1 w-2 h-2 rotate-45 bg-primary" />
-                <span className="font-serif text-2xl text-primary">G</span>
-              </div>
+              {/* Brand logo (auto-syncs from Branding settings) */}
+              {branding.useImageLogo && branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.brandName}
+                  className="w-16 h-16 object-contain border-2 border-primary p-1 bg-white print:bg-transparent" />
+              ) : (
+                <div className="w-16 h-16 border-2 border-primary flex items-center justify-center relative">
+                  <div className="absolute -top-1 -left-1 w-2 h-2 rotate-45 bg-primary" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 rotate-45 bg-primary" />
+                  <div className="absolute -bottom-1 -left-1 w-2 h-2 rotate-45 bg-primary" />
+                  <div className="absolute -bottom-1 -right-1 w-2 h-2 rotate-45 bg-primary" />
+                  <span className="font-serif text-2xl text-primary">{(branding.brandName || "G").charAt(0).toUpperCase()}</span>
+                </div>
+              )}
               <div>
-                <h1 className="font-serif text-3xl text-primary tracking-[0.1em] uppercase">Grand Palace</h1>
-                <p className="text-[10px] uppercase tracking-[0.4em] text-primary/70 mt-1">Hotels & Resorts</p>
+                <h1 className="font-serif text-3xl text-primary tracking-[0.1em] uppercase">{branding.brandName}</h1>
+                <p className="text-[10px] uppercase tracking-[0.4em] text-primary/70 mt-1">{branding.tagline}</p>
               </div>
             </div>
             <div className="text-right">
@@ -174,7 +181,7 @@ export default function InvoiceView() {
 
           {/* Footer */}
           <div className="mt-10 pt-6 border-t border-primary/15 text-center">
-            <p className="text-xs text-muted-foreground italic">Cảm ơn quý khách đã lựa chọn Grand Palace Hotels & Resorts.</p>
+            <p className="text-xs text-muted-foreground italic">Cảm ơn quý khách đã lựa chọn {branding.brandName}.</p>
             <div className="mt-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-primary/60">
               <span>contact@grandpalace.vn</span> · <span>+84 1800 9999</span> · <span>grandpalace.vn</span>
             </div>
