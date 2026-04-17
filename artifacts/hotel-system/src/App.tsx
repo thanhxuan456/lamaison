@@ -22,6 +22,7 @@ import RoomListing from "@/pages/room-listing";
 import RoomDetail from "@/pages/room-detail";
 import Bookings from "@/pages/bookings";
 import BookingDetail from "@/pages/booking-detail";
+import ContractView from "@/pages/contract-view";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin/index";
 import AdminHotels from "@/pages/admin/hotels";
@@ -168,6 +169,7 @@ function Router() {
       <Route path="/hotels/:id/rooms" component={RoomListing} />
       <Route path="/rooms/:id" component={RoomDetail} />
       <Route path="/bookings" component={Bookings} />
+      <Route path="/bookings/:id/contract" component={ContractView} />
       <Route path="/bookings/:id" component={BookingDetail} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/news" component={NewsList} />

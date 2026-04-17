@@ -3,7 +3,8 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarCheck, CalendarX, LogIn, LogOut, Loader2, Search } from "lucide-react";
+import { CalendarCheck, CalendarX, LogIn, LogOut, Loader2, Search, FileSignature } from "lucide-react";
+import { Link } from "wouter";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
@@ -179,6 +180,12 @@ function BookingsContent() {
                             {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
                           </button>
                         )}
+                        <Link href={`/bookings/${b.id}/contract`}>
+                          <button title="Tải hợp đồng"
+                            className="p-1.5 border border-primary/40 text-primary hover:bg-primary/10">
+                            <FileSignature size={12} />
+                          </button>
+                        </Link>
                         {status !== "cancelled" && status !== "checked_out" && (
                           <button disabled={busyId === b.id}
                             onClick={() => { if (confirm("Hủy đặt phòng này?")) action(b.id, "cancel"); }}

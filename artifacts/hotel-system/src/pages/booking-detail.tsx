@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MapPin, User, Phone, Mail, FileText, UtensilsCrossed, Receipt, Plus, Minus, ShoppingBag, Eye } from "lucide-react";
+import { MapPin, User, Phone, Mail, FileText, UtensilsCrossed, Receipt, Plus, Minus, ShoppingBag, Eye, FileSignature } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
@@ -264,6 +264,11 @@ function RoomServiceSection({ bookingId, hotelId }: { bookingId: number; hotelId
           <UtensilsCrossed className="text-primary" /> Room Service
         </h3>
         <div className="ml-auto flex flex-wrap gap-2">
+          <Link href={`/bookings/${bookingId}/contract`}>
+            <Button variant="outline" className="rounded-none border-primary text-primary hover:bg-primary hover:text-primary-foreground uppercase tracking-widest text-xs">
+              <FileSignature size={14} className="mr-2" /> Tải hợp đồng
+            </Button>
+          </Link>
           {invoiceId && (
             <Link href={`/invoices/${invoiceId}`}>
               <Button variant="outline" className="rounded-none border-primary text-primary hover:bg-primary hover:text-primary-foreground uppercase tracking-widest text-xs">
