@@ -113,18 +113,42 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navBg = variant === "auth"
-    ? isScrolled
+  const ns = branding.navbarStyle ?? "auto";
+  const nbColor = branding.navbarBgColor ?? "#1a1f2e";
+  const nbOpacity = (branding.navbarBgOpacity ?? 95) / 100;
+
+  function hexToRgb(hex: string) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r},${g},${b}`;
+  }
+
+  let navClassName = `fixed top-0 w-full z-50 transition-all duration-300 border-b `;
+  let navStyle: React.CSSProperties = {};
+
+  if (variant === "auth") {
+    navClassName += isScrolled
       ? "bg-[hsl(222,40%,8%)]/98 backdrop-blur-md border-primary/20 shadow-sm py-3"
-      : "bg-[hsl(222,40%,8%)]/90 backdrop-blur-sm border-primary/10 py-5"
-    : isScrolled
+      : "bg-[hsl(222,40%,8%)]/90 backdrop-blur-sm border-primary/10 py-5";
+  } else if (ns === "solid") {
+    navStyle = { backgroundColor: `rgba(${hexToRgb(nbColor)},${nbOpacity})` };
+    navClassName += isScrolled
+      ? "backdrop-blur-sm border-primary/20 shadow-sm py-3"
+      : "border-primary/10 py-5";
+  } else if (ns === "glass") {
+    navStyle = { backgroundColor: `rgba(${hexToRgb(nbColor)},${Math.min(nbOpacity * 0.7, 0.85)})` };
+    navClassName += isScrolled
+      ? "backdrop-blur-md border-primary/20 shadow-sm py-3"
+      : "backdrop-blur-sm border-primary/10 py-5";
+  } else {
+    navClassName += isScrolled
       ? "bg-secondary/95 dark:bg-card/95 backdrop-blur-md border-primary/20 shadow-sm py-3"
-      : "bg-transparent py-5";
+      : "bg-transparent border-transparent py-5";
+  }
 
   return (
-    <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent ${navBg}`}
-    >
+    <nav className={navClassName} style={navStyle}>
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">

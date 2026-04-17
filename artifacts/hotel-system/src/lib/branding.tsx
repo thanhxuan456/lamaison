@@ -4,6 +4,8 @@ const STORAGE_KEY = "grand-palace-branding";
 
 export type Currency = "VND" | "USD";
 
+export type NavbarStyle = "auto" | "solid" | "glass";
+
 export interface Branding {
   brandName: string;
   tagline: string;
@@ -15,6 +17,9 @@ export interface Branding {
   faviconUrl: string;
   pageTitle: string;
   currency: Currency;
+  navbarStyle: NavbarStyle;
+  navbarBgColor: string;
+  navbarBgOpacity: number;
 }
 
 export const DEFAULT_BRANDING: Branding = {
@@ -28,6 +33,9 @@ export const DEFAULT_BRANDING: Branding = {
   faviconUrl: "/favicon.svg",
   pageTitle: "Grand Palace Hotels & Resorts — Luxury Vietnam",
   currency: "VND",
+  navbarStyle: "auto",
+  navbarBgColor: "#1a1f2e",
+  navbarBgOpacity: 95,
 };
 
 export function formatPrice(amount: number | string | null | undefined, currency: Currency = "VND"): string {
