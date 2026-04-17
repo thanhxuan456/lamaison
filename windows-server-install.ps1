@@ -224,7 +224,7 @@ Write-OK "Dependencies installed"
 $rollupWinBin = Join-Path $Config.InstallDir "node_modules\.pnpm\@rollup+rollup-win32-x64-msvc*"
 if (-not (Test-Path $rollupWinBin)) {
     Write-Info "Installing Windows-specific Rollup native binary..."
-    & pnpm add -w --no-frozen-lockfile @rollup/rollup-win32-x64-msvc 2>&1 | Out-Null
+    & pnpm add -w @rollup/rollup-win32-x64-msvc 2>&1 | Out-Null
     Write-OK "Rollup Windows binary installed"
 }
 
