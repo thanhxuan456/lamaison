@@ -1,0 +1,50 @@
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:75 char:40
++     $env:Path = "$machinePath;$userPath"
++                                        ~
+Unexpected token '"
+}
+$TempDir = Join-Path $env:TEMP "' in expression or statement.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:78 char:33
++ $TempDir = Join-Path $env:TEMP "GrandPalaceSetup"
++                                 ~~~~~~~~~~~~~~~~~
+Unexpected token 'GrandPalaceSetup"
+New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+â”€â”€â”€â”€â”€â”€' in expression or statement.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:142 char:26
++     $env:Path += ";$pgBin"
++                          ~
+Unexpected token '"
+}
+# â”' in expression or statement.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:145 char:5
++ # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token '€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â
+”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€' in expression or statement.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:368 char:79
++ ... SL certificate (IIS ARR or nginx on Windows)" -ForegroundColor Yellow
++                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~
+The string is missing the terminator: ".
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:264 char:120
++ ... ing]$displayName, [string]$exe, [string]$args, [hashtable]$envVars) {
++                                                                         ~
+Missing closing '}' in statement block or type definition.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:120 char:17
++ if ($pgService) {
++                 ~
+Missing closing '}' in statement block or type definition.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:105 char:32
++ if (Test-CommandExists "pnpm") {
++                                ~
+Missing closing '}' in statement block or type definition.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:86 char:32
++ if (Test-CommandExists "node") {
++                                ~
+Missing closing '}' in statement block or type definition.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:53 char:33
++ function Write-OK([string]$msg) {
++                                 ~
+Missing closing '}' in statement block or type definition.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
