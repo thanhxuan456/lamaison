@@ -517,7 +517,7 @@ function BuilderContent() {
 export default function AdminBuilder() {
   return (
     <AdminGuard>
-      <AdminLayout>
+      <AdminLayout title="Page Builder" subtitle="Thiết kế trang chủ và các trang con bằng kéo-thả">
         <BuilderContent />
       </AdminLayout>
     </AdminGuard>

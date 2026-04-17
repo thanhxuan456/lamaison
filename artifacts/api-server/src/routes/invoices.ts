@@ -95,7 +95,7 @@ router.get("/invoices/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     const [row] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, row.bookingId));
     const [hotel] = booking ? await db.select().from(hotelsTable).where(eq(hotelsTable.id, booking.hotelId)) : [null];
     res.json({ ...row, booking, hotel });
@@ -139,7 +139,7 @@ router.put("/invoices/:id", async (req, res) => {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
     }
     const [row] = await db.update(invoicesTable).set(updates).where(eq(invoicesTable.id, id)).returning();
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

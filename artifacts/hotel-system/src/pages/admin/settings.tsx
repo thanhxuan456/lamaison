@@ -508,8 +508,8 @@ function AffiliateTab() {
           <div className="grid grid-cols-2 gap-4">
             {([
               { label: "Hoa hồng mặc định (%)", key: "defaultCommission", min: 0, max: 100 },
-              { label: "Cookie theo dõi (ngày)", key: "cookieDuration", min: 1 },
-              { label: "Số dư tối thiểu để rút (VND)", key: "minPayout" },
+              { label: "Cookie theo dõi (ngày)", key: "cookieDuration", min: 1, max: undefined },
+              { label: "Số dư tối thiểu để rút (VND)", key: "minPayout", min: undefined, max: undefined },
             ] as const).map(({ label, key, min, max }) => (
               <div key={key}>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">{label}</label>

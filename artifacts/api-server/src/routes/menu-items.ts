@@ -20,7 +20,7 @@ router.get("/menu-items", async (req, res) => {
 router.post("/menu-items", async (req, res) => {
   try {
     const parsed = insertMenuItemSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+    if (!parsed.success) { res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() }); return; }
     const [row] = await db.insert(menuItemsTable).values(parsed.data).returning();
     res.status(201).json(row);
   } catch (err: any) {
@@ -32,9 +32,9 @@ router.put("/menu-items/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     const parsed = insertMenuItemSchema.partial().safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid data" });
+    if (!parsed.success) { res.status(400).json({ error: "Invalid data" }); return; }
     const [row] = await db.update(menuItemsTable).set(parsed.data).where(eq(menuItemsTable.id, id)).returning();
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

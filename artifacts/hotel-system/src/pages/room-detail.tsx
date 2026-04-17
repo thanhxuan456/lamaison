@@ -19,7 +19,7 @@ export default function RoomDetail() {
 
   const { data: room, isLoading: loadingRoom } = useGetRoom(roomId);
   const hotelId = room?.hotelId || 0;
-  const { data: hotel, isLoading: loadingHotel } = useGetHotel(hotelId, { query: { enabled: !!hotelId } });
+  const { data: hotel, isLoading: loadingHotel } = useGetHotel(hotelId, { query: { enabled: !!hotelId, queryKey: ["hotel", hotelId] } });
 
   const createBooking = useCreateBooking();
 

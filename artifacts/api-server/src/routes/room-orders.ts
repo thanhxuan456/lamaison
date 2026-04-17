@@ -21,7 +21,7 @@ router.post("/room-orders", async (req, res) => {
   try {
     const rawItems = (req.body.items ?? []) as any[];
     const ids = rawItems.map((it) => Number(it.menuItemId)).filter((n) => Number.isFinite(n));
-    if (ids.length === 0) return res.status(400).json({ error: "No items provided" });
+    if (ids.length === 0) { res.status(400).json({ error: "No items provided" }); return; }
 
     // Authoritative price lookup: never trust client-supplied unitPrice
     const dbItems = await db.select().from(menuItemsTable).where(inArray(menuItemsTable.id, ids));
@@ -30,8 +30,8 @@ router.post("/room-orders", async (req, res) => {
     const items: OrderLine[] = [];
     for (const raw of rawItems) {
       const menuItem = priceMap.get(Number(raw.menuItemId));
-      if (!menuItem) return res.status(400).json({ error: `Menu item ${raw.menuItemId} not found` });
-      if (!menuItem.available) return res.status(400).json({ error: `${menuItem.name} hiện không phục vụ` });
+      if (!menuItem) { res.status(400).json({ error: `Menu item ${raw.menuItemId} not found` }); return; }
+      if (!menuItem.available) { res.status(400).json({ error: `${menuItem.name} hiện không phục vụ` }); return; }
       const quantity = Math.max(1, Math.floor(Number(raw.quantity ?? 1)));
       const unitPrice = Number(menuItem.price);
       items.push({
@@ -51,7 +51,7 @@ router.post("/room-orders", async (req, res) => {
       notes: req.body.notes ?? "",
     };
     const parsed = insertRoomOrderSchema.safeParse(payload);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+    if (!parsed.success) { res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() }); return; }
     const [row] = await db.insert(roomOrdersTable).values(parsed.data).returning();
     res.status(201).json(row);
   } catch (err: any) {
@@ -66,7 +66,7 @@ router.put("/room-orders/:id", async (req, res) => {
     if (req.body.status) updates.status = req.body.status;
     if (req.body.notes !== undefined) updates.notes = req.body.notes;
     const [row] = await db.update(roomOrdersTable).set(updates).where(eq(roomOrdersTable.id, id)).returning();
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
