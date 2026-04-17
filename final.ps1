@@ -69,6 +69,65 @@ function Find-PgHba {
     return $null
 }
 
+# Reliably stop then start the PostgreSQL service with fallbacks
+function Restart-Pg([string]$svcName) {
+    info "Stopping PostgreSQL service..."
+    $ErrorActionPreference = "Continue"
+
+    # Try Stop-Service first
+    Stop-Service -Name $svcName -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 3
+
+    # Make sure it's really stopped — force kill if needed
+    $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -ne "Stopped") {
+        net stop $svcName /y 2>&1 | Out-Null
+        Start-Sleep -Seconds 3
+    }
+
+    info "Starting PostgreSQL service..."
+    Start-Service -Name $svcName -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 4
+
+    # If Start-Service failed, try net start
+    $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -ne "Running") {
+        net start $svcName 2>&1 | Out-Null
+        Start-Sleep -Seconds 5
+    }
+
+    # Last check
+    $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+    $ErrorActionPreference = "Stop"
+
+    if ($svc -and $svc.Status -eq "Running") {
+        ok "PostgreSQL service is running"
+        return $true
+    }
+
+    # Try pg_ctl as last resort
+    $pgBin = Find-PgBin
+    $pgData = $null
+    $dataSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "PG_VERSION" -Recurse -ErrorAction SilentlyContinue |
+                  Where-Object { $_.FullName -notlike "*pgAdmin*" } | Select-Object -First 1
+    if ($dataSearch) { $pgData = Split-Path $dataSearch.FullName }
+
+    if ($pgBin -and $pgData) {
+        $ErrorActionPreference = "Continue"
+        & "$pgBin\pg_ctl.exe" start -D $pgData 2>&1 | Out-Null
+        Start-Sleep -Seconds 6
+        $ErrorActionPreference = "Stop"
+        $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+        if ($svc -and $svc.Status -eq "Running") {
+            ok "PostgreSQL service is running (started via pg_ctl)"
+            return $true
+        }
+    }
+
+    err "Could not start PostgreSQL service. Try restarting it manually in Services (services.msc)."
+    return $false
+}
+
 # Run psql as postgres with PGPASSWORD set, capture output, return exit code via $?
 function Invoke-Psql([string]$sql, [string]$pass, [string]$db = "postgres") {
     $env:PGPASSWORD = $pass
@@ -133,8 +192,7 @@ if ($choice -eq "3") {
 
     $pgSvc = (Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue | Select-Object -First 1).Name
     info "Restarting PostgreSQL to apply trust mode..."
-    Restart-Service -Name $pgSvc -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 6
+    Restart-Pg $pgSvc
 
     $psqlExe = Find-Psql
     $env:PGPASSWORD = ""
@@ -146,8 +204,7 @@ if ($choice -eq "3") {
     Copy-Item $hbaBak $hbaFile -Force
     Remove-Item $hbaBak -Force
     info "Restoring normal authentication and restarting..."
-    Restart-Service -Name $pgSvc -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 6
+    Restart-Pg $pgSvc
 
     if (Test-PgConnection $PG_SUPER_PASS) {
         ok "Password reset successful! New password: $PG_SUPER_PASS"
@@ -320,8 +377,7 @@ function Setup-Database {
         Set-Content $hbaFile ($trustLine + "`n" + (Get-Content $hbaFile -Raw)) -Encoding UTF8
 
         $pgSvc = (Get-Service -Name "postgresql*" | Select-Object -First 1).Name
-        Restart-Service -Name $pgSvc -Force
-        Start-Sleep -Seconds 6
+        Restart-Pg $pgSvc
 
         $psqlExe = Find-Psql
         $env:PGPASSWORD = ""
@@ -331,8 +387,7 @@ function Setup-Database {
 
         Copy-Item $hbaBak $hbaFile -Force
         Remove-Item $hbaBak -Force
-        Restart-Service -Name $pgSvc -Force
-        Start-Sleep -Seconds 6
+        Restart-Pg $pgSvc
 
         if (-not (Test-PgConnection $PG_SUPER_PASS)) {
             err "Auto-reset failed. Run option 3 (Reset PostgreSQL Passwords) first, then retry."
