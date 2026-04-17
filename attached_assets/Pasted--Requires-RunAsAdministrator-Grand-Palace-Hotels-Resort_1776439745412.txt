@@ -22,14 +22,14 @@ $Config = @{
     FrontendPort        = 3000
 
     # PostgreSQL settings
-    PgSuperPassword     = "ChangeMe123!"
+    PgSuperPassword     = "ZeroCode123#!!"
     PgDbName            = "grandpalace"
     PgDbUser            = "grandpalace"
-    PgDbPassword        = "ChangeMe456!"
+    PgDbPassword        = "ZeroCode123#!!"
 
     # Clerk authentication keys (https://dashboard.clerk.com)
-    ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
-    ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
+    ClerkPublishableKey = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
+    ClerkSecretKey      = "sk_test_cPh6CPPBJ9oRO9qmRahsEHOLH9IOYUUwdUyJw11se6"
 
     # Versions
     NodeVersion         = "22.14.0"
@@ -216,15 +216,10 @@ Write-Step "Step 8: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
-$nodeModulesDir = Join-Path $Config.InstallDir "node_modules"
-if (Test-Path $nodeModulesDir) {
-    Write-OK "node_modules already present, skipping install"
-} else {
-    Write-Info "Running pnpm install..."
-    & pnpm install --no-frozen-lockfile
-    if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
-    Write-OK "Dependencies installed"
-}
+Write-Info "Running pnpm install..."
+& pnpm install --frozen-lockfile
+if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
+Write-OK "Dependencies installed"
 
 Write-Info "Applying database schema..."
 & pnpm --filter "@workspace/db" run push
@@ -234,25 +229,15 @@ if ($LASTEXITCODE -ne 0) {
     Write-OK "Database schema applied"
 }
 
-$apiDist = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
-if (Test-Path $apiDist) {
-    Write-OK "API server already built, skipping"
-} else {
-    Write-Info "Building API server..."
-    & pnpm --filter "@workspace/api-server" run build
-    if ($LASTEXITCODE -ne 0) { throw "API server build failed." }
-    Write-OK "API server built"
-}
+Write-Info "Building API server..."
+& pnpm --filter "@workspace/api-server" run build
+if ($LASTEXITCODE -ne 0) { throw "API server build failed." }
+Write-OK "API server built"
 
-$frontendDist = Join-Path $Config.InstallDir "artifacts\hotel-system\dist\index.html"
-if (Test-Path $frontendDist) {
-    Write-OK "Frontend already built, skipping"
-} else {
-    Write-Info "Building frontend..."
-    & pnpm --filter "@workspace/hotel-system" run build
-    if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
-    Write-OK "Frontend built"
-}
+Write-Info "Building frontend..."
+& pnpm --filter "@workspace/hotel-system" run build
+if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
+Write-OK "Frontend built"
 
 Pop-Location
 
