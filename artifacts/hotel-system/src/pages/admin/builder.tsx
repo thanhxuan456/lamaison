@@ -395,9 +395,15 @@ function RenamePageModal({ page, onConfirm, onClose }: { page: SitePage; onConfi
 }
 
 /* ──────────────────────────────────────────────
-   Quick Edit Modal — WordPress-style page editor
-   (no full Page Builder needed)
+   Quick Edit — Fullscreen WordPress Gutenberg-style editor
 ────────────────────────────────────────────── */
+function blockPreviewText(block: PageBlock): string {
+  const s = block.settings || {};
+  const cand = s.title || s.title1 || s.heading || s.kicker || s.body || s.subtitle || s.text || "";
+  const stripped = String(cand).replace(/<[^>]+>/g, "").trim();
+  return stripped.length > 90 ? stripped.slice(0, 90) + "…" : stripped;
+}
+
 function QuickEditModal({
   page,
   onSave,
@@ -413,125 +419,302 @@ function QuickEditModal({
   const [slug, setSlug] = useState(page.slug);
   const [category, setCategory] = useState<PageCategory>(page.category ?? "custom");
   const [blocks, setBlocks] = useState<PageBlock[]>(page.blocks);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sidebarTab, setSidebarTab] = useState<"page" | "block">("page");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showAdd, setShowAdd] = useState<{ at: number } | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
-  const toggleVisible = (id: string) =>
-    setBlocks(prev => prev.map(b => b.id === id ? { ...b, visible: !b.visible } : b));
+  const selectedBlock = blocks.find(b => b.id === selectedId) ?? null;
+  const selectedIdx = selectedBlock ? blocks.findIndex(b => b.id === selectedBlock.id) : -1;
 
+  const markDirty = () => setDirty(true);
+
+  const updateBlock = (id: string, settings: Record<string, any>) => {
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, settings } : b)); markDirty();
+  };
+  const toggleVisible = (id: string) => { setBlocks(prev => prev.map(b => b.id === id ? { ...b, visible: !b.visible } : b)); markDirty(); };
   const move = (id: string, dir: "up" | "down") => {
     setBlocks(prev => {
       const idx = prev.findIndex(b => b.id === id);
       const swap = dir === "up" ? idx - 1 : idx + 1;
       if (idx < 0 || swap < 0 || swap >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[swap]] = [next[swap], next[idx]];
-      return next;
+      const next = [...prev]; [next[idx], next[swap]] = [next[swap], next[idx]]; return next;
     });
+    markDirty();
   };
-
+  const duplicateBlock = (id: string) => {
+    setBlocks(prev => {
+      const idx = prev.findIndex(b => b.id === id); if (idx < 0) return prev;
+      const src = prev[idx];
+      const copy: PageBlock = { id: genBlockId(), type: src.type, visible: src.visible, settings: JSON.parse(JSON.stringify(src.settings)) };
+      const next = [...prev]; next.splice(idx + 1, 0, copy); return next;
+    });
+    markDirty();
+  };
   const removeBlock = (id: string) => {
     if (!confirm("Xóa block này?")) return;
     setBlocks(prev => prev.filter(b => b.id !== id));
+    if (selectedId === id) setSelectedId(null);
+    markDirty();
   };
+  const addAt = (idx: number, type: BlockType) => {
+    const def = BLOCK_DEFINITIONS.find(d => d.type === type)!;
+    const nb: PageBlock = { id: genBlockId(), type, visible: true, settings: { ...def.defaultSettings } };
+    setBlocks(prev => { const next = [...prev]; next.splice(idx, 0, nb); return next; });
+    setSelectedId(nb.id); setSidebarTab("block"); setSidebarOpen(true);
+    markDirty();
+  };
+
+  // Auto-switch to "block" tab when selecting
+  useEffect(() => { if (selectedId) setSidebarTab("block"); }, [selectedId]);
 
   const handleSave = () => {
     if (!title.trim()) return;
     onSave({ ...page, title: title.trim(), slug: slug.trim() || page.slug, category, blocks });
-    onClose();
+    setDirty(false);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1500);
   };
 
+  // ESC to close
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { if (showAdd) setShowAdd(null); else onClose(); } };
+    window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, showAdd]);
+
   const visibleCount = blocks.filter(b => b.visible).length;
+  const selectedDef = selectedBlock ? BLOCK_DEFINITIONS.find(d => d.type === selectedBlock.type) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card border border-primary/40 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-primary/20 bg-primary/5 shrink-0">
-          <div className="flex items-center gap-2">
-            <Pencil size={14} className="text-primary" />
-            <h3 className="font-serif text-sm">Sửa nhanh — {page.title}</h3>
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      {/* ── Top App Bar ────────────────────────────── */}
+      <header className="flex items-center justify-between border-b border-primary/20 bg-card px-4 h-14 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={onClose} title="Đóng (Esc)"
+            className="w-9 h-9 flex items-center justify-center border border-primary/20 hover:bg-primary/10 text-foreground transition-colors">
+            <X size={16} />
+          </button>
+          <button onClick={() => { setShowAdd({ at: blocks.length }); }} title="Thêm block"
+            className="w-9 h-9 flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Plus size={16} />
+          </button>
+          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground border-l border-primary/15 pl-3 ml-1 min-w-0">
+            <FileText size={12} className="text-primary shrink-0" />
+            <span className="truncate font-medium text-foreground">{title || "Trang không tên"}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="font-mono truncate">{slug}</span>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-luxury p-5 space-y-5">
-          {/* Metadata */}
-          <section className="space-y-3">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium border-b border-primary/10 pb-1">Thông tin trang</div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Tên trang</label>
-                <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" value={title} onChange={e => setTitle(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Đường dẫn</label>
-                <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none font-mono" value={slug} onChange={e => setSlug(e.target.value)} disabled={page.id === "home"} />
-              </div>
-            </div>
-            <CategoryPicker value={category} onChange={setCategory} />
-          </section>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-[10px] uppercase tracking-widest transition-opacity ${dirty ? "text-amber-500 opacity-100" : savedFlash ? "text-green-600 opacity-100" : "opacity-0"}`}>
+            {savedFlash ? "✓ Đã lưu" : "● Chưa lưu"}
+          </span>
+          <a href={slug} target="_blank" rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary border border-primary/20 px-3 h-9 transition-colors">
+            <ExternalLink size={11} /> Xem
+          </a>
+          <Button onClick={handleSave} disabled={!title.trim() || (!dirty && !savedFlash)} size="sm"
+            className={`rounded-none h-9 px-5 text-xs uppercase tracking-widest gap-1.5 ${savedFlash ? "bg-green-600" : "bg-primary"} text-primary-foreground disabled:opacity-50`}>
+            {savedFlash ? <Check size={12} /> : <Save size={12} />}
+            {savedFlash ? "Đã cập nhật" : "Cập nhật"}
+          </Button>
+          <button onClick={() => setSidebarOpen(o => !o)} title={sidebarOpen ? "Ẩn cài đặt" : "Hiện cài đặt"}
+            className={`w-9 h-9 flex items-center justify-center border transition-colors ${sidebarOpen ? "border-primary bg-primary/10 text-primary" : "border-primary/20 hover:bg-primary/5 text-muted-foreground"}`}>
+            <Settings2 size={14} />
+          </button>
+        </div>
+      </header>
 
-          {/* Blocks list (no settings — quick toggle/reorder/delete) */}
-          <section className="space-y-2">
-            <div className="flex items-center justify-between border-b border-primary/10 pb-1">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Khối nội dung ({blocks.length} · {visibleCount} hiển thị)</div>
-              <button onClick={onOpenBuilder} className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                <PaletteIcon size={10} /> Thêm/chỉnh chi tiết
-              </button>
-            </div>
+      {/* ── Main 2-col layout ──────────────────────── */}
+      <div className="flex-1 flex min-h-0">
+        {/* Center canvas */}
+        <main className="flex-1 overflow-y-auto scrollbar-luxury bg-muted/10" onClick={() => setSelectedId(null)}>
+          <div className="max-w-3xl mx-auto py-10 px-6">
+            {/* Title input */}
+            <input
+              value={title}
+              onChange={e => { setTitle(e.target.value); markDirty(); }}
+              placeholder="Thêm tiêu đề"
+              className="w-full bg-transparent border-0 outline-none font-serif text-4xl text-foreground placeholder:text-muted-foreground/40 mb-8 px-2"
+              onClick={e => e.stopPropagation()}
+            />
+
+            {/* Insert button at top */}
+            <InsertSeparator onClick={(e) => { e.stopPropagation(); setShowAdd({ at: 0 }); }} />
+
+            {/* Blocks */}
             {blocks.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-primary/20 text-muted-foreground text-xs">
-                Trang chưa có block nào. Mở Page Builder để thêm.
+              <div className="text-center py-16 border border-dashed border-primary/20 text-muted-foreground">
+                <Layers size={36} className="mx-auto opacity-20 mb-3" />
+                <p className="text-sm mb-3">Trang trống — bắt đầu bằng cách thêm block</p>
+                <button onClick={(e) => { e.stopPropagation(); setShowAdd({ at: 0 }); }}
+                  className="inline-flex items-center gap-1.5 text-xs text-primary border border-primary/30 px-4 py-2 hover:bg-primary/5">
+                  <Plus size={11} /> Thêm block đầu tiên
+                </button>
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {blocks.map((block, idx) => {
                   const def = BLOCK_DEFINITIONS.find(d => d.type === block.type);
+                  const isSelected = selectedId === block.id;
+                  const preview = blockPreviewText(block);
                   return (
-                    <div key={block.id}
-                      className={`flex items-center gap-2 px-3 py-2 border transition-colors ${block.visible ? "border-primary/20 bg-background" : "border-primary/10 bg-muted/30 opacity-60"}`}>
-                      <span className="text-[10px] font-mono text-muted-foreground w-5 text-right">{idx + 1}.</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium truncate">{def?.label ?? block.type}</div>
-                        <div className="text-[10px] text-muted-foreground">{def?.description ?? block.type}</div>
+                    <div key={block.id}>
+                      <div className="relative group" onClick={(e) => { e.stopPropagation(); setSelectedId(block.id); }}>
+                        {/* Block toolbar (above selected block) */}
+                        {isSelected && (
+                          <div className="absolute -top-9 left-0 z-10 flex items-center bg-card border border-primary/40 shadow-lg" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => move(block.id, "up")} disabled={idx === 0}
+                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-primary/10 disabled:opacity-20 disabled:cursor-not-allowed" title="Di chuyển lên">
+                              <ChevronUp size={13} />
+                            </button>
+                            <button onClick={() => move(block.id, "down")} disabled={idx === blocks.length - 1}
+                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-primary/10 disabled:opacity-20 disabled:cursor-not-allowed" title="Di chuyển xuống">
+                              <ChevronDown size={13} />
+                            </button>
+                            <div className="w-px h-5 bg-primary/15" />
+                            <button onClick={() => toggleVisible(block.id)}
+                              className={`w-8 h-8 flex items-center justify-center hover:bg-primary/10 ${block.visible ? "text-primary" : "text-muted-foreground"}`}
+                              title={block.visible ? "Ẩn block" : "Hiện block"}>
+                              {block.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                            </button>
+                            <button onClick={() => duplicateBlock(block.id)}
+                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-primary/10" title="Nhân đôi">
+                              <Copy size={12} />
+                            </button>
+                            <div className="w-px h-5 bg-primary/15" />
+                            <button onClick={() => removeBlock(block.id)}
+                              className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-red-500/10 hover:text-red-500" title="Xóa">
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Block card preview */}
+                        <div className={[
+                          "border bg-background px-5 py-4 transition-all cursor-pointer",
+                          isSelected ? "border-primary shadow-md" : "border-transparent hover:border-primary/30",
+                          !block.visible && "opacity-50",
+                        ].filter(Boolean).join(" ")}>
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary">
+                              <Layers size={12} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[10px] uppercase tracking-widest text-primary font-medium">{def?.label ?? block.type}</span>
+                                {!block.visible && <span className="text-[9px] uppercase tracking-wider text-muted-foreground border border-muted-foreground/30 px-1.5 py-px">Ẩn</span>}
+                              </div>
+                              {preview ? (
+                                <div className="text-sm text-foreground line-clamp-2">{preview}</div>
+                              ) : (
+                                <div className="text-xs text-muted-foreground italic">{def?.description ?? "Block trống — bấm để chỉnh sửa"}</div>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0">#{idx + 1}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <button onClick={() => move(block.id, "up")} disabled={idx === 0}
-                          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed" title="Lên">
-                          <ChevronUp size={12} />
-                        </button>
-                        <button onClick={() => move(block.id, "down")} disabled={idx === blocks.length - 1}
-                          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed" title="Xuống">
-                          <ChevronDown size={12} />
-                        </button>
-                        <button onClick={() => toggleVisible(block.id)}
-                          className={`p-1.5 transition-colors ${block.visible ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-foreground"}`}
-                          title={block.visible ? "Đang hiện — bấm để ẩn" : "Đang ẩn — bấm để hiện"}>
-                          {block.visible ? <Eye size={12} /> : <EyeOff size={12} />}
-                        </button>
-                        <button onClick={() => removeBlock(block.id)}
-                          className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Xóa">
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+
+                      {/* Insert separator */}
+                      <InsertSeparator onClick={(e) => { e.stopPropagation(); setShowAdd({ at: idx + 1 }); }} />
                     </div>
                   );
                 })}
               </div>
             )}
-          </section>
-        </div>
-
-        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-primary/20 bg-card shrink-0">
-          <button onClick={onOpenBuilder} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1.5">
-            <PaletteIcon size={11} /> Mở Page Builder để chỉnh chi tiết
-          </button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="rounded-none border-primary/30 text-xs uppercase tracking-widest" onClick={onClose}>Hủy</Button>
-            <Button size="sm" className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest gap-1.5" disabled={!title.trim()} onClick={handleSave}>
-              <Save size={11} /> Lưu thay đổi
-            </Button>
           </div>
-        </div>
+        </main>
+
+        {/* ── Right Sidebar ─────────────────────── */}
+        {sidebarOpen && (
+          <aside className="w-80 shrink-0 border-l border-primary/20 bg-card flex flex-col">
+            {/* Tabs */}
+            <div className="flex border-b border-primary/20 shrink-0">
+              <button onClick={() => setSidebarTab("page")}
+                className={`flex-1 h-11 text-xs uppercase tracking-widest border-b-2 -mb-px transition-colors ${sidebarTab === "page" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                Trang
+              </button>
+              <button onClick={() => setSidebarTab("block")} disabled={!selectedBlock}
+                className={`flex-1 h-11 text-xs uppercase tracking-widest border-b-2 -mb-px transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sidebarTab === "block" && selectedBlock ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                Block {selectedBlock && `(${(selectedIdx + 1)})`}
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-luxury">
+              {sidebarTab === "page" ? (
+                <div className="p-4 space-y-5">
+                  <section className="space-y-3">
+                    <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Trạng thái & hiển thị</h4>
+                    <div className="bg-primary/5 border border-primary/15 px-3 py-2.5 text-xs text-foreground space-y-1">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Block:</span><span>{blocks.length}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Hiển thị:</span><span className="text-primary">{visibleCount}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Đã ẩn:</span><span>{blocks.length - visibleCount}</span></div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-2">
+                    <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Đường dẫn (URL)</h4>
+                    <input value={slug} onChange={e => { setSlug(e.target.value); markDirty(); }} disabled={page.id === "home"}
+                      className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-xs font-mono outline-none disabled:opacity-50" />
+                    {page.id === "home" && <p className="text-[10px] text-muted-foreground">Đường dẫn trang chủ không thay đổi được</p>}
+                  </section>
+
+                  <section className="space-y-2">
+                    <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium">Phân loại</h4>
+                    <CategoryPicker value={category} onChange={(v) => { setCategory(v); markDirty(); }} />
+                  </section>
+
+                  <section className="pt-2 border-t border-primary/10">
+                    <button onClick={onOpenBuilder}
+                      className="w-full text-xs text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2.5 flex items-center justify-center gap-2 transition-colors">
+                      <PaletteIcon size={12} /> Mở Page Builder cổ điển
+                    </button>
+                  </section>
+                </div>
+              ) : selectedBlock && selectedDef ? (
+                <div className="p-4 space-y-4">
+                  <div className="bg-primary/5 border border-primary/15 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-widest text-primary font-medium">{selectedDef.label}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{selectedDef.description}</div>
+                  </div>
+                  <div className="space-y-3">
+                    {selectedDef.fields.map(field => (
+                      <div key={field.key}>
+                        <label className="block text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">{field.label}</label>
+                        <FieldEditor field={field} value={selectedBlock.settings[field.key]}
+                          onChange={(v) => updateBlock(selectedBlock.id, { ...selectedBlock.settings, [field.key]: v })} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full p-6 text-muted-foreground gap-3">
+                  <Settings2 size={32} className="opacity-15" />
+                  <p className="text-xs text-center">Chọn một block ở giữa để chỉnh sửa nội dung</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
+
+      {showAdd && <AddBlockModal onAdd={(t) => { addAt(showAdd.at, t); setShowAdd(null); }} onClose={() => setShowAdd(null)} />}
+    </div>
+  );
+}
+
+function InsertSeparator({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <div className="relative h-6 group flex items-center justify-center">
+      <div className="absolute inset-x-0 top-1/2 h-px bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <button onClick={onClick} title="Thêm block ở đây"
+        className="relative w-6 h-6 rounded-full bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 hover:scale-110 transition-all flex items-center justify-center shadow-md">
+        <Plus size={12} />
+      </button>
     </div>
   );
 }
