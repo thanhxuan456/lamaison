@@ -393,3 +393,8 @@
     inset: -1px;
   }
 }
+
+/* Hide Clerk development mode footer badge */
+.cl-footerPages {
+  display: none !important;
+}
