@@ -48,10 +48,12 @@ function Invoke-Download([string]$url, [string]$dest) {
 }
 
 function Get-PgBin {
-    $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue
-    if ($pgBinSearch) {
-        return ($pgBinSearch | Sort-Object FullName -Descending | Select-Object -First 1).FullName
-    }
+    # Only return a bin directory that actually contains psql.exe directly inside it
+    $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue |
+        Where-Object { Test-Path (Join-Path $_.FullName "psql.exe") } |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1
+    if ($pgBinSearch) { return $pgBinSearch.FullName }
     return $null
 }
 

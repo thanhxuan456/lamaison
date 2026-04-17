@@ -35,7 +35,11 @@ if ($confirm -ne "YES") {
 # ===========================================================
 # Find PostgreSQL bin directory
 # ===========================================================
-$pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue
+$pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path (Join-Path $_.FullName "psql.exe") } |
+    Sort-Object FullName -Descending |
+    Select-Object -First 1
+
 if (-not $pgBinSearch) {
     Write-Host ""
     Write-Host "  [ERROR] PostgreSQL does not appear to be installed." -ForegroundColor Red
@@ -44,7 +48,7 @@ if (-not $pgBinSearch) {
     Read-Host "Press Enter to close"
     exit 1
 }
-$pgBin = ($pgBinSearch | Select-Object -First 1).FullName
+$pgBin = $pgBinSearch.FullName
 $env:Path = $env:Path + ";" + $pgBin
 
 # ===========================================================

@@ -172,10 +172,11 @@ $pgBin = $null
 $pgService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
 if ($pgService) {
     Write-OK "PostgreSQL already installed: $($pgService.Name)"
-    $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue
-    if ($pgBinSearch) {
-        $pgBin = ($pgBinSearch | Select-Object -First 1).FullName
-    }
+    $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue |
+        Where-Object { Test-Path (Join-Path $_.FullName "psql.exe") } |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1
+    if ($pgBinSearch) { $pgBin = $pgBinSearch.FullName }
 
     # PostgreSQL exists - ask for the existing postgres superuser password
     Write-Host ""
