@@ -10,6 +10,7 @@ import guestsRouter from "./guests";
 import menuItemsRouter from "./menu-items";
 import roomOrdersRouter from "./room-orders";
 import invoicesRouter from "./invoices";
+import settingsRouter from "./settings";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(guestsRouter);
 router.use(menuItemsRouter);
 router.use(roomOrdersRouter);
 router.use(invoicesRouter);
+router.use(settingsRouter);
 
 export default router;

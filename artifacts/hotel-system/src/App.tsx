@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
+import { ThemeApplier } from "@/components/ThemeApplier";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
@@ -214,6 +215,7 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="grand-palace-theme">
+      <ThemeApplier />
       <LanguageProvider>
        <BrandingProvider>
         <SiteContentProvider>

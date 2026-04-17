@@ -7,3 +7,4 @@ export * from "./users";
 export * from "./menu-items";
 export * from "./room-orders";
 export * from "./invoices";
+export * from "./app-settings";
