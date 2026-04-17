@@ -1,0 +1,38 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "19l92yfwrqTPUD7QeCbSf"
+uri = "file://artifacts/hotel-system/public/images/hero.png"
+type = "image"
+title = "Grand Palace Hotel lobby hero"
+
+[[generated]]
+id = "7j11YPiONL9rNkpECJh10"
+uri = "file://artifacts/hotel-system/public/images/hotel-hanoi.png"
+type = "image"
+title = "Hanoi hotel exterior"
+
+[[generated]]
+id = "l84_-Cuq1RR_v6S-g2qYD"
+uri = "file://artifacts/hotel-system/public/images/hotel-danang.png"
+type = "image"
+title = "Da Nang hotel pool"
+
+[[generated]]
+id = "zKsaZ6aIYFSXp0P5PDYDH"
+uri = "file://artifacts/hotel-system/public/images/hotel-hcmc.png"
+type = "image"
+title = "Ho Chi Minh City hotel skyline"
+
+[[generated]]
+id = "QCj2pwmrQvBCffOicAb5u"
+uri = "file://artifacts/hotel-system/public/images/room-suite.png"
+type = "image"
+title = "Luxury suite bedroom"
+
+[[generated]]
+id = "J0nM7czhuJKsKfjtFhrCB"
+uri = "file://artifacts/hotel-system/public/images/restaurant.png"
+type = "image"
+title = "Elegant hotel restaurant"

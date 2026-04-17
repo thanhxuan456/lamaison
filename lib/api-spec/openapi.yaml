@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Luxury Hotel System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: hotels
+    description: Hotel operations
+  - name: rooms
+    description: Room operations
+  - name: bookings
+    description: Booking operations
 paths:
   /healthz:
     get:
@@ -24,6 +30,174 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /hotels:
+    get:
+      operationId: listHotels
+      tags: [hotels]
+      summary: List all hotels
+      responses:
+        "200":
+          description: List of hotels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hotel"
+
+  /hotels/{id}:
+    get:
+      operationId: getHotel
+      tags: [hotels]
+      summary: Get hotel by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Hotel details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hotel"
+        "404":
+          description: Hotel not found
+
+  /hotels/{id}/rooms:
+    get:
+      operationId: listHotelRooms
+      tags: [rooms]
+      summary: List rooms for a hotel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+
+  /hotels/{id}/summary:
+    get:
+      operationId: getHotelSummary
+      tags: [hotels]
+      summary: Get hotel summary stats
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Hotel summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HotelSummary"
+
+  /rooms/{id}:
+    get:
+      operationId: getRoom
+      tags: [rooms]
+      summary: Get room by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "404":
+          description: Room not found
+
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List all bookings
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      summary: Create a new booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingRequest"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}:
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      summary: Get booking by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: Booking not found
+    delete:
+      operationId: cancelBooking
+      tags: [bookings]
+      summary: Cancel a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +208,195 @@ components:
       required:
         - status
 
+    Hotel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        description:
+          type: string
+        rating:
+          type: number
+        imageUrl:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        priceFrom:
+          type: number
+        totalRooms:
+          type: integer
+        availableRooms:
+          type: integer
+        phone:
+          type: string
+        email:
+          type: string
+      required:
+        - id
+        - name
+        - location
+        - city
+        - address
+        - description
+        - rating
+        - imageUrl
+        - amenities
+        - priceFrom
+        - totalRooms
+        - availableRooms
+        - phone
+        - email
+
+    HotelSummary:
+      type: object
+      properties:
+        hotelId:
+          type: integer
+        totalRooms:
+          type: integer
+        availableRooms:
+          type: integer
+        occupancyRate:
+          type: number
+        totalBookings:
+          type: integer
+        popularRoomType:
+          type: string
+        avgRating:
+          type: number
+      required:
+        - hotelId
+        - totalRooms
+        - availableRooms
+        - occupancyRate
+        - totalBookings
+        - popularRoomType
+        - avgRating
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+        hotelId:
+          type: integer
+        roomNumber:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        pricePerNight:
+          type: number
+        capacity:
+          type: integer
+        imageUrl:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        isAvailable:
+          type: boolean
+        floor:
+          type: integer
+        view:
+          type: string
+      required:
+        - id
+        - hotelId
+        - roomNumber
+        - type
+        - description
+        - pricePerNight
+        - capacity
+        - imageUrl
+        - amenities
+        - isAvailable
+        - floor
+        - view
+
+    BookingRequest:
+      type: object
+      properties:
+        roomId:
+          type: integer
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+        guestPhone:
+          type: string
+        checkInDate:
+          type: string
+        checkOutDate:
+          type: string
+        numberOfGuests:
+          type: integer
+        specialRequests:
+          type: string
+      required:
+        - roomId
+        - guestName
+        - guestEmail
+        - guestPhone
+        - checkInDate
+        - checkOutDate
+        - numberOfGuests
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        roomId:
+          type: integer
+        hotelId:
+          type: integer
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+        guestPhone:
+          type: string
+        checkInDate:
+          type: string
+        checkOutDate:
+          type: string
+        numberOfGuests:
+          type: integer
+        specialRequests:
+          type: string
+        status:
+          type: string
+        totalPrice:
+          type: number
+        createdAt:
+          type: string
+        room:
+          $ref: "#/components/schemas/Room"
+        hotel:
+          $ref: "#/components/schemas/Hotel"
+      required:
+        - id
+        - roomId
+        - hotelId
+        - guestName
+        - guestEmail
+        - guestPhone
+        - checkInDate
+        - checkOutDate
+        - numberOfGuests
+        - status
+        - totalPrice
+        - createdAt
