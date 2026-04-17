@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <rect width="200" height="80" fill="none"/>
+  <!-- Crown ornament -->
+  <polygon points="100,8 108,22 120,16 112,30 126,30 100,46 74,30 88,30 80,16 92,22" fill="#D4AF37" opacity="0.9"/>
+  <!-- Horizontal rule -->
+  <line x1="30" y1="50" x2="170" y2="50" stroke="#D4AF37" stroke-width="0.8" opacity="0.6"/>
+  <!-- Hotel name -->
+  <text x="100" y="66" font-family="serif" font-size="16" letter-spacing="3" fill="#D4AF37" text-anchor="middle" font-weight="600">GRAND PALACE</text>
+  <line x1="30" y1="72" x2="170" y2="72" stroke="#D4AF37" stroke-width="0.8" opacity="0.6"/>
+</svg>
