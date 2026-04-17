@@ -121,9 +121,6 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
                 <Menu size={18} />
               </button>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] tracking-[0.4em] uppercase text-primary font-serif mb-0.5">
-                  {t("admin.label")}
-                </div>
                 <h1 className="font-serif text-xl text-foreground truncate">{title}</h1>
                 {subtitle && (
                   <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
