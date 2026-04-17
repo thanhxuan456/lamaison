@@ -161,10 +161,8 @@ if (-not (Test-Path $Config.InstallDir)) {
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Write-Info "Copying from '$scriptDir' to '$($Config.InstallDir)'..."
 
-$excludes = @(".git", "node_modules", "dist", ".replit-artifact")
-Get-ChildItem -Path $scriptDir -Exclude $excludes | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $Config.InstallDir -Recurse -Force -ErrorAction SilentlyContinue
-}
+robocopy $scriptDir $Config.InstallDir /E /XD ".git" "node_modules" "dist" ".replit-artifact" /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "File copy failed (robocopy exit code $LASTEXITCODE)." }
 Write-OK "Files copied"
 
 # ===========================================================
@@ -226,6 +224,13 @@ if (-not (Test-Path $rollupWinBin)) {
     Write-Info "Installing Windows-specific Rollup native binary..."
     & pnpm add -w @rollup/rollup-win32-x64-msvc 2>&1 | Out-Null
     Write-OK "Rollup Windows binary installed"
+}
+
+$lightningWinBin = Join-Path $Config.InstallDir "node_modules\.pnpm\lightningcss-win32-x64-msvc*"
+if (-not (Test-Path $lightningWinBin)) {
+    Write-Info "Installing Windows-specific LightningCSS native binary..."
+    & pnpm add -w lightningcss-win32-x64-msvc 2>&1 | Out-Null
+    Write-OK "LightningCSS Windows binary installed"
 }
 
 Write-Info "Applying database schema..."
