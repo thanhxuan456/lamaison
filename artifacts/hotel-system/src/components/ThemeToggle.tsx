@@ -21,15 +21,30 @@ export function ThemeToggle() {
       aria-pressed={isDark}
       title={label}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative inline-flex items-center justify-center w-10 h-10 border border-primary/40 text-primary hover:border-primary hover:bg-primary/10 transition-colors"
+      className="group relative inline-flex items-center justify-center w-11 h-11 transition-all duration-500"
     >
+      {/* Outer ornamental ring */}
+      <span className="absolute inset-0 border border-primary/40 rotate-45 group-hover:rotate-[225deg] group-hover:border-primary transition-all duration-700"></span>
+      {/* Inner circle */}
+      <span className="absolute inset-[3px] rounded-full border border-primary/30 group-hover:border-primary/70 group-hover:bg-primary/10 transition-all duration-500"></span>
+      {/* Decorative corner dots */}
+      <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[3px] w-1 h-1 bg-primary rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></span>
+      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[3px] w-1 h-1 bg-primary rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></span>
+
+      {/* Icons */}
       <Sun
-        size={18}
-        className={`absolute transition-all duration-500 ${isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+        size={16}
+        strokeWidth={1.5}
+        className={`absolute text-primary transition-all duration-500 ${
+          isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.6)]"
+        }`}
       />
       <Moon
-        size={18}
-        className={`absolute transition-all duration-500 ${isDark ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"}`}
+        size={16}
+        strokeWidth={1.5}
+        className={`absolute text-primary transition-all duration-500 ${
+          isDark ? "rotate-0 scale-100 opacity-100 drop-shadow-[0_0_6px_rgba(212,175,55,0.6)]" : "-rotate-90 scale-0 opacity-0"
+        }`}
       />
     </button>
   );
