@@ -90,7 +90,7 @@ export function LocationSwitcher() {
         </div>
 
         {/* Scrollable hotel items */}
-        <div className="overflow-y-auto max-h-[min(70vh,400px)]" style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--primary) / 0.5) transparent" }}>
+        <div className="overflow-y-auto max-h-[min(70vh,400px)] scrollbar-luxury">
           {hotels?.map((h) => {
             const meta = getCityMeta(h.city);
             const active = h.id === selectedId;

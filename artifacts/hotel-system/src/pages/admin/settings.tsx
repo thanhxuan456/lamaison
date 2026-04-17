@@ -6,13 +6,60 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CreditCard, Save, Settings, Globe, Link2,
   Eye, EyeOff, Building, RefreshCw, CheckCircle2,
-  XCircle, Loader2, Wifi, WifiOff, Shield,
+  XCircle, Loader2, Wifi, WifiOff, Shield, QrCode, Copy, Download,
 } from "lucide-react";
 
 const PAYMENT_KEY = "grand-palace-payment-settings";
 const GENERAL_KEY  = "grand-palace-general-settings";
 const AFFILIATE_KEY = "grand-palace-affiliate-settings";
 const OAUTH_KEY    = "grand-palace-oauth-settings";
+const BANK_QR_KEY  = "grand-palace-bank-qr";
+
+const VIET_BANKS = [
+  { code: "VCB",   name: "Vietcombank",       fullName: "Ngân hàng TMCP Ngoại thương Việt Nam" },
+  { code: "ICB",   name: "VietinBank",         fullName: "Ngân hàng TMCP Công thương Việt Nam" },
+  { code: "BIDV",  name: "BIDV",               fullName: "Ngân hàng TMCP Đầu tư và Phát triển VN" },
+  { code: "VBA",   name: "Agribank",           fullName: "Ngân hàng Nông nghiệp & PTNT Việt Nam" },
+  { code: "MB",    name: "MBBank",             fullName: "Ngân hàng TMCP Quân đội" },
+  { code: "TCB",   name: "Techcombank",        fullName: "Ngân hàng TMCP Kỹ Thương Việt Nam" },
+  { code: "ACB",   name: "ACB",                fullName: "Ngân hàng TMCP Á Châu" },
+  { code: "VPB",   name: "VPBank",             fullName: "Ngân hàng TMCP Việt Nam Thịnh Vượng" },
+  { code: "STB",   name: "Sacombank",          fullName: "Ngân hàng TMCP Sài Gòn Thương Tín" },
+  { code: "HDB",   name: "HDBank",             fullName: "Ngân hàng TMCP Phát triển TP.HCM" },
+  { code: "TPB",   name: "TPBank",             fullName: "Ngân hàng TMCP Tiên Phong" },
+  { code: "OCB",   name: "OCB",                fullName: "Ngân hàng TMCP Phương Đông" },
+  { code: "VIB",   name: "VIB",                fullName: "Ngân hàng TMCP Quốc tế Việt Nam" },
+  { code: "MSB",   name: "MSB",                fullName: "Ngân hàng TMCP Hàng Hải Việt Nam" },
+  { code: "LPB",   name: "LienVietPostBank",   fullName: "Ngân hàng TMCP Bưu điện Liên Việt" },
+  { code: "SHB",   name: "SHB",                fullName: "Ngân hàng TMCP Sài Gòn - Hà Nội" },
+  { code: "SEAB",  name: "SeABank",            fullName: "Ngân hàng TMCP Đông Nam Á" },
+  { code: "ABBANK",name: "ABBank",             fullName: "Ngân hàng TMCP An Bình" },
+  { code: "NCB",   name: "NCB",                fullName: "Ngân hàng TMCP Quốc Dân" },
+  { code: "NVB",   name: "NamABank",           fullName: "Ngân hàng TMCP Nam Á" },
+  { code: "KLB",   name: "KienLongBank",       fullName: "Ngân hàng TMCP Kiên Long" },
+  { code: "PVCB",  name: "PVcomBank",          fullName: "Ngân hàng TMCP Đại Chúng Việt Nam" },
+  { code: "WOO",   name: "Woori",              fullName: "Ngân hàng Woori Việt Nam" },
+  { code: "SHBVN", name: "Shinhan",            fullName: "Ngân hàng TNHH MTV Shinhan Việt Nam" },
+  { code: "UOB",   name: "UOB",                fullName: "Ngân hàng United Overseas Bank" },
+  { code: "HSBC",  name: "HSBC",               fullName: "Ngân hàng TNHH MTV HSBC Việt Nam" },
+];
+
+interface BankQRSettings {
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  defaultAmount: string;
+  defaultDescription: string;
+}
+
+const DEFAULT_BANK_QR: BankQRSettings = {
+  bankCode: "VCB", accountNumber: "", accountName: "GRAND PALACE HOTELS",
+  defaultAmount: "", defaultDescription: "Dat phong Grand Palace",
+};
+
+function loadBankQR(): BankQRSettings {
+  try { const s = localStorage.getItem(BANK_QR_KEY); return s ? { ...DEFAULT_BANK_QR, ...JSON.parse(s) } : DEFAULT_BANK_QR; } catch { return DEFAULT_BANK_QR; }
+}
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
@@ -43,12 +90,12 @@ interface OtaChannel {
 }
 
 const DEFAULT_PAYMENTS: PaymentMethod[] = [
-  { id: "vnpay",  name: "VNPay",              description: "Cổng thanh toán trực tuyến phổ biến nhất Việt Nam", enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "🏦", color: "#005BAA" },
-  { id: "momo",   name: "MoMo",               description: "Ví điện tử MoMo — thanh toán nhanh qua QR",        enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "💜", color: "#AE2070" },
-  { id: "zalopay",name: "ZaloPay",            description: "Ví điện tử ZaloPay tích hợp với Zalo",             enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "🔵", color: "#0068FF" },
-  { id: "stripe", name: "Stripe",             description: "Thanh toán quốc tế — Visa, Mastercard, AmEx",     enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "💳", color: "#635BFF" },
-  { id: "paypal", name: "PayPal",             description: "Thanh toán quốc tế an toàn qua PayPal",           enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "🅿️", color: "#003087" },
-  { id: "bank",   name: "Chuyển khoản ngân hàng", description: "Thanh toán thủ công qua tài khoản ngân hàng", enabled: true,  apiKey: "", secretKey: "", webhookUrl: "", testMode: false, logo: "🏧", color: "#2E7D32" },
+  { id: "vnpay",  name: "VNPay",              description: "Cổng thanh toán trực tuyến phổ biến nhất Việt Nam", enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "https://logo.clearbit.com/vnpay.vn", color: "#005BAA" },
+  { id: "momo",   name: "MoMo",               description: "Ví điện tử MoMo — thanh toán nhanh qua QR",        enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "https://logo.clearbit.com/momo.vn", color: "#AE2070" },
+  { id: "zalopay",name: "ZaloPay",            description: "Ví điện tử ZaloPay tích hợp với Zalo",             enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "https://logo.clearbit.com/zalopay.vn", color: "#0068FF" },
+  { id: "stripe", name: "Stripe",             description: "Thanh toán quốc tế — Visa, Mastercard, AmEx",     enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "https://cdn.simpleicons.org/stripe/635BFF", color: "#635BFF" },
+  { id: "paypal", name: "PayPal",             description: "Thanh toán quốc tế an toàn qua PayPal",           enabled: false, apiKey: "", secretKey: "", webhookUrl: "", testMode: true,  logo: "https://cdn.simpleicons.org/paypal/003087", color: "#003087" },
+  { id: "bank",   name: "Chuyển khoản ngân hàng", description: "Tạo mã QR VietQR để khách chuyển khoản trực tiếp", enabled: true, apiKey: "", secretKey: "", webhookUrl: "", testMode: false, logo: "https://vietqr.io/img/VIETQR.svg", color: "#2E7D32" },
 ];
 const DEFAULT_GENERAL: GeneralSettings = {
   siteName: "Grand Palace Hotels & Resorts", siteUrl: "https://grandpalace.vn",
@@ -69,6 +116,184 @@ const DEFAULT_OAUTH: OAuthSettings = {
 
 function load<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; } catch { return fallback; }
+}
+
+/* ── Brand Logo Image with colored-initial fallback ── */
+function LogoImg({ src, name, color, size = 40 }: { src: string; name: string; color: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const initials = name.slice(0, 2).toUpperCase();
+  if (failed || !src) {
+    return (
+      <div style={{ width: size, height: size, backgroundColor: color + "22", border: `1px solid ${color}44` }}
+        className="flex items-center justify-center rounded-sm shrink-0">
+        <span style={{ color, fontSize: size * 0.3, fontWeight: 700, lineHeight: 1 }}>{initials}</span>
+      </div>
+    );
+  }
+  return (
+    <img src={src} alt={name} width={size} height={size}
+      className="rounded-sm object-contain shrink-0 bg-white p-0.5"
+      style={{ width: size, height: size, border: "1px solid #e5e7eb" }}
+      onError={() => setFailed(true)} />
+  );
+}
+
+/* ── Bank QR Section (inside bank payment expanded area) ── */
+function BankQRSection({ toast }: { toast: ReturnType<typeof import("@/hooks/use-toast").useToast>["toast"] }) {
+  const [qr, setQr] = useState<BankQRSettings>(() => loadBankQR());
+  const [preview, setPreview] = useState({ amount: "", description: "" });
+  const [saved, setSaved] = useState(false);
+  const set = (k: keyof BankQRSettings, v: string) => setQr((x) => ({ ...x, [k]: v }));
+
+  const bank = VIET_BANKS.find((b) => b.code === qr.bankCode) ?? VIET_BANKS[0];
+
+  const buildQrUrl = (amount: string, desc: string) => {
+    if (!qr.accountNumber) return null;
+    const base = `https://img.vietqr.io/image/${qr.bankCode}-${qr.accountNumber}-compact2.png`;
+    const params = new URLSearchParams();
+    if (qr.accountName) params.set("accountName", qr.accountName);
+    if (amount) params.set("amount", amount);
+    if (desc) params.set("addInfo", desc);
+    return `${base}?${params.toString()}`;
+  };
+
+  const qrUrl = buildQrUrl(preview.amount || qr.defaultAmount, preview.description || qr.defaultDescription);
+
+  const handleSave = () => {
+    localStorage.setItem(BANK_QR_KEY, JSON.stringify(qr));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    toast({ title: "Thông tin ngân hàng đã lưu", description: `${bank.name} · ${qr.accountNumber}` });
+  };
+
+  const copyText = (text: string) => { navigator.clipboard.writeText(text); toast({ title: "Đã sao chép" }); };
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Ngân hàng *</label>
+          <select className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
+            value={qr.bankCode} onChange={(e) => set("bankCode", e.target.value)}>
+            {VIET_BANKS.map((b) => (
+              <option key={b.code} value={b.code}>{b.name} — {b.fullName}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Số tài khoản *</label>
+          <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none font-mono tracking-widest"
+            value={qr.accountNumber} onChange={(e) => set("accountNumber", e.target.value)} placeholder="1234567890" />
+        </div>
+        <div>
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tên chủ tài khoản (IN HOA)</label>
+          <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none uppercase"
+            value={qr.accountName} onChange={(e) => set("accountName", e.target.value.toUpperCase())} placeholder="GRAND PALACE HOTELS" />
+        </div>
+        <div>
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Số tiền mặc định (VND, tuỳ chọn)</label>
+          <input type="number" className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
+            value={qr.defaultAmount} onChange={(e) => set("defaultAmount", e.target.value)} placeholder="500000" />
+        </div>
+        <div>
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Nội dung chuyển khoản mặc định</label>
+          <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
+            value={qr.defaultDescription} onChange={(e) => set("defaultDescription", e.target.value)} placeholder="Dat phong Grand Palace" />
+        </div>
+      </div>
+
+      {/* QR Preview */}
+      <div className="border border-primary/20 bg-background">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-primary/15 bg-primary/5">
+          <div className="flex items-center gap-2">
+            <QrCode size={13} className="text-primary" />
+            <span className="text-[11px] tracking-[0.2em] uppercase text-primary font-serif">Xem trước mã QR VietQR</span>
+          </div>
+          <div className="flex gap-2">
+            <input type="number" className="border border-primary/20 bg-background px-2 py-1 text-xs w-28 outline-none"
+              value={preview.amount} onChange={(e) => setPreview((p) => ({ ...p, amount: e.target.value }))} placeholder="Số tiền test..." />
+            <input className="border border-primary/20 bg-background px-2 py-1 text-xs w-40 outline-none"
+              value={preview.description} onChange={(e) => setPreview((p) => ({ ...p, description: e.target.value }))} placeholder="Nội dung test..." />
+          </div>
+        </div>
+        <div className="p-5 flex gap-6 items-start">
+          {qrUrl ? (
+            <>
+              <div className="shrink-0">
+                <img src={qrUrl} alt="VietQR" className="w-48 h-48 object-contain border border-primary/20 bg-white p-1"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = ""; (e.currentTarget as HTMLImageElement).alt = "QR Error"; }} />
+                <div className="flex gap-1.5 mt-2">
+                  <a href={qrUrl} download="vietqr.png"
+                    className="flex-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-primary border border-primary/20 py-1 transition-colors">
+                    <Download size={10} /> Tải QR
+                  </a>
+                  <button onClick={() => copyText(qrUrl)}
+                    className="flex-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-primary border border-primary/20 py-1 transition-colors">
+                    <Copy size={10} /> Copy URL
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <LogoImg src={`https://logo.clearbit.com/${bank.name.toLowerCase().replace(/\s/g, "")}.com`}
+                    name={bank.name} color="#2E7D32" size={32} />
+                  <div>
+                    <div className="font-medium text-foreground">{bank.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{bank.fullName}</div>
+                  </div>
+                </div>
+                <div className="bg-muted/30 border border-primary/10 p-3 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">STK:</span>
+                    <span className="font-mono font-semibold text-foreground tracking-wider flex items-center gap-1">
+                      {qr.accountNumber}
+                      <button onClick={() => copyText(qr.accountNumber)} className="hover:text-primary transition-colors"><Copy size={10} /></button>
+                    </span>
+                  </div>
+                  {qr.accountName && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tên TK:</span>
+                      <span className="font-medium text-foreground uppercase">{qr.accountName}</span>
+                    </div>
+                  )}
+                  {(preview.amount || qr.defaultAmount) && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Số tiền:</span>
+                      <span className="font-semibold text-primary">
+                        {Number(preview.amount || qr.defaultAmount).toLocaleString("vi-VN")} ₫
+                      </span>
+                    </div>
+                  )}
+                  {(preview.description || qr.defaultDescription) && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nội dung:</span>
+                      <span className="text-foreground">{preview.description || qr.defaultDescription}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Powered by <a href="https://vietqr.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">VietQR.io</a> — hỗ trợ tất cả app ngân hàng Việt Nam
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-full py-8 text-muted-foreground">
+              <QrCode size={40} className="opacity-20 mb-3" />
+              <p className="text-sm">Nhập số tài khoản để xem mã QR</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} size="sm"
+          className={`rounded-none text-xs uppercase tracking-widest h-8 px-4 gap-1.5 ${saved ? "bg-green-600" : "bg-primary"} text-primary-foreground`}>
+          {saved ? <CheckCircle2 size={11} /> : <Save size={11} />}
+          {saved ? "Đã lưu!" : "Lưu thông tin ngân hàng"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 /* ── Toggle helper ── */
@@ -134,7 +359,7 @@ function PaymentTab() {
       {methods.map((method) => (
         <div key={method.id} className={`border ${method.enabled ? "border-primary/30 bg-primary/3" : "border-primary/15 bg-card"} transition-all`}>
           <div className="flex items-center gap-4 px-5 py-4">
-            <span className="text-2xl">{method.logo}</span>
+            <LogoImg src={method.logo} name={method.name} color={method.color} size={40} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-foreground">{method.name}</span>
@@ -177,9 +402,7 @@ function PaymentTab() {
                   </label>
                 </>
               ) : (
-                <div className="text-sm text-muted-foreground bg-primary/5 border border-primary/15 p-4">
-                  Chuyển khoản ngân hàng không cần cấu hình API. Thông tin tài khoản ngân hàng được quản lý tại <strong>Admin → Nội dung</strong>.
-                </div>
+                <BankQRSection toast={toast} />
               )}
             </div>
           )}
@@ -456,8 +679,14 @@ function OtaTab() {
   const [syncing, setSyncing] = useState<string | null>(null);
 
   const OTA_LOGOS: Record<string, string> = {
-    booking_com: "🔵", agoda: "🔴", expedia: "🟡", airbnb: "🏠",
-    traveloka: "🟢", tripadvisor: "🦉", trip_com: "✈️", klook: "🎟️",
+    booking_com: "https://logo.clearbit.com/booking.com",
+    agoda:        "https://logo.clearbit.com/agoda.com",
+    expedia:      "https://logo.clearbit.com/expedia.com",
+    airbnb:       "https://logo.clearbit.com/airbnb.com",
+    traveloka:    "https://logo.clearbit.com/traveloka.com",
+    tripadvisor:  "https://logo.clearbit.com/tripadvisor.com",
+    trip_com:     "https://logo.clearbit.com/trip.com",
+    klook:        "https://logo.clearbit.com/klook.com",
   };
   const OTA_COLORS: Record<string, string> = {
     booking_com: "#003580", agoda: "#e31837", expedia: "#f5a623", airbnb: "#ff5a5f",
@@ -546,9 +775,7 @@ function OtaTab() {
       {channels.map((ch) => (
         <div key={ch.id} className={`border transition-all ${ch.enabled ? "border-primary/30 bg-primary/3" : "border-primary/15 bg-card"}`}>
           <div className="flex items-center gap-4 px-5 py-4">
-            <div className="w-10 h-10 flex items-center justify-center text-xl border border-primary/10 bg-background">
-              {OTA_LOGOS[ch.id] ?? "🌐"}
-            </div>
+            <LogoImg src={OTA_LOGOS[ch.id] ?? ""} name={ch.name} color={OTA_COLORS[ch.id] ?? "#888"} size={40} />
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground text-sm">{ch.name}</span>

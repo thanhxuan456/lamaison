@@ -309,6 +309,31 @@
     @apply hidden;
   }
 
+  /* Native select options — fix dark mode background bleed from browser defaults */
+  select option {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Thin themed scrollbar for dropdown panels / inner scroll areas */
+  .scrollbar-luxury {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.45) transparent;
+  }
+  .scrollbar-luxury::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-luxury::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-luxury::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.45);
+    border-radius: 0;
+  }
+  .scrollbar-luxury::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.75);
+  }
+
   /* Placeholder styling for contentEditable div */
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);

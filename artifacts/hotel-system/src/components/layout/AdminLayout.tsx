@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { BackToTop } from "@/components/BackToTop";
 import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
-  Palette, ChevronRight, Menu, FileText, ArrowLeft, Settings,
+  Palette, ChevronRight, Menu, FileText, ArrowLeft, Settings, Search,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { icon: Users,           labelKey: "admin.nav.users",     path: "/admin/users" },
   { icon: MessageSquare,   labelKey: "admin.nav.chat",      path: "/admin/chat" },
   { icon: FileText,        labelKey: "admin.nav.pages",     path: "/admin/pages" },
+  { icon: Search,          labelKey: "admin.nav.seo",       path: "/admin/seo" },
   { icon: Palette,         labelKey: "admin.nav.theme",     path: "/admin/theme" },
   { icon: Settings,        labelKey: "admin.nav.settings",  path: "/admin/settings" },
 ];
