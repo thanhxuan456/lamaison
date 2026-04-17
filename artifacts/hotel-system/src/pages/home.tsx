@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { MapPin, Star, ChevronRight } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { useSiteContent } from "@/lib/site-content";
 
 export default function Home() {
   const { data: hotels, isLoading } = useListHotels();
   const [, setLocation] = useLocation();
-  const { t } = useT();
+  const { content } = useSiteContent();
 
   return (
     <PageLayout>
@@ -17,7 +17,7 @@ export default function Home() {
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/hero.png"
+            src={content.hero.imageUrl || "/images/hero.png"}
             alt="Grand Palace Hotel Lobby"
             className="w-full h-full object-cover"
           />
@@ -32,14 +32,14 @@ export default function Home() {
             transition={{ duration: 1, ease: "easeOut" }}
           >
             <h2 className="text-primary font-serif tracking-[0.2em] text-sm md:text-base uppercase mb-6">
-              {t("home.hero.kicker")}
+              {content.hero.kicker}
             </h2>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white mb-8 leading-tight drop-shadow-lg">
-              {t("home.hero.title1")} <br className="hidden md:block" /> {t("home.hero.title2")}
+              {content.hero.title1} <br className="hidden md:block" /> {content.hero.title2}
             </h1>
             <div className="w-24 h-[1px] bg-primary mx-auto mb-8"></div>
             <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto mb-12 leading-relaxed">
-              {t("home.hero.subtitle")}
+              {content.hero.subtitle}
             </p>
             <Button
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-8 py-6 text-sm tracking-widest uppercase border border-transparent hover:border-white transition-all"
@@ -47,7 +47,7 @@ export default function Home() {
                 document.getElementById("destinations")?.scrollIntoView({ behavior: "smooth" });
               }}
             >
-              {t("home.hero.cta")}
+              {content.hero.cta}
             </Button>
           </motion.div>
         </div>
@@ -61,10 +61,10 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-8 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-primary font-serif tracking-[0.2em] text-sm uppercase mb-4">
-              {t("home.dest.kicker")}
+              {content.dest.kicker}
             </h2>
             <h3 className="text-3xl md:text-5xl font-serif text-foreground mb-6">
-              {t("home.dest.title")}
+              {content.dest.title}
             </h3>
             <div className="w-16 h-[2px] bg-primary mx-auto"></div>
           </div>
@@ -119,7 +119,7 @@ export default function Home() {
                           {hotel.description}
                         </p>
                         <span className="inline-flex items-center text-primary text-sm uppercase tracking-widest font-medium group/btn">
-                          {t("common.details")} <ChevronRight size={16} className="ml-1 transition-transform group-hover/btn:translate-x-1" />
+                          Chi tiết <ChevronRight size={16} className="ml-1 transition-transform group-hover/btn:translate-x-1" />
                         </span>
                       </div>
                     </div>
@@ -141,28 +141,28 @@ export default function Home() {
             <div className="order-2 lg:order-1 relative">
               <div className="absolute -inset-4 border border-primary/20 z-0"></div>
               <img
-                src="/images/restaurant.png"
+                src={content.exp.imageUrl || "/images/restaurant.png"}
                 alt="Fine Dining"
                 className="w-full h-auto aspect-[4/3] object-cover relative z-10 border border-primary/40 shadow-2xl"
               />
               <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-primary/10 border border-primary/30 z-20 flex items-center justify-center p-6 text-center backdrop-blur-sm hidden md:flex">
-                <p className="font-serif italic text-primary text-lg">{t("home.exp.quote")}</p>
+                <p className="font-serif italic text-primary text-lg">{content.exp.quote}</p>
               </div>
             </div>
 
             <div className="order-1 lg:order-2">
               <h2 className="text-primary font-serif tracking-[0.2em] text-sm uppercase mb-4">
-                {t("home.exp.kicker")}
+                {content.exp.kicker}
               </h2>
               <h3 className="text-3xl md:text-5xl font-serif text-white mb-6 leading-tight">
-                {t("home.exp.title")}
+                {content.exp.title}
               </h3>
               <div className="w-16 h-[2px] bg-primary mb-8"></div>
               <p className="text-white/70 text-lg font-light leading-relaxed mb-8">
-                {t("home.exp.body")}
+                {content.exp.body}
               </p>
               <ul className="space-y-4 mb-10">
-                {[t("home.exp.item1"), t("home.exp.item2"), t("home.exp.item3"), t("home.exp.item4")].map((item, i) => (
+                {[content.exp.item1, content.exp.item2, content.exp.item3, content.exp.item4].map((item, i) => (
                   <li key={i} className="flex items-center gap-4 text-white/80">
                     <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                     <span className="font-light">{item}</span>
@@ -170,7 +170,7 @@ export default function Home() {
                 ))}
               </ul>
               <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none px-8 py-6 text-sm tracking-widest uppercase bg-transparent">
-                {t("home.exp.cta")}
+                {content.exp.cta}
               </Button>
             </div>
           </div>

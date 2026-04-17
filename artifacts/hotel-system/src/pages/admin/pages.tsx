@@ -6,8 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   FileText, Plus, Edit, Trash2, X, Globe, EyeOff,
   Share2, Navigation, Save, GripVertical, Newspaper,
-  Tag, Calendar, Search, Image,
+  Tag, Calendar, Search, Image, LayoutDashboard, RotateCcw, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { useSiteContent, DEFAULT_HOME_CONTENT, type HomeContent } from "@/lib/site-content";
 
 const PAGES_KEY   = "grand-palace-cms-pages";
 const POSTS_KEY   = "grand-palace-cms-posts";
@@ -610,26 +611,236 @@ function SocialTab() {
   );
 }
 
+/* ──────────── HOME TAB ──────────── */
+function SectionCard({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-primary/20 overflow-hidden">
+      <button onClick={onToggle} className="w-full flex items-center justify-between px-5 py-4 border-b border-primary/15 bg-primary/5 hover:bg-primary/10 transition-colors">
+        <span className="text-[11px] tracking-[0.3em] uppercase text-primary font-serif">{title}</span>
+        {open ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+      </button>
+      {open && <div className="p-5 space-y-4">{children}</div>}
+    </div>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">{label}</label>
+      {children}
+      {hint && <p className="text-[10px] text-muted-foreground/60 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function Input({ value, onChange, placeholder, mono }: { value: string; onChange: (v: string) => void; placeholder?: string; mono?: boolean }) {
+  return (
+    <input
+      className={`w-full border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none ${mono ? "font-mono text-xs" : ""}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  );
+}
+
+function Textarea({ value, onChange, placeholder, rows = 3 }: { value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
+  return (
+    <textarea
+      className="w-full border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none resize-none"
+      style={{ minHeight: `${rows * 1.75 + 1.5}rem` }}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  );
+}
+
+function ImageField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <Field label={label} hint="Để trống để dùng ảnh mặc định">
+      <div className="flex gap-2">
+        <input
+          className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none font-mono text-xs"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/images/hero.png hoặc https://..."
+        />
+        <div className="w-14 h-10 border border-primary/20 bg-muted/20 shrink-0 overflow-hidden flex items-center justify-center">
+          {value ? (
+            <img src={value} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+          ) : (
+            <Image size={14} className="text-muted-foreground" />
+          )}
+        </div>
+      </div>
+    </Field>
+  );
+}
+
+function HomeTab() {
+  const { content, updateContent } = useSiteContent();
+  const { toast } = useToast();
+  const [form, setForm] = useState<HomeContent>(() => content);
+  const [sections, setSections] = useState({ hero: true, dest: false, exp: false });
+
+  const setHero = (k: keyof HomeContent["hero"], v: string) =>
+    setForm((f) => ({ ...f, hero: { ...f.hero, [k]: v } }));
+  const setDest = (k: keyof HomeContent["dest"], v: string) =>
+    setForm((f) => ({ ...f, dest: { ...f.dest, [k]: v } }));
+  const setExp = (k: keyof HomeContent["exp"], v: string) =>
+    setForm((f) => ({ ...f, exp: { ...f.exp, [k]: v } }));
+
+  const toggle = (s: keyof typeof sections) => setSections((x) => ({ ...x, [s]: !x[s] }));
+
+  const handleSave = () => {
+    updateContent(form);
+    toast({ title: "Đã lưu trang chủ", description: "Thay đổi hiển thị ngay lập tức trên website." });
+  };
+
+  const handleReset = () => {
+    if (!confirm("Khôi phục toàn bộ nội dung về mặc định?")) return;
+    setForm(DEFAULT_HOME_CONTENT);
+    updateContent(DEFAULT_HOME_CONTENT);
+    toast({ title: "Đã khôi phục mặc định" });
+  };
+
+  return (
+    <div className="max-w-3xl space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm text-muted-foreground">Chỉnh sửa nội dung các phần trên trang chủ. Thay đổi áp dụng ngay khi lưu.</p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset}
+            className="rounded-none border-primary/30 text-muted-foreground text-xs uppercase tracking-widest h-8 px-3 gap-1.5">
+            <RotateCcw size={11} /> Mặc định
+          </Button>
+          <Button size="sm" onClick={handleSave}
+            className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest h-8 px-4 gap-1.5">
+            <Save size={11} /> Lưu thay đổi
+          </Button>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <SectionCard title="Phần Hero — Màn hình chào đầu tiên" open={sections.hero} onToggle={() => toggle("hero")}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Kicker (dòng nhỏ phía trên)">
+            <Input value={form.hero.kicker} onChange={(v) => setHero("kicker", v)} placeholder="Tinh hoa của sự xa hoa" />
+          </Field>
+          <Field label="Nút CTA (nút khám phá)">
+            <Input value={form.hero.cta} onChange={(v) => setHero("cta", v)} placeholder="Khám phá điểm đến" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Tiêu đề — Dòng 1">
+            <Input value={form.hero.title1} onChange={(v) => setHero("title1", v)} placeholder="Trải Nghiệm Hoàng Gia" />
+          </Field>
+          <Field label="Tiêu đề — Dòng 2">
+            <Input value={form.hero.title2} onChange={(v) => setHero("title2", v)} placeholder="Tại Việt Nam" />
+          </Field>
+        </div>
+        <Field label="Mô tả phụ (subtitle)">
+          <Textarea value={form.hero.subtitle} onChange={(v) => setHero("subtitle", v)} rows={3}
+            placeholder="Tận hưởng không gian thanh lịch..." />
+        </Field>
+        <ImageField label="Ảnh nền Hero" value={form.hero.imageUrl} onChange={(v) => setHero("imageUrl", v)} />
+
+        <div className="border border-primary/15 p-4 bg-muted/20">
+          <p className="text-[10px] tracking-widest uppercase text-muted-foreground mb-2">Xem trước tiêu đề</p>
+          <p className="text-[11px] text-primary tracking-widest uppercase">{form.hero.kicker || "—"}</p>
+          <p className="text-2xl font-serif text-foreground leading-tight mt-1">
+            {form.hero.title1 || "—"}<br />{form.hero.title2 || "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">{form.hero.subtitle}</p>
+        </div>
+      </SectionCard>
+
+      {/* Destinations Section */}
+      <SectionCard title="Phần Điểm Đến — Tiêu đề khối khách sạn" open={sections.dest} onToggle={() => toggle("dest")}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Kicker (nhãn nhỏ)">
+            <Input value={form.dest.kicker} onChange={(v) => setDest("kicker", v)} placeholder="Các điểm đến" />
+          </Field>
+          <Field label="Tiêu đề chính">
+            <Input value={form.dest.title} onChange={(v) => setDest("title", v)} placeholder="Nơi cảm xúc thăng hoa" />
+          </Field>
+        </div>
+        <div className="border border-primary/15 p-4 bg-muted/20">
+          <p className="text-[10px] tracking-widest uppercase text-muted-foreground mb-2">Xem trước</p>
+          <p className="text-[11px] text-primary tracking-widest uppercase">{form.dest.kicker || "—"}</p>
+          <p className="text-xl font-serif text-foreground mt-1">{form.dest.title || "—"}</p>
+        </div>
+      </SectionCard>
+
+      {/* Experience Section */}
+      <SectionCard title="Phần Trải Nghiệm — Khối nội dung + ảnh" open={sections.exp} onToggle={() => toggle("exp")}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Kicker (nhãn nhỏ)">
+            <Input value={form.exp.kicker} onChange={(v) => setExp("kicker", v)} placeholder="Trải nghiệm" />
+          </Field>
+          <Field label="Tiêu đề chính">
+            <Input value={form.exp.title} onChange={(v) => setExp("title", v)} placeholder="Dấu ấn khó phai" />
+          </Field>
+        </div>
+        <Field label="Mô tả (đoạn văn chính)">
+          <Textarea value={form.exp.body} onChange={(v) => setExp("body", v)} rows={4}
+            placeholder="Tại Grand Palace, mỗi khoảnh khắc..." />
+        </Field>
+        <Field label="Câu trích dẫn (hiển thị trên ảnh)">
+          <Input value={form.exp.quote} onChange={(v) => setExp("quote", v)} placeholder='"Nghệ thuật ẩm thực đỉnh cao"' />
+        </Field>
+        <div className="space-y-2">
+          <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Danh sách điểm nổi bật (4 mục)</label>
+          {(["item1", "item2", "item3", "item4"] as const).map((k, i) => (
+            <div key={k} className="flex items-center gap-2">
+              <span className="text-[10px] text-primary font-mono w-4 shrink-0">{i + 1}.</span>
+              <input
+                className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-1.5 text-sm text-foreground outline-none"
+                value={form.exp[k]}
+                onChange={(e) => setExp(k, e.target.value)}
+                placeholder={`Điểm nổi bật ${i + 1}`}
+              />
+            </div>
+          ))}
+        </div>
+        <Field label="Nút CTA">
+          <Input value={form.exp.cta} onChange={(v) => setExp("cta", v)} placeholder="Khám phá dịch vụ" />
+        </Field>
+        <ImageField label="Ảnh minh hoạ" value={form.exp.imageUrl} onChange={(v) => setExp("imageUrl", v)} />
+      </SectionCard>
+
+      <div className="flex justify-end pt-2">
+        <Button onClick={handleSave}
+          className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-8 py-5 gap-2">
+          <Save size={13} /> Lưu tất cả thay đổi
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /* ──────────── MAIN ──────────── */
-type Tab = "pages" | "posts" | "menus" | "social";
+type Tab = "home" | "pages" | "posts" | "menus" | "social";
 
 export default function AdminPages() {
-  const [tab, setTab] = useState<Tab>("pages");
+  const [tab, setTab] = useState<Tab>("home");
 
   const TABS: { key: Tab; icon: any; label: string }[] = [
-    { key: "pages",  icon: FileText,  label: "Trang nội dung" },
-    { key: "posts",  icon: Newspaper, label: "Bài viết / Blog" },
-    { key: "menus",  icon: Navigation,label: "Menu điều hướng" },
-    { key: "social", icon: Share2,    label: "Mạng xã hội" },
+    { key: "home",   icon: LayoutDashboard, label: "Trang Chủ" },
+    { key: "pages",  icon: FileText,        label: "Trang nội dung" },
+    { key: "posts",  icon: Newspaper,       label: "Bài viết / Blog" },
+    { key: "menus",  icon: Navigation,      label: "Menu điều hướng" },
+    { key: "social", icon: Share2,          label: "Mạng xã hội" },
   ];
 
   return (
     <AdminGuard>
-      <AdminLayout title="Quản lý Nội dung" subtitle="Trang, bài viết, menu điều hướng và mạng xã hội">
-        <div className="flex gap-0 mb-6 border-b border-primary/20">
+      <AdminLayout title="Quản lý Nội dung" subtitle="Trang chủ, bài viết, menu điều hướng và mạng xã hội">
+        <div className="flex gap-0 mb-6 border-b border-primary/20 overflow-x-auto">
           {TABS.map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm border-b-2 transition-all -mb-px ${
+              className={`flex items-center gap-2 px-5 py-3 text-sm border-b-2 transition-all -mb-px whitespace-nowrap ${
                 tab === key ? "border-primary text-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30"
               }`}>
               <Icon size={14} />
@@ -637,6 +848,7 @@ export default function AdminPages() {
             </button>
           ))}
         </div>
+        {tab === "home"   && <HomeTab />}
         {tab === "pages"  && <PagesTab />}
         {tab === "posts"  && <PostsTab />}
         {tab === "menus"  && <MenusTab />}

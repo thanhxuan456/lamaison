@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/i18n";
+import { SiteContentProvider } from "@/lib/site-content";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { AuthPageLayout } from "@/components/layout/AuthPageLayout";
 import NotFound from "@/pages/not-found";
@@ -198,10 +199,12 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="grand-palace-theme">
       <LanguageProvider>
-        <WouterRouter base={basePath}>
-          <ClerkProviderWithRoutes />
-        </WouterRouter>
-        <Toaster />
+        <SiteContentProvider>
+          <WouterRouter base={basePath}>
+            <ClerkProviderWithRoutes />
+          </WouterRouter>
+          <Toaster />
+        </SiteContentProvider>
       </LanguageProvider>
     </ThemeProvider>
   );
