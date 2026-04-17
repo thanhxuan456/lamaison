@@ -14,10 +14,14 @@ export const roomsTable = pgTable("rooms", {
   imageUrl: text("image_url").notNull(),
   amenities: text("amenities").array().notNull().default([]),
   isAvailable: boolean("is_available").notNull().default(true),
+  status: text("status").notNull().default("available"),
   floor: integer("floor").notNull(),
   view: text("view").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const ROOM_STATUSES = ["available", "reserved", "occupied", "cleaning", "maintenance"] as const;
+export type RoomStatus = (typeof ROOM_STATUSES)[number];
 
 export const insertRoomSchema = createInsertSchema(roomsTable).omit({ id: true, createdAt: true });
 export type InsertRoom = z.infer<typeof insertRoomSchema>;

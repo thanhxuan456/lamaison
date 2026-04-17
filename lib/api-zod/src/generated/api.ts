@@ -78,6 +78,13 @@ export const ListHotelRoomsResponseItem = zod.object({
   imageUrl: zod.string(),
   amenities: zod.array(zod.string()),
   isAvailable: zod.boolean(),
+  status: zod.enum([
+    "available",
+    "reserved",
+    "occupied",
+    "cleaning",
+    "maintenance",
+  ]),
   floor: zod.number(),
   view: zod.string(),
 });
@@ -118,6 +125,13 @@ export const GetRoomResponse = zod.object({
   imageUrl: zod.string(),
   amenities: zod.array(zod.string()),
   isAvailable: zod.boolean(),
+  status: zod.enum([
+    "available",
+    "reserved",
+    "occupied",
+    "cleaning",
+    "maintenance",
+  ]),
   floor: zod.number(),
   view: zod.string(),
 });
@@ -137,6 +151,11 @@ export const ListBookingsResponseItem = zod.object({
   numberOfGuests: zod.number(),
   specialRequests: zod.string().optional(),
   status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
   totalPrice: zod.number(),
   createdAt: zod.string(),
   room: zod
@@ -151,6 +170,13 @@ export const ListBookingsResponseItem = zod.object({
       imageUrl: zod.string(),
       amenities: zod.array(zod.string()),
       isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
       floor: zod.number(),
       view: zod.string(),
     })
@@ -209,6 +235,11 @@ export const GetBookingResponse = zod.object({
   numberOfGuests: zod.number(),
   specialRequests: zod.string().optional(),
   status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
   totalPrice: zod.number(),
   createdAt: zod.string(),
   room: zod
@@ -223,6 +254,13 @@ export const GetBookingResponse = zod.object({
       imageUrl: zod.string(),
       amenities: zod.array(zod.string()),
       isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
       floor: zod.number(),
       view: zod.string(),
     })
@@ -266,6 +304,11 @@ export const CancelBookingResponse = zod.object({
   numberOfGuests: zod.number(),
   specialRequests: zod.string().optional(),
   status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
   totalPrice: zod.number(),
   createdAt: zod.string(),
   room: zod
@@ -280,6 +323,377 @@ export const CancelBookingResponse = zod.object({
       imageUrl: zod.string(),
       amenities: zod.array(zod.string()),
       isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
+      floor: zod.number(),
+      view: zod.string(),
+    })
+    .optional(),
+  hotel: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      location: zod.string(),
+      city: zod.string(),
+      address: zod.string(),
+      description: zod.string(),
+      rating: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      priceFrom: zod.number(),
+      totalRooms: zod.number(),
+      availableRooms: zod.number(),
+      phone: zod.string(),
+      email: zod.string(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Mark a booking as checked-in (guest arrived)
+ */
+export const CheckInBookingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CheckInBookingResponse = zod.object({
+  id: zod.number(),
+  roomId: zod.number(),
+  hotelId: zod.number(),
+  guestName: zod.string(),
+  guestEmail: zod.string(),
+  guestPhone: zod.string(),
+  checkInDate: zod.string(),
+  checkOutDate: zod.string(),
+  numberOfGuests: zod.number(),
+  specialRequests: zod.string().optional(),
+  status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
+  totalPrice: zod.number(),
+  createdAt: zod.string(),
+  room: zod
+    .object({
+      id: zod.number(),
+      hotelId: zod.number(),
+      roomNumber: zod.string(),
+      type: zod.string(),
+      description: zod.string(),
+      pricePerNight: zod.number(),
+      capacity: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
+      floor: zod.number(),
+      view: zod.string(),
+    })
+    .optional(),
+  hotel: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      location: zod.string(),
+      city: zod.string(),
+      address: zod.string(),
+      description: zod.string(),
+      rating: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      priceFrom: zod.number(),
+      totalRooms: zod.number(),
+      availableRooms: zod.number(),
+      phone: zod.string(),
+      email: zod.string(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Mark a booking as checked-out (guest departed)
+ */
+export const CheckOutBookingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CheckOutBookingResponse = zod.object({
+  id: zod.number(),
+  roomId: zod.number(),
+  hotelId: zod.number(),
+  guestName: zod.string(),
+  guestEmail: zod.string(),
+  guestPhone: zod.string(),
+  checkInDate: zod.string(),
+  checkOutDate: zod.string(),
+  numberOfGuests: zod.number(),
+  specialRequests: zod.string().optional(),
+  status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
+  totalPrice: zod.number(),
+  createdAt: zod.string(),
+  room: zod
+    .object({
+      id: zod.number(),
+      hotelId: zod.number(),
+      roomNumber: zod.string(),
+      type: zod.string(),
+      description: zod.string(),
+      pricePerNight: zod.number(),
+      capacity: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
+      floor: zod.number(),
+      view: zod.string(),
+    })
+    .optional(),
+  hotel: zod
+    .object({
+      id: zod.number(),
+      name: zod.string(),
+      location: zod.string(),
+      city: zod.string(),
+      address: zod.string(),
+      description: zod.string(),
+      rating: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      priceFrom: zod.number(),
+      totalRooms: zod.number(),
+      availableRooms: zod.number(),
+      phone: zod.string(),
+      email: zod.string(),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Override a room status (e.g. cleaning, maintenance)
+ */
+export const SetRoomStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SetRoomStatusBody = zod.object({
+  status: zod.enum([
+    "available",
+    "reserved",
+    "occupied",
+    "cleaning",
+    "maintenance",
+  ]),
+});
+
+export const SetRoomStatusResponse = zod.object({
+  id: zod.number(),
+  hotelId: zod.number(),
+  roomNumber: zod.string(),
+  type: zod.string(),
+  description: zod.string(),
+  pricePerNight: zod.number(),
+  capacity: zod.number(),
+  imageUrl: zod.string(),
+  amenities: zod.array(zod.string()),
+  isAvailable: zod.boolean(),
+  status: zod.enum([
+    "available",
+    "reserved",
+    "occupied",
+    "cleaning",
+    "maintenance",
+  ]),
+  floor: zod.number(),
+  view: zod.string(),
+});
+
+/**
+ * @summary List unique guest profiles (deduplicated across sources)
+ */
+export const ListGuestsResponseItem = zod.object({
+  id: zod.number(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string(),
+  notes: zod.string().nullish(),
+  totalBookings: zod.number(),
+  sources: zod.array(zod.string()),
+  lastStayAt: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListGuestsResponse = zod.array(ListGuestsResponseItem);
+
+/**
+ * @summary Get a guest profile with full booking history (merged across web + OTA)
+ */
+export const GetGuestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetGuestResponse = zod
+  .object({
+    id: zod.number(),
+    fullName: zod.string(),
+    email: zod.string(),
+    phone: zod.string(),
+    notes: zod.string().nullish(),
+    totalBookings: zod.number(),
+    sources: zod.array(zod.string()),
+    lastStayAt: zod.string().nullish(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      bookings: zod.array(
+        zod.object({
+          id: zod.number(),
+          roomId: zod.number(),
+          hotelId: zod.number(),
+          guestName: zod.string(),
+          guestEmail: zod.string(),
+          guestPhone: zod.string(),
+          checkInDate: zod.string(),
+          checkOutDate: zod.string(),
+          numberOfGuests: zod.number(),
+          specialRequests: zod.string().optional(),
+          status: zod.string(),
+          source: zod.string(),
+          externalRef: zod.string().nullish(),
+          checkedInAt: zod.string().nullish(),
+          checkedOutAt: zod.string().nullish(),
+          guestId: zod.number().nullish(),
+          totalPrice: zod.number(),
+          createdAt: zod.string(),
+          room: zod
+            .object({
+              id: zod.number(),
+              hotelId: zod.number(),
+              roomNumber: zod.string(),
+              type: zod.string(),
+              description: zod.string(),
+              pricePerNight: zod.number(),
+              capacity: zod.number(),
+              imageUrl: zod.string(),
+              amenities: zod.array(zod.string()),
+              isAvailable: zod.boolean(),
+              status: zod.enum([
+                "available",
+                "reserved",
+                "occupied",
+                "cleaning",
+                "maintenance",
+              ]),
+              floor: zod.number(),
+              view: zod.string(),
+            })
+            .optional(),
+          hotel: zod
+            .object({
+              id: zod.number(),
+              name: zod.string(),
+              location: zod.string(),
+              city: zod.string(),
+              address: zod.string(),
+              description: zod.string(),
+              rating: zod.number(),
+              imageUrl: zod.string(),
+              amenities: zod.array(zod.string()),
+              priceFrom: zod.number(),
+              totalRooms: zod.number(),
+              availableRooms: zod.number(),
+              phone: zod.string(),
+              email: zod.string(),
+            })
+            .optional(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Ingest a single booking received from an OTA channel (idempotent by externalRef)
+ */
+export const IngestOtaBookingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const IngestOtaBookingBody = zod.object({
+  externalRef: zod
+    .string()
+    .describe("OTA's unique booking reference (used for idempotency)"),
+  roomId: zod.number(),
+  guestName: zod.string(),
+  guestEmail: zod.string(),
+  guestPhone: zod.string(),
+  checkInDate: zod.string(),
+  checkOutDate: zod.string(),
+  numberOfGuests: zod.number(),
+  totalPrice: zod.number(),
+  specialRequests: zod.string().optional(),
+});
+
+export const IngestOtaBookingResponse = zod.object({
+  id: zod.number(),
+  roomId: zod.number(),
+  hotelId: zod.number(),
+  guestName: zod.string(),
+  guestEmail: zod.string(),
+  guestPhone: zod.string(),
+  checkInDate: zod.string(),
+  checkOutDate: zod.string(),
+  numberOfGuests: zod.number(),
+  specialRequests: zod.string().optional(),
+  status: zod.string(),
+  source: zod.string(),
+  externalRef: zod.string().nullish(),
+  checkedInAt: zod.string().nullish(),
+  checkedOutAt: zod.string().nullish(),
+  guestId: zod.number().nullish(),
+  totalPrice: zod.number(),
+  createdAt: zod.string(),
+  room: zod
+    .object({
+      id: zod.number(),
+      hotelId: zod.number(),
+      roomNumber: zod.string(),
+      type: zod.string(),
+      description: zod.string(),
+      pricePerNight: zod.number(),
+      capacity: zod.number(),
+      imageUrl: zod.string(),
+      amenities: zod.array(zod.string()),
+      isAvailable: zod.boolean(),
+      status: zod.enum([
+        "available",
+        "reserved",
+        "occupied",
+        "cleaning",
+        "maintenance",
+      ]),
       floor: zod.number(),
       view: zod.string(),
     })

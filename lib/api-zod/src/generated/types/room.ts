@@ -5,6 +5,7 @@
  * Luxury Hotel System API
  * OpenAPI spec version: 0.1.0
  */
+import type { RoomStatus } from "./roomStatus";
 
 export interface Room {
   id: number;
@@ -17,6 +18,7 @@ export interface Room {
   imageUrl: string;
   amenities: string[];
   isAvailable: boolean;
+  status: RoomStatus;
   floor: number;
   view: string;
 }

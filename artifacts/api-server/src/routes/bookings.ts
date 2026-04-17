@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { bookingsTable, roomsTable, hotelsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  bookingsTable,
+  roomsTable,
+  hotelsTable,
+  guestsTable,
+  normalizeEmail,
+  normalizePhone,
+} from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
 import { CreateBookingBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -25,6 +32,36 @@ async function enrichBooking(booking: typeof bookingsTable.$inferSelect) {
         }
       : null,
   };
+}
+
+/**
+ * Upsert a guest by normalized email — race-safe via ON CONFLICT.
+ * Existing name is preserved (we never overwrite a real name with a different one);
+ * blank phone gets filled in. Returns the resulting guest row.
+ */
+export async function upsertGuest(input: { fullName: string; email: string; phone: string }) {
+  const normalizedEmail = normalizeEmail(input.email);
+  const normalizedPhone = normalizePhone(input.phone);
+  const [row] = await db
+    .insert(guestsTable)
+    .values({
+      fullName: input.fullName,
+      email: input.email,
+      phone: input.phone,
+      normalizedEmail,
+      normalizedPhone,
+    })
+    .onConflictDoUpdate({
+      target: guestsTable.normalizedEmail,
+      // Preserve existing name; only fill in blank phone.
+      set: {
+        phone: sql`COALESCE(NULLIF(${guestsTable.phone}, ''), EXCLUDED.phone)`,
+        normalizedPhone: sql`COALESCE(NULLIF(${guestsTable.normalizedPhone}, ''), EXCLUDED.normalized_phone)`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+  return row;
 }
 
 router.get("/bookings", async (req, res) => {
@@ -52,7 +89,7 @@ router.post("/bookings", async (req, res) => {
       res.status(404).json({ error: "Room not found" });
       return;
     }
-    if (!room.isAvailable) {
+    if (!room.isAvailable || (room.status !== "available" && room.status !== "reserved")) {
       res.status(409).json({ error: "Room is not available" });
       return;
     }
@@ -62,11 +99,14 @@ router.post("/bookings", async (req, res) => {
     const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     const totalPrice = parseFloat(room.pricePerNight) * Math.max(nights, 1);
 
+    const guest = await upsertGuest({ fullName: guestName, email: guestEmail, phone: guestPhone });
+
     const [booking] = await db
       .insert(bookingsTable)
       .values({
         roomId,
         hotelId: room.hotelId,
+        guestId: guest.id,
         guestName,
         guestEmail,
         guestPhone,
@@ -75,13 +115,16 @@ router.post("/bookings", async (req, res) => {
         numberOfGuests,
         specialRequests: specialRequests ?? null,
         status: "confirmed",
+        source: "web",
         totalPrice: totalPrice.toString(),
       })
       .returning();
 
-    await db.update(roomsTable).set({ isAvailable: false }).where(eq(roomsTable.id, roomId));
+    await db
+      .update(roomsTable)
+      .set({ isAvailable: false, status: "reserved" })
+      .where(eq(roomsTable.id, roomId));
 
-    // Auto-generate invoice for the new booking (idempotent upsert)
     try {
       const { upsertInvoiceForBooking } = await import("./invoices");
       await upsertInvoiceForBooking(booking.id);
@@ -117,6 +160,64 @@ router.get("/bookings/:id", async (req, res) => {
   }
 });
 
+router.post("/bookings/:id/check-in", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid booking ID" }); return; }
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id));
+    if (!booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    // Only allow check-in from pending/confirmed
+    if (!["pending", "confirmed"].includes(booking.status)) {
+      res.status(409).json({ error: `Cannot check in booking in '${booking.status}' state` });
+      return;
+    }
+    const [room] = await db.select().from(roomsTable).where(eq(roomsTable.id, booking.roomId));
+    if (room && room.status === "maintenance") {
+      res.status(409).json({ error: "Room is under maintenance" });
+      return;
+    }
+    const [updated] = await db
+      .update(bookingsTable)
+      .set({ status: "checked_in", checkedInAt: new Date() })
+      .where(eq(bookingsTable.id, id))
+      .returning();
+    await db
+      .update(roomsTable)
+      .set({ isAvailable: false, status: "occupied" })
+      .where(eq(roomsTable.id, booking.roomId));
+    res.json(await enrichBooking(updated));
+  } catch (err) {
+    req.log.error({ err }, "Failed to check in booking");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/bookings/:id/check-out", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid booking ID" }); return; }
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id));
+    if (!booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (booking.status !== "checked_in") {
+      res.status(409).json({ error: "Booking must be checked-in first" });
+      return;
+    }
+    const [updated] = await db
+      .update(bookingsTable)
+      .set({ status: "checked_out", checkedOutAt: new Date() })
+      .where(eq(bookingsTable.id, id))
+      .returning();
+    await db
+      .update(roomsTable)
+      .set({ isAvailable: false, status: "cleaning" })
+      .where(eq(roomsTable.id, booking.roomId));
+    res.json(await enrichBooking(updated));
+  } catch (err) {
+    req.log.error({ err }, "Failed to check out booking");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.delete("/bookings/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -129,13 +230,32 @@ router.delete("/bookings/:id", async (req, res) => {
       res.status(404).json({ error: "Booking not found" });
       return;
     }
+    // Cannot cancel a guest who has already checked in — they must check out first.
+    if (booking.status === "checked_in") {
+      res.status(409).json({ error: "Cannot cancel a checked-in booking. Check the guest out first." });
+      return;
+    }
+    if (booking.status === "checked_out") {
+      res.status(409).json({ error: "Booking is already checked out" });
+      return;
+    }
     const [updated] = await db
       .update(bookingsTable)
       .set({ status: "cancelled" })
       .where(eq(bookingsTable.id, id))
       .returning();
 
-    await db.update(roomsTable).set({ isAvailable: true }).where(eq(roomsTable.id, booking.roomId));
+    // Only free the room if no other active booking holds it
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookingsTable)
+      .where(sql`${bookingsTable.roomId} = ${booking.roomId} AND ${bookingsTable.status} IN ('confirmed','checked_in')`);
+    if (Number(count) === 0) {
+      await db
+        .update(roomsTable)
+        .set({ isAvailable: true, status: "available" })
+        .where(eq(roomsTable.id, booking.roomId));
+    }
 
     const enriched = await enrichBooking(updated);
     res.json(enriched);

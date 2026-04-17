@@ -19,10 +19,14 @@ import type {
 import type {
   Booking,
   BookingRequest,
+  Guest,
+  GuestWithHistory,
   HealthStatus,
   Hotel,
   HotelSummary,
+  OtaIngestRequest,
   Room,
+  RoomStatusUpdate,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -849,4 +853,504 @@ export const useCancelBooking = <
   TContext
 > => {
   return useMutation(getCancelBookingMutationOptions(options));
+};
+
+/**
+ * @summary Mark a booking as checked-in (guest arrived)
+ */
+export const getCheckInBookingUrl = (id: number) => {
+  return `/api/bookings/${id}/check-in`;
+};
+
+export const checkInBooking = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Booking> => {
+  return customFetch<Booking>(getCheckInBookingUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCheckInBookingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkInBooking>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkInBooking>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["checkInBooking"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkInBooking>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return checkInBooking(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckInBookingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkInBooking>>
+>;
+
+export type CheckInBookingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a booking as checked-in (guest arrived)
+ */
+export const useCheckInBooking = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkInBooking>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkInBooking>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getCheckInBookingMutationOptions(options));
+};
+
+/**
+ * @summary Mark a booking as checked-out (guest departed)
+ */
+export const getCheckOutBookingUrl = (id: number) => {
+  return `/api/bookings/${id}/check-out`;
+};
+
+export const checkOutBooking = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Booking> => {
+  return customFetch<Booking>(getCheckOutBookingUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCheckOutBookingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkOutBooking>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkOutBooking>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["checkOutBooking"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkOutBooking>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return checkOutBooking(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckOutBookingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkOutBooking>>
+>;
+
+export type CheckOutBookingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a booking as checked-out (guest departed)
+ */
+export const useCheckOutBooking = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkOutBooking>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkOutBooking>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getCheckOutBookingMutationOptions(options));
+};
+
+/**
+ * @summary Override a room status (e.g. cleaning, maintenance)
+ */
+export const getSetRoomStatusUrl = (id: number) => {
+  return `/api/rooms/${id}/status`;
+};
+
+export const setRoomStatus = async (
+  id: number,
+  roomStatusUpdate: RoomStatusUpdate,
+  options?: RequestInit,
+): Promise<Room> => {
+  return customFetch<Room>(getSetRoomStatusUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(roomStatusUpdate),
+  });
+};
+
+export const getSetRoomStatusMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setRoomStatus>>,
+    TError,
+    { id: number; data: BodyType<RoomStatusUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setRoomStatus>>,
+  TError,
+  { id: number; data: BodyType<RoomStatusUpdate> },
+  TContext
+> => {
+  const mutationKey = ["setRoomStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setRoomStatus>>,
+    { id: number; data: BodyType<RoomStatusUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setRoomStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetRoomStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setRoomStatus>>
+>;
+export type SetRoomStatusMutationBody = BodyType<RoomStatusUpdate>;
+export type SetRoomStatusMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Override a room status (e.g. cleaning, maintenance)
+ */
+export const useSetRoomStatus = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setRoomStatus>>,
+    TError,
+    { id: number; data: BodyType<RoomStatusUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setRoomStatus>>,
+  TError,
+  { id: number; data: BodyType<RoomStatusUpdate> },
+  TContext
+> => {
+  return useMutation(getSetRoomStatusMutationOptions(options));
+};
+
+/**
+ * @summary List unique guest profiles (deduplicated across sources)
+ */
+export const getListGuestsUrl = () => {
+  return `/api/guests`;
+};
+
+export const listGuests = async (options?: RequestInit): Promise<Guest[]> => {
+  return customFetch<Guest[]>(getListGuestsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListGuestsQueryKey = () => {
+  return [`/api/guests`] as const;
+};
+
+export const getListGuestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGuests>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGuests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListGuestsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listGuests>>> = ({
+    signal,
+  }) => listGuests({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGuests>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGuestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGuests>>
+>;
+export type ListGuestsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List unique guest profiles (deduplicated across sources)
+ */
+
+export function useListGuests<
+  TData = Awaited<ReturnType<typeof listGuests>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGuests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGuestsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a guest profile with full booking history (merged across web + OTA)
+ */
+export const getGetGuestUrl = (id: number) => {
+  return `/api/guests/${id}`;
+};
+
+export const getGuest = async (
+  id: number,
+  options?: RequestInit,
+): Promise<GuestWithHistory> => {
+  return customFetch<GuestWithHistory>(getGetGuestUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGuestQueryKey = (id: number) => {
+  return [`/api/guests/${id}`] as const;
+};
+
+export const getGetGuestQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGuest>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGuestQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuest>>> = ({
+    signal,
+  }) => getGuest(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getGuest>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetGuestQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGuest>>
+>;
+export type GetGuestQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a guest profile with full booking history (merged across web + OTA)
+ */
+
+export function useGetGuest<
+  TData = Awaited<ReturnType<typeof getGuest>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getGuest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGuestQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Ingest a single booking received from an OTA channel (idempotent by externalRef)
+ */
+export const getIngestOtaBookingUrl = (id: string) => {
+  return `/api/ota/channels/${id}/ingest`;
+};
+
+export const ingestOtaBooking = async (
+  id: string,
+  otaIngestRequest: OtaIngestRequest,
+  options?: RequestInit,
+): Promise<Booking> => {
+  return customFetch<Booking>(getIngestOtaBookingUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(otaIngestRequest),
+  });
+};
+
+export const getIngestOtaBookingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof ingestOtaBooking>>,
+    TError,
+    { id: string; data: BodyType<OtaIngestRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof ingestOtaBooking>>,
+  TError,
+  { id: string; data: BodyType<OtaIngestRequest> },
+  TContext
+> => {
+  const mutationKey = ["ingestOtaBooking"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof ingestOtaBooking>>,
+    { id: string; data: BodyType<OtaIngestRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return ingestOtaBooking(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type IngestOtaBookingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof ingestOtaBooking>>
+>;
+export type IngestOtaBookingMutationBody = BodyType<OtaIngestRequest>;
+export type IngestOtaBookingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Ingest a single booking received from an OTA channel (idempotent by externalRef)
+ */
+export const useIngestOtaBooking = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof ingestOtaBooking>>,
+    TError,
+    { id: string; data: BodyType<OtaIngestRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof ingestOtaBooking>>,
+  TError,
+  { id: string; data: BodyType<OtaIngestRequest> },
+  TContext
+> => {
+  return useMutation(getIngestOtaBookingMutationOptions(options));
 };

@@ -7,6 +7,23 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { BedDouble, Plus, Edit, Trash2, X, Loader2, ChevronDown } from "lucide-react";
 
+const ROOM_STATUSES = ["available", "reserved", "occupied", "cleaning", "maintenance"] as const;
+type RoomStatus = (typeof ROOM_STATUSES)[number];
+
+const STATUS_META: Record<RoomStatus, { label: string; cls: string }> = {
+  available:   { label: "Trống",       cls: "border-green-400/40 text-green-600 dark:text-green-400 bg-green-500/5" },
+  reserved:    { label: "Đã đặt",      cls: "border-amber-400/40 text-amber-700 dark:text-amber-400 bg-amber-500/5" },
+  occupied:    { label: "Đang ở",      cls: "border-rose-400/40  text-rose-600  dark:text-rose-400  bg-rose-500/5"  },
+  cleaning:    { label: "Đang dọn",    cls: "border-sky-400/40   text-sky-600   dark:text-sky-400   bg-sky-500/5"   },
+  maintenance: { label: "Bảo trì",     cls: "border-zinc-400/40  text-zinc-600  dark:text-zinc-400  bg-zinc-500/10" },
+};
+
+function deriveStatus(r: any): RoomStatus {
+  const s = (r?.status ?? "") as RoomStatus;
+  if (ROOM_STATUSES.includes(s)) return s;
+  return r?.isAvailable ? "available" : "occupied";
+}
+
 const API = import.meta.env.VITE_API_URL ?? "";
 
 const ROOM_TYPES = ["Standard", "Deluxe", "Superior", "Suite", "Junior Suite", "Presidential Suite", "Villa"];
@@ -155,6 +172,7 @@ function RoomsContent() {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterHotel, setFilterHotel] = useState<number | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<RoomStatus | "all">("all");
   const [addOpen, setAddOpen] = useState(false);
   const [editRoom, setEditRoom] = useState<any>(null);
 
@@ -179,7 +197,22 @@ function RoomsContent() {
     } catch { toast({ title: "Error", variant: "destructive" }); }
   };
 
-  const filtered = filterHotel === "all" ? rooms : rooms.filter((r) => r.hotelId === filterHotel);
+  const filtered = rooms
+    .filter((r) => filterHotel === "all" || r.hotelId === filterHotel)
+    .filter((r) => filterStatus === "all" || deriveStatus(r) === filterStatus);
+
+  const setStatus = async (room: any, status: RoomStatus) => {
+    try {
+      const res = await fetch(`${API}/api/rooms/${room.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast({ title: `Phòng ${room.roomNumber} → ${STATUS_META[status].label}` });
+      loadRooms();
+    } catch { toast({ title: "Không thể cập nhật trạng thái", variant: "destructive" }); }
+  };
   const hotelName = (id: number) => hotels?.find((h: any) => h.id === id)?.name ?? `Hotel #${id}`;
 
   return (
@@ -194,7 +227,12 @@ function RoomsContent() {
             <option value="all">All Hotels</option>
             {hotels?.map((h: any) => <option key={h.id} value={h.id}>{h.name}</option>)}
           </select>
-          <span className="text-sm text-muted-foreground">{filtered.length} rooms</span>
+          <select className="border border-primary/25 bg-background text-sm text-foreground px-3 py-2 outline-none"
+            value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
+            <option value="all">Tất cả trạng thái</option>
+            {ROOM_STATUSES.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+          </select>
+          <span className="text-sm text-muted-foreground">{filtered.length} phòng</span>
         </div>
         <Button onClick={() => setAddOpen(true)} className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
           <Plus size={13} /> Add Room
@@ -226,9 +264,19 @@ function RoomsContent() {
                   <td className="px-4 py-3 text-muted-foreground">{r.capacity}</td>
                   <td className="px-4 py-3 text-foreground">${parseFloat(r.pricePerNight).toFixed(0)}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-[10px] tracking-widest uppercase px-2 py-0.5 border ${r.isAvailable ? "border-green-400/40 text-green-600 dark:text-green-400" : "border-red-400/40 text-red-500"}`}>
-                      {r.isAvailable ? "Available" : "Occupied"}
-                    </span>
+                    {(() => {
+                      const st = deriveStatus(r);
+                      return (
+                        <select
+                          value={st}
+                          onChange={(e) => setStatus(r, e.target.value as RoomStatus)}
+                          className={`text-[10px] tracking-widest uppercase px-2 py-1 border outline-none cursor-pointer ${STATUS_META[st].cls}`}
+                          title="Đổi trạng thái phòng"
+                        >
+                          {ROOM_STATUSES.map((s) => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+                        </select>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">

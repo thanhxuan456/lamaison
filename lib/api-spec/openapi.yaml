@@ -16,6 +16,10 @@ tags:
     description: Room operations
   - name: bookings
     description: Booking operations
+  - name: guests
+    description: Guest profiles
+  - name: ota
+    description: OTA channel ingestion
 paths:
   /healthz:
     get:
@@ -198,6 +202,128 @@ paths:
               schema:
                 $ref: "#/components/schemas/Booking"
 
+  /bookings/{id}/check-in:
+    post:
+      operationId: checkInBooking
+      tags: [bookings]
+      summary: Mark a booking as checked-in (guest arrived)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking checked-in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/check-out:
+    post:
+      operationId: checkOutBooking
+      tags: [bookings]
+      summary: Mark a booking as checked-out (guest departed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking checked-out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /rooms/{id}/status:
+    put:
+      operationId: setRoomStatus
+      tags: [rooms]
+      summary: Override a room status (e.g. cleaning, maintenance)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomStatusUpdate"
+      responses:
+        "200":
+          description: Updated room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /guests:
+    get:
+      operationId: listGuests
+      tags: [guests]
+      summary: List unique guest profiles (deduplicated across sources)
+      responses:
+        "200":
+          description: List of guests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Guest"
+
+  /guests/{id}:
+    get:
+      operationId: getGuest
+      tags: [guests]
+      summary: Get a guest profile with full booking history (merged across web + OTA)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Guest with bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestWithHistory"
+
+  /ota/channels/{id}/ingest:
+    post:
+      operationId: ingestOtaBooking
+      tags: [ota]
+      summary: Ingest a single booking received from an OTA channel (idempotent by externalRef)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtaIngestRequest"
+      responses:
+        "200":
+          description: Booking ingested or already present
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
 components:
   schemas:
     HealthStatus:
@@ -308,6 +434,9 @@ components:
             type: string
         isAvailable:
           type: boolean
+        status:
+          type: string
+          enum: [available, reserved, occupied, cleaning, maintenance]
         floor:
           type: integer
         view:
@@ -323,6 +452,7 @@ components:
         - imageUrl
         - amenities
         - isAvailable
+        - status
         - floor
         - view
 
@@ -379,6 +509,20 @@ components:
           type: string
         status:
           type: string
+        source:
+          type: string
+        externalRef:
+          type: string
+          nullable: true
+        checkedInAt:
+          type: string
+          nullable: true
+        checkedOutAt:
+          type: string
+          nullable: true
+        guestId:
+          type: integer
+          nullable: true
         totalPrice:
           type: number
         createdAt:
@@ -398,5 +542,95 @@ components:
         - checkOutDate
         - numberOfGuests
         - status
+        - source
         - totalPrice
         - createdAt
+
+    RoomStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [available, reserved, occupied, cleaning, maintenance]
+      required: [status]
+
+    Guest:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        totalBookings:
+          type: integer
+        sources:
+          type: array
+          items:
+            type: string
+        lastStayAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - fullName
+        - email
+        - phone
+        - totalBookings
+        - sources
+        - createdAt
+
+    GuestWithHistory:
+      allOf:
+        - $ref: "#/components/schemas/Guest"
+        - type: object
+          properties:
+            bookings:
+              type: array
+              items:
+                $ref: "#/components/schemas/Booking"
+          required:
+            - bookings
+
+    OtaIngestRequest:
+      type: object
+      properties:
+        externalRef:
+          type: string
+          description: OTA's unique booking reference (used for idempotency)
+        roomId:
+          type: integer
+        guestName:
+          type: string
+        guestEmail:
+          type: string
+        guestPhone:
+          type: string
+        checkInDate:
+          type: string
+        checkOutDate:
+          type: string
+        numberOfGuests:
+          type: integer
+        totalPrice:
+          type: number
+        specialRequests:
+          type: string
+      required:
+        - externalRef
+        - roomId
+        - guestName
+        - guestEmail
+        - guestPhone
+        - checkInDate
+        - checkOutDate
+        - numberOfGuests
+        - totalPrice

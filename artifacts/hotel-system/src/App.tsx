@@ -33,6 +33,8 @@ import AdminSeo from "@/pages/admin/seo";
 import AdminBuilder from "@/pages/admin/builder";
 import AdminMenu from "@/pages/admin/menu";
 import AdminInvoices from "@/pages/admin/invoices";
+import AdminBookings from "@/pages/admin/bookings";
+import AdminGuests from "@/pages/admin/guests";
 import InvoiceView from "@/pages/invoice-view";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -174,6 +176,8 @@ function Router() {
       <Route path="/admin/builder" component={AdminBuilder} />
       <Route path="/admin/menu" component={AdminMenu} />
       <Route path="/admin/invoices" component={AdminInvoices} />
+      <Route path="/admin/bookings" component={AdminBookings} />
+      <Route path="/admin/guests" component={AdminGuests} />
       <Route path="/invoices/:id" component={InvoiceView} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/error" component={() => <ServerError code={500} />} />

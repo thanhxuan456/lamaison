@@ -36,6 +36,16 @@ export interface HotelSummary {
   avgRating: number;
 }
 
+export type RoomStatus = (typeof RoomStatus)[keyof typeof RoomStatus];
+
+export const RoomStatus = {
+  available: "available",
+  reserved: "reserved",
+  occupied: "occupied",
+  cleaning: "cleaning",
+  maintenance: "maintenance",
+} as const;
+
 export interface Room {
   id: number;
   hotelId: number;
@@ -47,6 +57,7 @@ export interface Room {
   imageUrl: string;
   amenities: string[];
   isAvailable: boolean;
+  status: RoomStatus;
   floor: number;
   view: string;
 }
@@ -74,8 +85,58 @@ export interface Booking {
   numberOfGuests: number;
   specialRequests?: string;
   status: string;
+  source: string;
+  externalRef?: string | null;
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  guestId?: number | null;
   totalPrice: number;
   createdAt: string;
   room?: Room;
   hotel?: Hotel;
+}
+
+export type RoomStatusUpdateStatus =
+  (typeof RoomStatusUpdateStatus)[keyof typeof RoomStatusUpdateStatus];
+
+export const RoomStatusUpdateStatus = {
+  available: "available",
+  reserved: "reserved",
+  occupied: "occupied",
+  cleaning: "cleaning",
+  maintenance: "maintenance",
+} as const;
+
+export interface RoomStatusUpdate {
+  status: RoomStatusUpdateStatus;
+}
+
+export interface Guest {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  notes?: string | null;
+  totalBookings: number;
+  sources: string[];
+  lastStayAt?: string | null;
+  createdAt: string;
+}
+
+export type GuestWithHistory = Guest & {
+  bookings: Booking[];
+};
+
+export interface OtaIngestRequest {
+  /** OTA's unique booking reference (used for idempotency) */
+  externalRef: string;
+  roomId: number;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  checkInDate: string;
+  checkOutDate: string;
+  numberOfGuests: number;
+  totalPrice: number;
+  specialRequests?: string;
 }

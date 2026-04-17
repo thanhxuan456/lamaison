@@ -8,7 +8,13 @@
 
 export * from "./booking";
 export * from "./bookingRequest";
+export * from "./guest";
+export * from "./guestWithHistory";
 export * from "./healthStatus";
 export * from "./hotel";
 export * from "./hotelSummary";
+export * from "./otaIngestRequest";
 export * from "./room";
+export * from "./roomStatus";
+export * from "./roomStatusUpdate";
+export * from "./roomStatusUpdateStatus";

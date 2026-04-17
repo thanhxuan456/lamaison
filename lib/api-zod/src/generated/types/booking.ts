@@ -20,6 +20,11 @@ export interface Booking {
   numberOfGuests: number;
   specialRequests?: string;
   status: string;
+  source: string;
+  externalRef?: string | null;
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  guestId?: number | null;
   totalPrice: number;
   createdAt: string;
   room?: Room;
