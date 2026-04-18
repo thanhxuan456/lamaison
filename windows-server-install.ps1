@@ -39,6 +39,17 @@ $Config = @{
     ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
     ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
 
+    # MoMo payment (https://business.momo.vn — leave sandbox defaults for testing)
+    # For production, replace with your real MoMo Business credentials.
+    MomoPartnerCode     = "MOMO"
+    MomoAccessKey       = "F8BBA842ECF85"
+    MomoSecretKey       = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+    MomoEndpoint        = "https://test-payment.momo.vn/v2/gateway/api/create"
+    # Public URL of your API server (used for MoMo IPN callback — must be reachable from internet)
+    ApiPublicUrl        = "http://YOUR_SERVER_IP:8080"
+    # Public URL of your frontend (used for MoMo redirect after payment)
+    FrontendUrl         = "http://YOUR_SERVER_IP:3000"
+
     # Versions
     NodeVersion         = "22.14.0"
     PgVersion           = "16"
@@ -197,7 +208,13 @@ $envContent = @(
     "PORT=" + $Config.ApiPort,
     "FRONTEND_PORT=" + $Config.FrontendPort,
     "BASE_PATH=/",
-    "NODE_ENV=production"
+    "NODE_ENV=production",
+    "MOMO_PARTNER_CODE=" + $Config.MomoPartnerCode,
+    "MOMO_ACCESS_KEY=" + $Config.MomoAccessKey,
+    "MOMO_SECRET_KEY=" + $Config.MomoSecretKey,
+    "MOMO_ENDPOINT=" + $Config.MomoEndpoint,
+    "API_PUBLIC_URL=" + $Config.ApiPublicUrl,
+    "FRONTEND_URL=" + $Config.FrontendUrl
 )
 [System.IO.File]::WriteAllText($envFile, ($envContent -join "`n") + "`n", $utf8NoBom)
 Write-OK ".env written to $envFile"
@@ -359,6 +376,12 @@ $apiCmd = @(
     "set CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
     "set CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "set NODE_ENV=production",
+    "set MOMO_PARTNER_CODE=$($Config.MomoPartnerCode)",
+    "set MOMO_ACCESS_KEY=$($Config.MomoAccessKey)",
+    "set MOMO_SECRET_KEY=$($Config.MomoSecretKey)",
+    "set MOMO_ENDPOINT=$($Config.MomoEndpoint)",
+    "set API_PUBLIC_URL=$($Config.ApiPublicUrl)",
+    "set FRONTEND_URL=$($Config.FrontendUrl)",
     "`"$nodePath`" --enable-source-maps `"$apiDistPath`""
 ) -join "`r`n"
 [System.IO.File]::WriteAllText($apiLauncher, $apiCmd, $utf8NoBom)

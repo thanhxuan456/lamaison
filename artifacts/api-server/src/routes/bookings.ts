@@ -114,23 +114,18 @@ router.post("/bookings", async (req, res) => {
         checkOutDate,
         numberOfGuests,
         specialRequests: specialRequests ?? null,
-        status: "confirmed",
+        status: "pending_payment",
         source: "web",
         totalPrice: totalPrice.toString(),
       })
       .returning();
 
+    // Hold the room immediately to prevent double bookings.
+    // The room is released back to available if payment is not completed.
     await db
       .update(roomsTable)
       .set({ isAvailable: false, status: "reserved" })
       .where(eq(roomsTable.id, roomId));
-
-    try {
-      const { upsertInvoiceForBooking } = await import("./invoices");
-      await upsertInvoiceForBooking(booking.id);
-    } catch (invErr) {
-      req.log.warn({ err: invErr }, "Auto-invoice generation failed (non-fatal)");
-    }
 
     const enriched = await enrichBooking(booking);
     res.status(201).json(enriched);

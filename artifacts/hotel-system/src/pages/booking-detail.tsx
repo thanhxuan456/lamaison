@@ -59,6 +59,7 @@ export default function BookingDetail() {
   }
 
   const isCancelled = booking.status === 'cancelled';
+  const isPendingPayment = booking.status === 'pending_payment';
 
   return (
     <PageLayout>
@@ -88,12 +89,16 @@ export default function BookingDetail() {
                   </div>
                   <div className="text-left md:text-right">
                     <span className={`inline-block px-4 py-1 border text-sm uppercase tracking-widest mb-4 ${
-                      isCancelled ? 'border-destructive text-destructive bg-destructive/10' : 'border-primary text-primary bg-primary/10'
+                      isCancelled
+                        ? 'border-destructive text-destructive bg-destructive/10'
+                        : isPendingPayment
+                          ? 'border-yellow-400 text-yellow-400 bg-yellow-400/10'
+                          : 'border-primary text-primary bg-primary/10'
                     }`}>
-                      {isCancelled ? t("booking.cancelled") : t("booking.confirmed")}
+                      {isCancelled ? t("booking.cancelled") : isPendingPayment ? "Chờ thanh toán" : t("booking.confirmed")}
                     </span>
-                    <div className="text-3xl font-serif text-primary">${booking.totalPrice}</div>
-                    <div className="text-sm text-white/60">{t("booking.paid")}</div>
+                    <div className="text-3xl font-serif text-primary">{Number(booking.totalPrice).toLocaleString("vi-VN")} ₫</div>
+                    <div className="text-sm text-white/60">{isPendingPayment ? "Chưa thanh toán" : t("booking.paid")}</div>
                   </div>
                 </div>
 
@@ -152,8 +157,21 @@ export default function BookingDetail() {
                 </div>
               </div>
 
+              {/* Pending payment notice */}
+              {isPendingPayment && (
+                <div className="mb-8 border border-yellow-400/40 bg-yellow-400/5 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex-1">
+                    <div className="text-yellow-400 font-serif text-lg mb-1">Đặt phòng đang chờ thanh toán</div>
+                    <p className="text-sm text-muted-foreground">
+                      Vui lòng hoàn tất thanh toán qua MoMo để xác nhận đặt phòng của bạn.
+                      Phòng sẽ được giữ trong thời gian ngắn.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Room Service + Invoice */}
-              {!isCancelled && (
+              {!isCancelled && !isPendingPayment && (
                 <RoomServiceSection bookingId={booking.id} hotelId={booking.hotelId} />
               )}
 

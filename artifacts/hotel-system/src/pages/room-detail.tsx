@@ -6,15 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Check, User, Wind, Maximize, Crown, Star, Calendar, Users as UsersIcon,
   Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Sparkles, ShieldCheck,
-  CreditCard, Award, MapPin,
+  CreditCard, Award, MapPin, Loader2, ExternalLink,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
-type Step = 1 | 2 | 3;
+const API = import.meta.env.VITE_API_URL ?? "";
+
+type Step = 1 | 2 | 3 | 4;
+
+interface MomoPayment {
+  payUrl: string;
+  qrCodeUrl: string;
+  orderId: string;
+  amount: number;
+}
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat("vi-VN").format(Math.round(n)) + " ₫";
@@ -47,6 +56,26 @@ export default function RoomDetail() {
   const createBooking = useCreateBooking();
   const [step, setStep] = useState<Step>(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [momoPayment, setMomoPayment] = useState<MomoPayment | null>(null);
+  const [bookingId, setBookingId] = useState<number | null>(null);
+  const [paymentChecking, setPaymentChecking] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!bookingId || step !== 4) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/api/bookings/${bookingId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === "confirmed") {
+          clearInterval(pollRef.current!);
+          setLocation(`/bookings/${bookingId}`);
+        }
+      } catch {}
+    }, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [bookingId, step]);
 
   const [bookingData, setBookingData] = useState({
     guestName: "",
@@ -103,7 +132,7 @@ export default function RoomDetail() {
     }
   };
 
-  const handleBooking = (e: React.FormEvent) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!room) return;
     if (!datesValid || !guestValid) return;
@@ -111,15 +140,49 @@ export default function RoomDetail() {
     createBooking.mutate(
       { data: { roomId: room.id, ...bookingData } },
       {
-        onSuccess: (data) => {
-          toast({ title: t("toast.success"), description: t("toast.bookingSuccess") });
-          setLocation(`/bookings/${data.id}`);
+        onSuccess: async (data) => {
+          setBookingId(data.id);
+          try {
+            const res = await fetch(`${API}/api/payments/momo/create`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ bookingId: data.id }),
+            });
+            if (!res.ok) throw new Error("Failed to create MoMo payment");
+            const momo = await res.json() as MomoPayment;
+            setMomoPayment(momo);
+            setStep(4);
+          } catch {
+            toast({
+              title: t("toast.error"),
+              description: "Không thể khởi tạo thanh toán MoMo. Vui lòng thử lại.",
+              variant: "destructive",
+            });
+          }
         },
         onError: () => {
           toast({ title: t("toast.error"), description: t("toast.bookingError"), variant: "destructive" });
         },
       },
     );
+  };
+
+  const handleCheckPayment = async () => {
+    if (!bookingId) return;
+    setPaymentChecking(true);
+    try {
+      const res = await fetch(`${API}/api/bookings/${bookingId}`);
+      const data = await res.json();
+      if (data.status === "confirmed") {
+        setLocation(`/bookings/${bookingId}`);
+      } else {
+        toast({ title: "Chưa nhận được thanh toán", description: "Vui lòng quét mã QR và hoàn tất thanh toán.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: t("toast.error"), description: "Không thể kiểm tra trạng thái thanh toán.", variant: "destructive" });
+    } finally {
+      setPaymentChecking(false);
+    }
   };
 
   if (loadingRoom || loadingHotel) {
@@ -292,7 +355,7 @@ export default function RoomDetail() {
                   <>
                     {/* Stepper */}
                     <div className="px-6 pt-5">
-                      <Stepper current={step} steps={["Ngày", "Thông tin", "Xác nhận"]} />
+                      <Stepper current={step} steps={["Ngày", "Thông tin", "Xác nhận", "Thanh toán"]} />
                     </div>
 
                     <form onSubmit={handleBooking} className="p-6 space-y-5">
@@ -417,6 +480,76 @@ export default function RoomDetail() {
                           <div className="text-[10px] text-center text-white/40 tracking-widest uppercase pt-2 border-t border-primary/15">
                             <ShieldCheck size={11} className="inline mr-1 text-primary/70" />
                             Thanh toán an toàn · Hủy miễn phí trước 48h
+                          </div>
+                        </div>
+                      )}
+
+                      {/* STEP 4 — MoMo QR Payment */}
+                      {step === 4 && momoPayment && (
+                        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                          <div className="text-center">
+                            <div className="inline-flex items-center gap-2 mb-1">
+                              <span className="w-5 h-5 rounded-full bg-[#ae2070] flex items-center justify-center">
+                                <span className="text-white text-[9px] font-bold">M</span>
+                              </span>
+                              <span className="text-[10px] tracking-[0.3em] uppercase text-primary/80">Thanh toán MoMo</span>
+                            </div>
+                            <p className="text-white/60 text-xs mt-1">Quét mã QR bằng ứng dụng MoMo để thanh toán</p>
+                          </div>
+
+                          {/* QR Code */}
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="bg-white p-3 border-2 border-primary/30">
+                              {momoPayment.qrCodeUrl ? (
+                                <img
+                                  src={momoPayment.qrCodeUrl}
+                                  alt="MoMo QR Code"
+                                  className="w-44 h-44 object-contain"
+                                />
+                              ) : (
+                                <div className="w-44 h-44 flex items-center justify-center text-secondary text-xs text-center p-4">
+                                  QR không khả dụng. Dùng link bên dưới.
+                                </div>
+                              )}
+                            </div>
+                            <a
+                              href={momoPayment.payUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-[10px] text-primary/80 uppercase tracking-widest hover:text-primary transition-colors"
+                            >
+                              <ExternalLink size={11} /> Mở trang thanh toán MoMo
+                            </a>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="bg-white/5 border border-primary/20 px-4 py-3 flex justify-between items-center">
+                            <span className="text-[10px] tracking-widest uppercase text-white/50">Số tiền</span>
+                            <span className="font-serif text-primary text-lg">{fmtVND(momoPayment.amount)}</span>
+                          </div>
+
+                          {/* Waiting indicator */}
+                          <div className="flex items-center justify-center gap-2 text-white/40 text-[10px] uppercase tracking-widest">
+                            <Loader2 size={12} className="animate-spin text-primary/60" />
+                            Đang chờ xác nhận thanh toán...
+                          </div>
+
+                          {/* Manual check button */}
+                          <Button
+                            type="button"
+                            onClick={handleCheckPayment}
+                            disabled={paymentChecking}
+                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none py-3 uppercase tracking-[0.2em] text-xs"
+                          >
+                            {paymentChecking ? (
+                              <><Loader2 size={13} className="mr-2 animate-spin" /> Đang kiểm tra...</>
+                            ) : (
+                              "Tôi đã thanh toán xong"
+                            )}
+                          </Button>
+
+                          <div className="text-[10px] text-center text-white/30 tracking-widest uppercase">
+                            Trang sẽ tự động cập nhật sau khi thanh toán thành công
                           </div>
                         </div>
                       )}

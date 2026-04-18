@@ -13,9 +13,11 @@ import invoicesRouter from "./invoices";
 import settingsRouter from "./settings";
 import contactMessagesRouter from "./contact-messages";
 import blogPostsRouter from "./blog-posts";
+import paymentsRouter from "./payments";
 
 const router: IRouter = Router();
 
+router.use(paymentsRouter);
 router.use(healthRouter);
 router.use(hotelsRouter);
 router.use(roomsRouter);
