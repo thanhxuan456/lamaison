@@ -297,13 +297,47 @@ if (-not (Test-Path $nssmPath)) {
 New-Item -ItemType Directory -Force -Path (Join-Path $Config.InstallDir "logs") | Out-Null
 $nodePath = (Get-Command node).Source
 
+# --- Write launcher .cmd files (env vars hardcoded — no NSSM env magic needed) ---
+
+$apiDistPath  = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
+$apiLauncher  = Join-Path $Config.InstallDir "start-api.cmd"
+$apiCmd = @(
+    "@echo off",
+    "set PORT=$($Config.ApiPort)",
+    "set DATABASE_URL=$DatabaseUrl",
+    "set CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
+    "set NODE_ENV=production",
+    "`"$nodePath`" --enable-source-maps `"$apiDistPath`""
+) -join "`r`n"
+[System.IO.File]::WriteAllText($apiLauncher, $apiCmd, $utf8NoBom)
+Write-OK "Created start-api.cmd"
+
+$viteJs = Get-ChildItem (Join-Path $Config.InstallDir "node_modules\.pnpm\vite@*\node_modules\vite\bin\vite.js") -ErrorAction SilentlyContinue |
+          Sort-Object LastWriteTime -Descending |
+          Select-Object -First 1 -ExpandProperty FullName
+if (-not $viteJs) { throw "Could not locate vite.js in pnpm store. Run pnpm install first." }
+Write-OK "Found vite at: $viteJs"
+
+$viteConfig = Join-Path $Config.InstallDir "artifacts\hotel-system\vite.config.ts"
+$frontendLauncher = Join-Path $Config.InstallDir "start-frontend.cmd"
+$frontendCmd = @(
+    "@echo off",
+    "set PORT=$($Config.FrontendPort)",
+    "set BASE_PATH=/",
+    "set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
+    "set NODE_ENV=production",
+    "`"$nodePath`" `"$viteJs`" preview --config `"$viteConfig`" --host 0.0.0.0 --port $($Config.FrontendPort)"
+) -join "`r`n"
+[System.IO.File]::WriteAllText($frontendLauncher, $frontendCmd, $utf8NoBom)
+Write-OK "Created start-frontend.cmd"
+
+# --- NSSM service installer (no env vars — handled by launcher scripts) ---
+
 function Install-NssmService {
     param(
         [string]$svcName,
         [string]$displayName,
-        [string]$exe,
-        [string]$exeArgs,
-        [string[]]$envLines
+        [string]$launcher
     )
 
     $existing = Get-Service -Name $svcName -ErrorAction SilentlyContinue
@@ -315,7 +349,7 @@ function Install-NssmService {
         Start-Sleep -Seconds 2
     }
 
-    & $nssmPath install $svcName $exe $exeArgs
+    & $nssmPath install $svcName "cmd.exe" "/c `"$launcher`""
     & $nssmPath set $svcName DisplayName $displayName
     & $nssmPath set $svcName Description "Grand Palace Hotels & Resorts - $displayName"
     & $nssmPath set $svcName AppDirectory $Config.InstallDir
@@ -325,38 +359,11 @@ function Install-NssmService {
     & $nssmPath set $svcName AppRotateFiles 1
     & $nssmPath set $svcName AppRotateBytes 10485760
 
-    if ($envLines.Count -gt 0) {
-        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$svcName\Parameters"
-        Set-ItemProperty -Path $regPath -Name AppEnvironmentExtra -Value $envLines -Type MultiString
-    }
-
     Write-OK "Service registered: $svcName"
 }
 
-$apiDistPath = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
-Install-NssmService `
-    -svcName     "GrandPalaceAPI" `
-    -displayName "Grand Palace - API Server" `
-    -exe         $nodePath `
-    -exeArgs     "--enable-source-maps `"$apiDistPath`"" `
-    -envLines    @(
-        "PORT=" + $Config.ApiPort,
-        "DATABASE_URL=" + $DatabaseUrl,
-        "CLERK_SECRET_KEY=" + $Config.ClerkSecretKey,
-        "NODE_ENV=production"
-    )
-
-Install-NssmService `
-    -svcName     "GrandPalaceFrontend" `
-    -displayName "Grand Palace - Frontend" `
-    -exe         "cmd.exe" `
-    -exeArgs     "/c pnpm --filter @workspace/hotel-system run serve" `
-    -envLines    @(
-        "PORT=" + $Config.FrontendPort,
-        "BASE_PATH=/",
-        "VITE_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
-        "NODE_ENV=production"
-    )
+Install-NssmService -svcName "GrandPalaceAPI"      -displayName "Grand Palace - API Server" -launcher $apiLauncher
+Install-NssmService -svcName "GrandPalaceFrontend" -displayName "Grand Palace - Frontend"   -launcher $frontendLauncher
 
 # ===========================================================
 # 10. START SERVICES
