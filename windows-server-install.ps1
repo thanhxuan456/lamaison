@@ -326,7 +326,8 @@ function Install-NssmService {
     & $nssmPath set $svcName AppRotateBytes 10485760
 
     if ($envLines.Count -gt 0) {
-        & $nssmPath set $svcName AppEnvironmentExtra @envLines
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$svcName\Parameters"
+        Set-ItemProperty -Path $regPath -Name AppEnvironmentExtra -Value $envLines -Type MultiString
     }
 
     Write-OK "Service registered: $svcName"
@@ -345,13 +346,11 @@ Install-NssmService `
         "NODE_ENV=production"
     )
 
-$vitePath = Join-Path $Config.InstallDir "node_modules\.bin\vite.cmd"
-$viteConfig = Join-Path $Config.InstallDir "artifacts\hotel-system\vite.config.ts"
 Install-NssmService `
     -svcName     "GrandPalaceFrontend" `
     -displayName "Grand Palace - Frontend" `
     -exe         "cmd.exe" `
-    -exeArgs     "/c `"$vitePath`" preview --config `"$viteConfig`" --host 0.0.0.0 --port $($Config.FrontendPort)" `
+    -exeArgs     "/c pnpm --filter @workspace/hotel-system run serve" `
     -envLines    @(
         "PORT=" + $Config.FrontendPort,
         "BASE_PATH=/",
