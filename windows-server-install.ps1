@@ -243,9 +243,18 @@ Write-Step "Step 9: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
+# Remove node_modules for a clean install (fixes Windows native binary issues)
+$nodeModulesDir = Join-Path $Config.InstallDir "node_modules"
+if (Test-Path $nodeModulesDir) {
+    Write-Info "Removing existing node_modules for a clean reinstall..."
+    Remove-Item $nodeModulesDir -Recurse -Force
+    Write-OK "node_modules removed"
+}
+
+# Remove lockfile so pnpm re-resolves Windows-native binaries fresh
 $lockFile = Join-Path $Config.InstallDir "pnpm-lock.yaml"
 if (Test-Path $lockFile) {
-    Write-Info "Removing Linux lockfile so pnpm resolves Windows-native binaries..."
+    Write-Info "Removing lockfile so pnpm resolves Windows-native binaries..."
     Remove-Item $lockFile -Force
 }
 
@@ -266,29 +275,31 @@ Write-Info "Seeding database with initial data..."
 if ($LASTEXITCODE -ne 0) { throw "Database seeding failed." }
 Write-OK "Database seeded"
 
-$apiDist = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
-if (Test-Path $apiDist) {
-    Write-OK "API server already built, skipping"
-} else {
-    Write-Info "Building API server..."
-    & pnpm --filter "@workspace/api-server" run build
-    if ($LASTEXITCODE -ne 0) { throw "API server build failed." }
-    Write-OK "API server built"
+# Remove old API dist and rebuild fresh
+$apiDistDir = Join-Path $Config.InstallDir "artifacts\api-server\dist"
+if (Test-Path $apiDistDir) {
+    Write-Info "Removing old API server build..."
+    Remove-Item $apiDistDir -Recurse -Force
 }
+Write-Info "Building API server..."
+& pnpm --filter "@workspace/api-server" run build
+if ($LASTEXITCODE -ne 0) { throw "API server build failed." }
+Write-OK "API server built"
 
-$frontendDist = Join-Path $Config.InstallDir "artifacts\hotel-system\dist\index.html"
-if (Test-Path $frontendDist) {
-    Write-OK "Frontend already built, skipping"
-} else {
-    Write-Info "Building frontend..."
-    $env:PORT     = [string]$Config.FrontendPort
-    $env:BASE_PATH = "/"
-    $env:NODE_ENV  = "production"
-    $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
-    & pnpm --filter "@workspace/hotel-system" run build
-    if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
-    Write-OK "Frontend built"
+# Remove old frontend dist and rebuild fresh
+$frontendDistDir = Join-Path $Config.InstallDir "artifacts\hotel-system\dist"
+if (Test-Path $frontendDistDir) {
+    Write-Info "Removing old frontend build..."
+    Remove-Item $frontendDistDir -Recurse -Force
 }
+Write-Info "Building frontend..."
+$env:PORT     = [string]$Config.FrontendPort
+$env:BASE_PATH = "/"
+$env:NODE_ENV  = "production"
+$env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
+& pnpm --filter "@workspace/hotel-system" run build
+if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
+Write-OK "Frontend built"
 
 Pop-Location
 
