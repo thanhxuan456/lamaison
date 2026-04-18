@@ -1,0 +1,75 @@
+  [OK] Service registered: GrandPalaceFrontend
+
+[11/12] Starting services and health check
+    ---------------------------------------------------
+  [ERROR] GrandPalaceAPI failed to start: Failed to start service 'Grand Palace - API Server (GrandPalaceAPI)'.
+  Last log lines:
+    'MOMO' is not recognized as an internal or external command,
+    operable program or batch file.
+    'F8BBA842ECF85' is not recognized as an internal or external command,
+    operable program or batch file.
+    'K951B6PE1waDMi640xX08PD3vg6EkVlz' is not recognized as an internal or external command,
+    operable program or batch file.
+    'https:' is not recognized as an internal or external command,
+    operable program or batch file.
+    'http:' is not recognized as an internal or external command,
+    operable program or batch file.
+    'http:' is not recognized as an internal or external command,
+    operable program or batch file.
+    '"' is not recognized as an internal or external command,
+    operable program or batch file.
+    'C:\Program' is not recognized as an internal or external command,
+    operable program or batch file.
+    '" --enable-source-maps "' is not recognized as an internal or external command,
+    operable program or batch file.
+    '"' is not recognized as an internal or external command,
+    operable program or batch file.
+WARNING: Waiting for service 'Grand Palace - Frontend (GrandPalaceFrontend)' to start...
+WARNING: Waiting for service 'Grand Palace - Frontend (GrandPalaceFrontend)' to start...
+WARNING: Waiting for service 'Grand Palace - Frontend (GrandPalaceFrontend)' to start...
+WARNING: Waiting for service 'Grand Palace - Frontend (GrandPalaceFrontend)' to start...
+  [OK] GrandPalaceFrontend started
+  --> Waiting for API at http://localhost:8080/api/healthz ...
+  -->   Attempt 1/12 -- waiting 5 s...
+  -->   Attempt 2/12 -- waiting 5 s...
+  -->   Attempt 3/12 -- waiting 5 s...
+  -->   Attempt 4/12 -- waiting 5 s...
+  -->   Attempt 5/12 -- waiting 5 s...
+  -->   Attempt 6/12 -- waiting 5 s...
+  -->   Attempt 7/12 -- waiting 5 s...
+  -->   Attempt 8/12 -- waiting 5 s...
+  -->   Attempt 9/12 -- waiting 5 s...
+  -->   Attempt 10/12 -- waiting 5 s...
+  -->   Attempt 11/12 -- waiting 5 s...
+  -->   Attempt 12/12 -- waiting 5 s...
+  [!] API did not respond within 60 s. Check: C:\GrandPalace\logs\GrandPalaceAPI-err.log
+  [OK] GrandPalaceAPI:      Paused
+  [OK] GrandPalaceFrontend: Running
+
+[12/12] Firewall rules
+    ---------------------------------------------------
+  [OK] Firewall: 'Grand Palace API' -> port 8080
+  [OK] Firewall: 'Grand Palace Frontend' -> port 3000
+
+=====================================================
+  Grand Palace Hotels and Resorts -- INSTALLED
+=====================================================
+
+  Frontend : http://222.255.180.94:3000/
+  API      : http://222.255.180.94:8080/api/
+  Admin    : http://222.255.180.94:3000/admin
+
+  Services (auto-start on reboot):
+    GrandPalaceAPI      port 8080
+    GrandPalaceFrontend port 3000
+
+  Logs     : C:\GrandPalace\logs
+  Env file : C:\GrandPalace\.env
+  Log file : C:\Users\ADMINI~1\AppData\Local\Temp\2\GrandPalaceInstall_20260418_155121.log
+
+  WARNING: Services that failed to start:
+    - GrandPalaceAPI
+  Check error logs in: C:\GrandPalace\logs
+
+  TIP: Update ApiPublicUrl / FrontendUrl in Config for MoMo callbacks.
+    Then re-run with: -SkipBuild

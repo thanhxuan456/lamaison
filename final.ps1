@@ -46,7 +46,7 @@ $Config = @{
     #   Fill NeonDatabaseUrl below, leave UseLocalPg = $false
     # Option B: Local PostgreSQL -- set UseLocalPg = $true
     UseLocalPg          = $false
-    NeonDatabaseUrl     = "postgresql://neondb_owner:npg_YCEZLyV6gwi7@ep-fragrant-sunset-a18l1eva-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    NeonDatabaseUrl     = "postgresql://neondb_owner:npg_YCEZLyV6gwi7@ep-fragrant-sunset-a18l1eva-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
     PgSuperPassword     = "ZeroCode123#!!"
     PgDbName            = "grandpalace"
@@ -580,20 +580,20 @@ Write-OK "Vite found: $viteJs"
 $apiLauncher = Join-Path $Config.InstallDir "start-api.cmd"
 $apiLines = @(
     "@echo off",
-    "set PORT=" + $Config.ApiPort,
-    "set DATABASE_URL=" + $DatabaseUrl,
-    "set NEON_DATABASE_URL=" + $NeonDatabaseUrl,
-    "set CLERK_SECRET_KEY=" + $Config.ClerkSecretKey,
-    "set CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
-    "set SESSION_SECRET=" + $sessionSecret,
-    "set CONTACT_ENCRYPTION_KEY=" + $contactEncKey,
-    "set NODE_ENV=production",
-    "set MOMO_PARTNER_CODE=" + $Config.MomoPartnerCode,
-    "set MOMO_ACCESS_KEY=" + $Config.MomoAccessKey,
-    "set MOMO_SECRET_KEY=" + $Config.MomoSecretKey,
-    "set MOMO_ENDPOINT=" + $Config.MomoEndpoint,
-    "set API_PUBLIC_URL=" + $Config.ApiPublicUrl,
-    "set FRONTEND_URL=" + $Config.FrontendUrl,
+    'set "PORT=' + $Config.ApiPort + '"',
+    'set "DATABASE_URL=' + $DatabaseUrl + '"',
+    'set "NEON_DATABASE_URL=' + $NeonDatabaseUrl + '"',
+    'set "CLERK_SECRET_KEY=' + $Config.ClerkSecretKey + '"',
+    'set "CLERK_PUBLISHABLE_KEY=' + $Config.ClerkPublishableKey + '"',
+    'set "SESSION_SECRET=' + $sessionSecret + '"',
+    'set "CONTACT_ENCRYPTION_KEY=' + $contactEncKey + '"',
+    'set "NODE_ENV=production"',
+    'set "MOMO_PARTNER_CODE=' + $Config.MomoPartnerCode + '"',
+    'set "MOMO_ACCESS_KEY=' + $Config.MomoAccessKey + '"',
+    'set "MOMO_SECRET_KEY=' + $Config.MomoSecretKey + '"',
+    'set "MOMO_ENDPOINT=' + $Config.MomoEndpoint + '"',
+    'set "API_PUBLIC_URL=' + $Config.ApiPublicUrl + '"',
+    'set "FRONTEND_URL=' + $Config.FrontendUrl + '"',
     "`"" + $nodePath + "`" --enable-source-maps `"" + $apiDistPath + "`""
 )
 [System.IO.File]::WriteAllText($apiLauncher, ($apiLines -join "`r`n"), $utf8NoBom)
@@ -602,12 +602,12 @@ Write-OK "Created start-api.cmd"
 $frontendLauncher = Join-Path $Config.InstallDir "start-frontend.cmd"
 $frontendLines = @(
     "@echo off",
-    "set PORT=" + $Config.FrontendPort,
-    "set BASE_PATH=/",
-    "set VITE_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
-    "set VITE_CLERK_PROXY_URL=" + $clerkProxyUrl,
-    "set VITE_API_URL=" + $Config.ApiPublicUrl,
-    "set NODE_ENV=production",
+    'set "PORT=' + $Config.FrontendPort + '"',
+    'set "BASE_PATH=/"',
+    'set "VITE_CLERK_PUBLISHABLE_KEY=' + $Config.ClerkPublishableKey + '"',
+    'set "VITE_CLERK_PROXY_URL=' + $clerkProxyUrl + '"',
+    'set "VITE_API_URL=' + $Config.ApiPublicUrl + '"',
+    'set "NODE_ENV=production"',
     "`"" + $nodePath + "`" `"" + $viteJs + "`" preview --config `"" + $viteConfigPath + "`" --host 0.0.0.0 --port " + $Config.FrontendPort
 )
 [System.IO.File]::WriteAllText($frontendLauncher, ($frontendLines -join "`r`n"), $utf8NoBom)
