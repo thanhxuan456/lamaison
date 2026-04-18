@@ -352,6 +352,14 @@ if ([string]::IsNullOrEmpty($contactEncKey)) { $contactEncKey = New-RandomSecret
 
 $clerkProxyUrl = $Config.ApiPublicUrl + "/api/__clerk"
 
+# When ApiPublicUrl is still the placeholder, use relative URLs so the
+# Node.js frontend proxy (serve-frontend.mjs) forwards /api/* to port 8080.
+# This avoids baking an unresolvable hostname into the JS bundle.
+$ViteApiUrl = if ($Config.ApiPublicUrl -match "YOUR_SERVER_IP") { "" } else { $Config.ApiPublicUrl }
+if ($ViteApiUrl -eq "") {
+    Write-Warn "ApiPublicUrl not configured -- frontend will use relative API URLs (proxied via port $($Config.FrontendPort))"
+}
+
 $envLines = @(
     "NODE_ENV=production",
     "DATABASE_URL=" + $DatabaseUrl,
@@ -528,7 +536,7 @@ try {
             Remove-Item $frontendDistDir -Recurse -Force
         }
         Write-Info "Building frontend..."
-        & cmd /c "set PORT=$($Config.FrontendPort) && set BASE_PATH=/ && set NODE_ENV=production && set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey) && set VITE_CLERK_PROXY_URL=$clerkProxyUrl && set VITE_API_URL=$($Config.ApiPublicUrl) && pnpm --filter `"@workspace/hotel-system`" run build"
+        & cmd /c "set PORT=$($Config.FrontendPort) && set BASE_PATH=/ && set NODE_ENV=production && set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey) && set VITE_CLERK_PROXY_URL=$clerkProxyUrl && set VITE_API_URL=$ViteApiUrl && pnpm --filter `"@workspace/hotel-system`" run build"
         if ($LASTEXITCODE -ne 0) { Fail "Frontend build failed." }
         Write-OK "Frontend built"
     } else {
@@ -731,6 +739,7 @@ Install-NssmService `
 # ===========================================================
 Write-Step "11/12" "Starting services and health check"
 
+# -- Start both services ------------------------------------------------
 $startFailed = @()
 foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
     try {
@@ -749,25 +758,138 @@ foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
     Start-Sleep -Seconds 3
 }
 
+# -- [CHECK 1] API basic health ------------------------------------------
 $apiReady  = $false
 $healthUrl = "http://localhost:" + $Config.ApiPort + "/api/healthz"
 Write-Info "Waiting for API at $healthUrl ..."
-for ($i = 1; $i -le 12; $i++) {
+for ($i = 1; $i -le 15; $i++) {
     try {
         $r = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
         if ($r.StatusCode -lt 400) { $apiReady = $true; break }
     } catch {}
-    Write-Info "  Attempt $i/12 -- waiting 5 s..."
+    Write-Info "  Attempt $i/15 -- waiting 5 s..."
     Start-Sleep -Seconds 5
 }
-if ($apiReady) { Write-OK "API health check passed" }
-else { Write-Warn "API did not respond within 60 s. Check: $LogDir\GrandPalaceAPI-err.log" }
+if ($apiReady) { Write-OK "[CHECK 1] API health check passed" }
+else {
+    Write-Err "[CHECK 1] API did not respond within 75 s"
+    $errLog = Join-Path $LogDir "GrandPalaceAPI-err.log"
+    if (Test-Path $errLog) {
+        Write-Host "  --- Last 30 lines of API error log ---" -ForegroundColor DarkRed
+        Get-Content $errLog -ErrorAction SilentlyContinue | Select-Object -Last 30 |
+            ForEach-Object { Write-Host "    $_" -ForegroundColor DarkRed }
+    }
+}
 
+# -- [CHECK 2] Verify env vars in Windows registry ----------------------
+Write-Info "[CHECK 2] Verifying GrandPalaceAPI environment variables in registry..."
+$regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\GrandPalaceAPI\Parameters"
+if (Test-Path $regPath) {
+    $regVal = (Get-ItemProperty -Path $regPath -Name "AppEnvironmentExtra" -ErrorAction SilentlyContinue).AppEnvironmentExtra
+    if ($regVal) {
+        $hasClerk  = ($regVal | Where-Object { $_ -match "^CLERK_SECRET_KEY=.+" }) -ne $null
+        $hasDb     = ($regVal | Where-Object { $_ -match "^(NEON_DATABASE_URL|DATABASE_URL)=.+" }) -ne $null
+        $hasPort   = ($regVal | Where-Object { $_ -match "^PORT=" }) -ne $null
+        if ($hasClerk -and $hasDb -and $hasPort) {
+            Write-OK "[CHECK 2] CLERK_SECRET_KEY, DATABASE_URL, PORT all present in service registry"
+        } else {
+            if (-not $hasClerk) { Write-Err "[CHECK 2] CLERK_SECRET_KEY MISSING from service registry -- all API routes will return 500!" }
+            if (-not $hasDb)    { Write-Err "[CHECK 2] DATABASE_URL / NEON_DATABASE_URL MISSING from service registry!" }
+            if (-not $hasPort)  { Write-Err "[CHECK 2] PORT MISSING from service registry!" }
+            Write-Warn "Registered env vars for GrandPalaceAPI:"
+            $regVal | ForEach-Object {
+                $display = if ($_ -match "^(CLERK_SECRET_KEY|.*_KEY|.*_SECRET|.*PASSWORD)=") { ($_ -replace "=.*", "=***hidden***") } else { $_ }
+                Write-Host "    $display" -ForegroundColor DarkYellow
+            }
+        }
+    } else {
+        Write-Err "[CHECK 2] AppEnvironmentExtra key EMPTY in registry -- no env vars injected into service!"
+    }
+} else {
+    Write-Warn "[CHECK 2] Registry path not found: $regPath"
+}
+
+# -- [CHECK 3] Database connectivity and seed data ----------------------
+Write-Info "[CHECK 3] Verifying database has data (hotels + rooms)..."
+if ($apiReady) {
+    try {
+        $hotelsResp = Invoke-WebRequest -Uri "http://localhost:$($Config.ApiPort)/api/hotels" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+        $hotelsJson = $hotelsResp.Content | ConvertFrom-Json -ErrorAction SilentlyContinue
+        $hotelCount = if ($hotelsJson -is [Array]) { $hotelsJson.Count } elseif ($hotelsJson) { 1 } else { 0 }
+        if ($hotelsJson -and $hotelCount -gt 0) {
+            Write-OK "[CHECK 3a] Hotels endpoint OK -- $hotelCount hotel(s) found in database"
+        } else {
+            Write-Err "[CHECK 3a] Hotels endpoint returned 0 records -- seed may have failed"
+        }
+    } catch {
+        Write-Err "[CHECK 3a] Hotels endpoint failed: $_"
+    }
+    try {
+        $roomsResp = Invoke-WebRequest -Uri "http://localhost:$($Config.ApiPort)/api/rooms" -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+        $roomsJson = $roomsResp.Content | ConvertFrom-Json -ErrorAction SilentlyContinue
+        $roomCount = if ($roomsJson -is [Array]) { $roomsJson.Count } elseif ($roomsJson) { 1 } else { 0 }
+        if ($roomsJson -and $roomCount -gt 0) {
+            Write-OK "[CHECK 3b] Rooms endpoint OK -- $roomCount room(s) found in database"
+        } else {
+            Write-Err "[CHECK 3b] Rooms endpoint returned 0 records!"
+            Write-Warn "Re-run seed manually from $($Config.InstallDir):"
+            Write-Host "    cmd /c `"set DATABASE_URL=$DatabaseUrl && pnpm --filter @workspace/scripts run seed`"" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Err "[CHECK 3b] Rooms endpoint failed: $_"
+    }
+} else {
+    Write-Warn "[CHECK 3] Skipped -- API is not responding"
+}
+
+# -- [CHECK 4] Frontend reachable ----------------------------------------
+Write-Info "[CHECK 4] Verifying frontend is serving on port $($Config.FrontendPort)..."
+$frontendReady = $false
+for ($i = 1; $i -le 6; $i++) {
+    try {
+        $fr = Invoke-WebRequest -Uri "http://localhost:$($Config.FrontendPort)/" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        if ($fr.StatusCode -lt 400) { $frontendReady = $true; break }
+    } catch {}
+    Start-Sleep -Seconds 3
+}
+if ($frontendReady) { Write-OK "[CHECK 4] Frontend serving on port $($Config.FrontendPort)" }
+else {
+    Write-Err "[CHECK 4] Frontend not responding on port $($Config.FrontendPort)"
+    $feLog = Join-Path $LogDir "GrandPalaceFrontend-err.log"
+    if (Test-Path $feLog) {
+        Write-Host "  --- Last 20 lines of frontend error log ---" -ForegroundColor DarkRed
+        Get-Content $feLog -ErrorAction SilentlyContinue | Select-Object -Last 20 |
+            ForEach-Object { Write-Host "    $_" -ForegroundColor DarkRed }
+    }
+}
+
+# -- [CHECK 5] VITE_API_URL baked into bundle ----------------------------
+Write-Info "[CHECK 5] Checking API URL baked into frontend bundle..."
+$distAssets = Join-Path $Config.InstallDir "artifacts\hotel-system\dist\public\assets"
+if (Test-Path $distAssets) {
+    $jsFile = Get-ChildItem -Path $distAssets -Filter "index-*.js" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($jsFile) {
+        $bundleSnip = Get-Content $jsFile.FullName -Raw -ErrorAction SilentlyContinue
+        if ($bundleSnip -match "YOUR_SERVER_IP") {
+            Write-Err "[CHECK 5] Bundle contains placeholder YOUR_SERVER_IP -- rooms/hotels will NOT load!"
+            Write-Warn "Set ApiPublicUrl in the Config block to your real IP and re-run final.ps1 (without -SkipBuild)"
+        } elseif ($ViteApiUrl -eq "") {
+            Write-OK "[CHECK 5] Frontend uses relative API URLs -- proxied via serve-frontend.mjs. OK."
+        } else {
+            Write-OK "[CHECK 5] Frontend API URL: $ViteApiUrl"
+        }
+    } else {
+        Write-Warn "[CHECK 5] No index-*.js found in dist/assets -- was the frontend built?"
+    }
+} else {
+    Write-Warn "[CHECK 5] Frontend dist/assets directory not found: $distAssets"
+}
+
+# -- Summary -------------------------------------------------------------
 $apiStatus      = (Get-Service -Name "GrandPalaceAPI"      -ErrorAction SilentlyContinue).Status
 $frontendStatus = (Get-Service -Name "GrandPalaceFrontend" -ErrorAction SilentlyContinue).Status
 Write-OK "GrandPalaceAPI:      $apiStatus"
 Write-OK "GrandPalaceFrontend: $frontendStatus"
-
 # ===========================================================
 # STEP 12 -- FIREWALL RULES
 # ===========================================================
