@@ -47,7 +47,7 @@ $Config = @{
     # Front-end port (exposed to users - open this in your firewall)
     FrontendPort        = 3000
 
-    # ── DATABASE (choose one) ─────────────────────────────────────────────
+    # -- DATABASE (choose one) ---------------------------------------------
     # Option A: Neon cloud database (recommended - no local PG install needed)
     #   Set NeonDatabaseUrl to your Neon connection string, leave UseLocalPg = $false
     # Option B: Local PostgreSQL
@@ -61,13 +61,13 @@ $Config = @{
     PgDbUser            = "grandpalace"
     PgDbPassword        = "ChangeMe456!"
 
-    # ── CLERK AUTHENTICATION ──────────────────────────────────────────────
+    # -- CLERK AUTHENTICATION ----------------------------------------------
     # Get these from https://dashboard.clerk.com -> Your App -> API Keys
     # Use PRODUCTION keys for live deployments (pk_live_... / sk_live_...)
     ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
     ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
 
-    # ── MOMO PAYMENT ──────────────────────────────────────────────────────
+    # -- MOMO PAYMENT ------------------------------------------------------
     # For testing: leave sandbox defaults below
     # For production: replace with your real MoMo Business credentials from https://business.momo.vn
     MomoPartnerCode     = "MOMO"
@@ -75,16 +75,16 @@ $Config = @{
     MomoSecretKey       = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
     MomoEndpoint        = "https://test-payment.momo.vn/v2/gateway/api/create"
 
-    # ── PUBLIC URLs (must be reachable from the internet for MoMo callbacks) ──
+    # -- PUBLIC URLs (must be reachable from the internet for MoMo callbacks) --
     # Replace YOUR_SERVER_IP with your server's actual IP or domain name
     ApiPublicUrl        = "http://YOUR_SERVER_IP:8080"
     FrontendUrl         = "http://YOUR_SERVER_IP:3000"
 
-    # ── VERSIONS ──────────────────────────────────────────────────────────
+    # -- VERSIONS ----------------------------------------------------------
     NodeVersion         = "22.14.0"
     PgVersion           = "16"
 
-    # ── SYSTEM REQUIREMENTS ───────────────────────────────────────────────
+    # -- SYSTEM REQUIREMENTS -----------------------------------------------
     MinRamGB            = 2
     MinDiskGB           = 10
 }
@@ -661,9 +661,9 @@ $serverIp = try {
 if (-not $serverIp) { $serverIp = "YOUR_SERVER_IP" }
 
 Write-Host ""
-Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║         Grand Palace Hotels & Resorts - INSTALLED         ║" -ForegroundColor Green
-Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "+===========================================================+" -ForegroundColor Green
+Write-Host "|         Grand Palace Hotels & Resorts - INSTALLED         |" -ForegroundColor Green
+Write-Host "+===========================================================+" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Frontend  : http://$($serverIp):$($Config.FrontendPort)/"    -ForegroundColor White
 Write-Host "  API       : http://$($serverIp):$($Config.ApiPort)/api/"     -ForegroundColor White
