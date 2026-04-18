@@ -309,8 +309,9 @@ function Install-NssmService {
     $existing = Get-Service -Name $svcName -ErrorAction SilentlyContinue
     if ($existing) {
         Write-Info "Removing old service: $svcName"
-        & $nssmPath stop $svcName 2>&1 | Out-Null
-        & $nssmPath remove $svcName confirm 2>&1 | Out-Null
+        try { & $nssmPath stop $svcName 2>&1 | Out-Null } catch {}
+        Start-Sleep -Seconds 1
+        try { & $nssmPath remove $svcName confirm 2>&1 | Out-Null } catch {}
         Start-Sleep -Seconds 2
     }
 
