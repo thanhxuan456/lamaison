@@ -40,11 +40,12 @@ export const DEFAULT_BRANDING: Branding = {
 
 export function formatPrice(amount: number | string | null | undefined, currency: Currency = "VND"): string {
   const n = Number(amount ?? 0);
-  if (!isFinite(n)) return currency === "USD" ? "$0" : "0 ₫";
+  if (!isFinite(n)) return currency === "USD" ? "0$" : "0 VNĐ";
+  const formatted = n.toLocaleString("vi-VN", { maximumFractionDigits: 0 });
   if (currency === "USD") {
-    return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    return formatted + "$";
   }
-  return n.toLocaleString("vi-VN", { maximumFractionDigits: 0 }) + " ₫";
+  return formatted + " VNĐ";
 }
 
 export function useFormatPrice() {

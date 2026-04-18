@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { Eye, FileText, Download, RefreshCw, Filter, Receipt, Check, Clock, X as XIcon } from "lucide-react";
+import { useFormatPrice } from "@/lib/branding";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
@@ -30,6 +31,7 @@ const STATUS_META: Record<string, { label: string; cls: string; Icon: any }> = {
 
 function AdminInvoicesContent() {
   const { toast } = useToast();
+  const fmtPrice = useFormatPrice();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ function AdminInvoicesContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatCard icon={Receipt} label="Tổng hóa đơn" value={String(invoices.length)} />
         <StatCard icon={Clock} label="Chờ thanh toán" value={String(pendingCount)} accent />
-        <StatCard icon={Check} label="Doanh thu (VND)" value={totalRevenue.toLocaleString("vi-VN")} />
+        <StatCard icon={Check} label="Doanh thu" value={fmtPrice(totalRevenue)} />
       </div>
 
       {/* Toolbar */}
@@ -113,7 +115,7 @@ function AdminInvoicesContent() {
                   <td className="px-4 py-3">#{inv.bookingId}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(inv.issuedAt).toLocaleString("vi-VN")}</td>
                   <td className="px-4 py-3 text-right font-serif text-primary">
-                    {Number(inv.total).toLocaleString("vi-VN")} ₫
+                    {fmtPrice(inv.total)}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 px-2 py-1 border text-[10px] uppercase tracking-widest ${meta.cls}`}>

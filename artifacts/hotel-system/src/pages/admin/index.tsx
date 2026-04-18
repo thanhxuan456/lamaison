@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { Link } from "wouter";
 import { Loader2 } from "lucide-react";
+import { useFormatPrice } from "@/lib/branding";
 
 const ADMIN_EMAIL = "tthanhxuan456@gmail.com";
 
@@ -51,6 +52,7 @@ function QuickAction({ icon: Icon, label, to, desc }: { icon: any; label: string
 
 function AdminDashboardContent() {
   const { t } = useT();
+  const fmtPrice = useFormatPrice();
   const { data: hotels, isLoading: hotelsLoading } = useListHotels();
   const { data: bookings, isLoading: bookingsLoading } = useListBookings();
 
@@ -64,7 +66,7 @@ function AdminDashboardContent() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatWidget label={t("admin.stat.hotels")} value={hotels?.length ?? 0} icon={Hotel} sub={t("admin.stat.branches")} />
         <StatWidget label={t("admin.stat.bookings")} value={bookings?.length ?? 0} icon={Calendar} sub={`${pendingBookings} ${t("admin.stat.pending")}`} />
-        <StatWidget label={t("admin.stat.revenue")} value={`$${(totalRevenue / 1000).toFixed(0)}K`} icon={DollarSign} sub={t("admin.stat.total")} />
+        <StatWidget label={t("admin.stat.revenue")} value={fmtPrice(totalRevenue)} icon={DollarSign} sub={t("admin.stat.total")} />
         <StatWidget label={t("admin.stat.rating")} value={avgRating} icon={Star} sub={t("admin.stat.avgRating")} />
       </div>
 
