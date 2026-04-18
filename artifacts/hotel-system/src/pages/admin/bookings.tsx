@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarX, LogIn, LogOut, Loader2, Search, FileSignature, Trash2 } from "lucide-react";
+import { CalendarX, LogIn, LogOut, Loader2, Search, FileSignature, Trash2, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -61,25 +61,34 @@ function BookingsContent() {
   };
   useEffect(() => { load(); }, []);
 
-  const action = async (id: number, kind: "check-in" | "check-out" | "cancel" | "delete") => {
+  const action = async (id: number, kind: "check-in" | "check-out" | "cancel" | "delete" | "bank-confirm") => {
     setBusyId(id);
     try {
       let url: string;
       let method: string;
+      let body: string | undefined;
       if (kind === "cancel") {
         url = `${API}/api/bookings/${id}`;
         method = "DELETE";
       } else if (kind === "delete") {
         url = `${API}/api/bookings/${id}/force`;
         method = "DELETE";
+      } else if (kind === "bank-confirm") {
+        url = `${API}/api/payments/bank/confirm`;
+        method = "POST";
+        body = JSON.stringify({ bookingId: id });
       } else {
         url = `${API}/api/bookings/${id}/${kind}`;
         method = "POST";
       }
-      const res = await fetch(url, { method });
+      const res = await fetch(url, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body,
+      });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Lỗi");
-      const labelMap = { "check-in": "Check-in", "check-out": "Check-out", "cancel": "Hủy", "delete": "Xóa" };
+      const labelMap = { "check-in": "Check-in", "check-out": "Check-out", "cancel": "Hủy", "delete": "Xóa", "bank-confirm": "Xác nhận chuyển khoản" };
       toast({ title: `${labelMap[kind]} thành công`, description: `Booking #${id}` });
       load();
     } catch (e: any) {
@@ -198,6 +207,15 @@ function BookingsContent() {
                             <FileSignature size={12} />
                           </button>
                         </Link>
+                        {/* Bank confirm: for pending_payment */}
+                        {status === "pending_payment" && (
+                          <button disabled={busyId === b.id}
+                            onClick={() => { if (confirm(`Xác nhận đã nhận chuyển khoản cho đặt phòng #${b.id}?`)) action(b.id, "bank-confirm"); }}
+                            title="Xác nhận chuyển khoản ngân hàng"
+                            className="p-1.5 border border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/15 disabled:opacity-40">
+                            {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                          </button>
+                        )}
                         {/* Cancel: not for checked_in, checked_out, or already cancelled */}
                         {(status === "pending" || status === "pending_payment" || status === "confirmed") && (
                           <button disabled={busyId === b.id}

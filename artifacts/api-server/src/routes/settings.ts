@@ -107,12 +107,18 @@ const DEFAULT_CONTACT_MAP = {
   height: 420,
 };
 
+const DEFAULT_PAYMENT_SETTINGS = {
+  momo: { enabled: false, partnerCode: "", accessKey: "", secretKey: "", testMode: true },
+  bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "GRAND PALACE HOTELS", defaultDescription: "Dat phong Grand Palace" },
+};
+
 // Safelist of keys that may be read/written via the generic endpoint and their defaults.
 const KEY_DEFAULTS: Record<string, unknown> = {
   theme: DEFAULT_THEME,
   mainMenu: DEFAULT_MAIN_MENU,
   footer: DEFAULT_FOOTER,
   contactMap: DEFAULT_CONTACT_MAP,
+  "payment-settings": DEFAULT_PAYMENT_SETTINGS,
 };
 
 function defaultFor(key: string): any {

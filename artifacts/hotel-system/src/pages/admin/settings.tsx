@@ -147,6 +147,13 @@ function BankQRSection({ toast }: { toast: ReturnType<typeof import("@/hooks/use
   const [saved, setSaved] = useState(false);
   const set = (k: keyof BankQRSettings, v: string) => setQr((x) => ({ ...x, [k]: v }));
 
+  useEffect(() => {
+    fetch(`${API}/api/settings/payment-settings`)
+      .then((r) => r.json())
+      .then((d) => { if (d?.bank) setQr((prev) => ({ ...prev, ...d.bank })); })
+      .catch(() => {});
+  }, []);
+
   const bank = VIET_BANKS.find((b) => b.code === qr.bankCode) ?? VIET_BANKS[0];
 
   const buildQrUrl = (amount: string, desc: string) => {
@@ -161,8 +168,16 @@ function BankQRSection({ toast }: { toast: ReturnType<typeof import("@/hooks/use
 
   const qrUrl = buildQrUrl(preview.amount || qr.defaultAmount, preview.description || qr.defaultDescription);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem(BANK_QR_KEY, JSON.stringify(qr));
+    try {
+      const current = await fetch(`${API}/api/settings/payment-settings`).then((r) => r.json());
+      await fetch(`${API}/api/settings/payment-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...current, bank: { ...qr, enabled: true } }),
+      });
+    } catch {}
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     toast({ title: "Thông tin ngân hàng đã lưu", description: `${bank.name} · ${qr.accountNumber}` });
@@ -334,82 +349,153 @@ function SectionHeader({ icon: Icon, title }: { icon: any; title: string }) {
 }
 
 /* ──────────────────────────────────────────
-   PAYMENT TAB
+   PAYMENT TAB — live methods (MoMo + Bank) + coming-soon list
 ────────────────────────────────────────── */
+interface MomoConfig { enabled: boolean; partnerCode: string; accessKey: string; secretKey: string; testMode: boolean; }
+
+const DEFAULT_MOMO_CFG: MomoConfig = { enabled: false, partnerCode: "", accessKey: "", secretKey: "", testMode: true };
+
 function PaymentTab() {
   const { toast } = useToast();
-  const [methods, setMethods] = useState<PaymentMethod[]>(() => load(PAYMENT_KEY, DEFAULT_PAYMENTS));
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [momoExpanded, setMomoExpanded] = useState(false);
+  const [bankExpanded, setBankExpanded] = useState(false);
+  const [momo, setMomo] = useState<MomoConfig>(DEFAULT_MOMO_CFG);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const update = (id: string, k: keyof PaymentMethod, v: any) =>
-    setMethods((m) => m.map((x) => x.id === id ? { ...x, [k]: v } : x));
+  useEffect(() => {
+    fetch(`${API}/api/settings/payment-settings`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.momo) setMomo({ ...DEFAULT_MOMO_CFG, ...d.momo });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  const save = () => {
-    localStorage.setItem(PAYMENT_KEY, JSON.stringify(methods));
-    toast({ title: "Cài đặt thanh toán đã lưu", description: `${methods.filter((m) => m.enabled).length} phương thức đang hoạt động` });
+  const saveMomo = async () => {
+    setSaving(true);
+    try {
+      const current = await fetch(`${API}/api/settings/payment-settings`).then((r) => r.json());
+      await fetch(`${API}/api/settings/payment-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...current, momo }),
+      });
+      toast({ title: "Cài đặt MoMo đã lưu", description: momo.testMode ? "Đang dùng chế độ Sandbox" : "Đang dùng môi trường thật" });
+    } catch {
+      toast({ title: "Lỗi lưu cài đặt", variant: "destructive" });
+    } finally { setSaving(false); }
   };
+
+  const COMING_SOON = [
+    { id: "vnpay",   name: "VNPay",   description: "Cổng thanh toán trực tuyến phổ biến nhất Việt Nam", logo: "https://logo.clearbit.com/vnpay.vn",         color: "#005BAA" },
+    { id: "zalopay", name: "ZaloPay", description: "Ví điện tử ZaloPay tích hợp với Zalo",              logo: "https://logo.clearbit.com/zalopay.vn",        color: "#0068FF" },
+    { id: "stripe",  name: "Stripe",  description: "Thanh toán quốc tế — Visa, Mastercard, AmEx",      logo: "https://cdn.simpleicons.org/stripe/635BFF",    color: "#635BFF" },
+    { id: "paypal",  name: "PayPal",  description: "Thanh toán quốc tế an toàn qua PayPal",            logo: "https://cdn.simpleicons.org/paypal/003087",    color: "#003087" },
+  ];
+
+  if (loading) return <div className="flex items-center gap-2 text-muted-foreground text-sm p-6"><Loader2 size={16} className="animate-spin" /> Đang tải...</div>;
 
   return (
     <div className="space-y-4 max-w-3xl">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">{methods.filter((m) => m.enabled).length} phương thức đang kích hoạt</p>
-        <Button onClick={save} className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest h-9 px-5 gap-1.5">
-          <Save size={13} /> Lưu cài đặt
-        </Button>
+      <p className="text-sm text-muted-foreground mb-2">Quản lý phương thức thanh toán cho khách đặt phòng</p>
+
+      {/* ── MoMo (live) ── */}
+      <div className={`border ${momo.enabled ? "border-primary/30 bg-primary/[0.02]" : "border-primary/15 bg-card"} transition-all`}>
+        <div className="flex items-center gap-4 px-5 py-4">
+          <LogoImg src="https://logo.clearbit.com/momo.vn" name="MoMo" color="#AE2070" size={40} />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground">MoMo</span>
+              <span className="text-[9px] tracking-widest uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/40 px-1.5 py-0.5">Đã tích hợp</span>
+              {momo.enabled && momo.testMode && <span className="text-[9px] tracking-widest uppercase text-orange-500 bg-orange-50 dark:bg-orange-950/40 border border-orange-300/40 px-1.5 py-0.5">Sandbox</span>}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">Ví điện tử MoMo — thanh toán nhanh qua QR</p>
+          </div>
+          <Toggle checked={momo.enabled} onChange={(v) => setMomo((m) => ({ ...m, enabled: v }))} />
+          <button onClick={() => setMomoExpanded((e) => !e)} className="text-xs text-muted-foreground hover:text-primary transition-colors px-2">
+            {momoExpanded ? "Thu gọn ▲" : "Cài đặt ▼"}
+          </button>
+        </div>
+
+        {momoExpanded && (
+          <div className="border-t border-primary/15 px-5 py-4 space-y-4 bg-background/50">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Partner Code</label>
+                <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none font-mono"
+                  value={momo.partnerCode} onChange={(e) => setMomo((m) => ({ ...m, partnerCode: e.target.value }))} placeholder="MOMO" />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Access Key</label>
+                <SecretInput value={momo.accessKey} onChange={(v) => setMomo((m) => ({ ...m, accessKey: v }))} placeholder="F8BBA842ECF85" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Secret Key</label>
+                <SecretInput value={momo.secretKey} onChange={(v) => setMomo((m) => ({ ...m, secretKey: v }))} placeholder="K951B6PE1waDMi640xX08PD3vg6EkVlz" />
+              </div>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+              IPN URL (điền vào MoMo dashboard): <span className="font-mono">{API}/api/payments/momo/ipn</span>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="accent-primary" checked={momo.testMode}
+                onChange={(e) => setMomo((m) => ({ ...m, testMode: e.target.checked }))} />
+              <span className="text-sm text-foreground">Chế độ kiểm thử (Sandbox)</span>
+            </label>
+            <div className="flex justify-end">
+              <Button onClick={saveMomo} disabled={saving} size="sm"
+                className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest h-8 px-4 gap-1.5">
+                {saving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                {saving ? "Đang lưu..." : "Lưu cài đặt MoMo"}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {methods.map((method) => (
-        <div key={method.id} className={`border ${method.enabled ? "border-primary/30 bg-primary/3" : "border-primary/15 bg-card"} transition-all`}>
-          <div className="flex items-center gap-4 px-5 py-4">
-            <LogoImg src={method.logo} name={method.name} color={method.color} size={40} />
+      {/* ── Bank Transfer / VietQR (live) ── */}
+      <div className="border border-primary/30 bg-primary/[0.02] transition-all">
+        <div className="flex items-center gap-4 px-5 py-4">
+          <LogoImg src="https://vietqr.io/img/VIETQR.svg" name="VietQR" color="#2E7D32" size={40} />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground">Chuyển khoản ngân hàng (VietQR)</span>
+              <span className="text-[9px] tracking-widest uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/40 px-1.5 py-0.5">Đã tích hợp</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">Tạo mã QR VietQR để khách chuyển khoản trực tiếp — hỗ trợ tất cả ngân hàng Việt Nam</p>
+          </div>
+          <span className="text-xs text-emerald-600 font-medium">Đang bật</span>
+          <button onClick={() => setBankExpanded((e) => !e)} className="text-xs text-muted-foreground hover:text-primary transition-colors px-2">
+            {bankExpanded ? "Thu gọn ▲" : "Cài đặt ▼"}
+          </button>
+        </div>
+        {bankExpanded && (
+          <div className="border-t border-primary/15 px-5 py-4 bg-background/50">
+            <BankQRSection toast={toast} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Coming soon ── */}
+      <div className="border border-primary/10 bg-card">
+        <div className="px-5 py-3 border-b border-primary/10 bg-muted/30">
+          <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground">Sắp tích hợp</span>
+        </div>
+        {COMING_SOON.map((m) => (
+          <div key={m.id} className="flex items-center gap-4 px-5 py-3.5 border-b border-primary/10 last:border-0 opacity-60">
+            <LogoImg src={m.logo} name={m.name} color={m.color} size={36} />
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">{method.name}</span>
-                {method.testMode && method.enabled && (
-                  <span className="text-[9px] tracking-widest uppercase text-orange-500 bg-orange-50 dark:bg-orange-950/40 border border-orange-300/40 px-1.5 py-0.5">Sandbox</span>
-                )}
+                <span className="font-medium text-foreground text-sm">{m.name}</span>
+                <span className="text-[9px] tracking-widest uppercase text-muted-foreground border border-muted-foreground/30 px-1.5 py-0.5">Sắp ra mắt</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">{method.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{m.description}</p>
             </div>
-            <Toggle checked={method.enabled} onChange={(v) => update(method.id, "enabled", v)} />
-            <button onClick={() => setExpanded((e) => e === method.id ? null : method.id)}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors px-2">
-              {expanded === method.id ? "Thu gọn ▲" : "Cài đặt ▼"}
-            </button>
           </div>
-
-          {expanded === method.id && (
-            <div className="border-t border-primary/15 px-5 py-4 space-y-4 bg-background/50">
-              {method.id !== "bank" ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">API Key / Client ID</label>
-                      <SecretInput value={method.apiKey} onChange={(v) => update(method.id, "apiKey", v)} />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Secret Key</label>
-                      <SecretInput value={method.secretKey} onChange={(v) => update(method.id, "secretKey", v)} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Webhook / IPN URL</label>
-                    <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none font-mono"
-                      value={method.webhookUrl} onChange={(e) => update(method.id, "webhookUrl", e.target.value)} placeholder="https://yourdomain.com/api/webhooks/..." />
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="accent-primary" checked={method.testMode}
-                      onChange={(e) => update(method.id, "testMode", e.target.checked)} />
-                    <span className="text-sm text-foreground">Chế độ kiểm thử (Sandbox)</span>
-                  </label>
-                </>
-              ) : (
-                <BankQRSection toast={toast} />
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

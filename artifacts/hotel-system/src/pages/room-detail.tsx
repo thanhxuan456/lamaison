@@ -10,19 +10,25 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Check, User, Wind, Maximize, Crown, Star, Calendar, Users as UsersIcon,
   Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Sparkles, ShieldCheck,
-  CreditCard, Award, MapPin, Loader2, ExternalLink,
+  CreditCard, Award, MapPin, Loader2, ExternalLink, QrCode, Building2,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
 type Step = 1 | 2 | 3 | 4;
+type PayMethod = "momo" | "bank" | null;
 
 interface MomoPayment {
   payUrl: string;
   qrCodeUrl: string;
   orderId: string;
   amount: number;
+}
+
+interface PaySettings {
+  momo: { enabled: boolean; configured: boolean };
+  bank: { enabled: boolean; bankCode: string; accountNumber: string; accountName: string; defaultDescription: string };
 }
 
 const fmtVND = (n: number) =>
@@ -58,11 +64,25 @@ export default function RoomDetail() {
   const [activeImage, setActiveImage] = useState(0);
   const [momoPayment, setMomoPayment] = useState<MomoPayment | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
+  const [bookingAmount, setBookingAmount] = useState<number>(0);
   const [paymentChecking, setPaymentChecking] = useState(false);
+  const [payMethod, setPayMethod] = useState<PayMethod>(null);
+  const [loadingMomo, setLoadingMomo] = useState(false);
+  const [paySettings, setPaySettings] = useState<PaySettings>({
+    momo: { enabled: false, configured: false },
+    bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "", defaultDescription: "Dat phong Grand Palace" },
+  });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!bookingId || step !== 4) return;
+    fetch(`${API}/api/payments/settings`)
+      .then((r) => r.json())
+      .then((d: PaySettings) => setPaySettings(d))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!bookingId || step !== 4 || payMethod !== "momo") return;
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${API}/api/bookings/${bookingId}`);
@@ -75,7 +95,7 @@ export default function RoomDetail() {
       } catch {}
     }, 4000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [bookingId, step]);
+  }, [bookingId, step, payMethod]);
 
   const [bookingData, setBookingData] = useState({
     guestName: "",
@@ -142,22 +162,14 @@ export default function RoomDetail() {
       {
         onSuccess: async (data) => {
           setBookingId(data.id);
-          try {
-            const res = await fetch(`${API}/api/payments/momo/create`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ bookingId: data.id }),
-            });
-            if (!res.ok) throw new Error("Failed to create MoMo payment");
-            const momo = await res.json() as MomoPayment;
-            setMomoPayment(momo);
+          setBookingAmount(parseFloat(data.totalPrice ?? "0"));
+          const momoOk = paySettings.momo.enabled && paySettings.momo.configured;
+          const bankOk = paySettings.bank.enabled && !!paySettings.bank.accountNumber;
+          if (momoOk && !bankOk) {
+            await initMomo(data.id);
+          } else {
+            setPayMethod(null);
             setStep(4);
-          } catch {
-            toast({
-              title: t("toast.error"),
-              description: "Không thể khởi tạo thanh toán MoMo. Vui lòng thử lại.",
-              variant: "destructive",
-            });
           }
         },
         onError: () => {
@@ -165,6 +177,24 @@ export default function RoomDetail() {
         },
       },
     );
+  };
+
+  const initMomo = async (bId: number) => {
+    setLoadingMomo(true);
+    try {
+      const res = await fetch(`${API}/api/payments/momo/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: bId }),
+      });
+      if (!res.ok) throw new Error("MoMo create failed");
+      const momo = await res.json() as MomoPayment;
+      setMomoPayment(momo);
+      setPayMethod("momo");
+      setStep(4);
+    } catch {
+      toast({ title: t("toast.error"), description: "Không thể khởi tạo thanh toán MoMo. Vui lòng thử lại.", variant: "destructive" });
+    } finally { setLoadingMomo(false); }
   };
 
   const handleCheckPayment = async () => {
@@ -484,73 +514,171 @@ export default function RoomDetail() {
                         </div>
                       )}
 
-                      {/* STEP 4 — MoMo QR Payment */}
-                      {step === 4 && momoPayment && (
+                      {/* STEP 4 — Payment */}
+                      {step === 4 && (
                         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                          <div className="text-center">
-                            <div className="inline-flex items-center gap-2 mb-1">
-                              <span className="w-5 h-5 rounded-full bg-[#ae2070] flex items-center justify-center">
-                                <span className="text-white text-[9px] font-bold">M</span>
-                              </span>
-                              <span className="text-[10px] tracking-[0.3em] uppercase text-primary/80">Thanh toán MoMo</span>
-                            </div>
-                            <p className="text-white/60 text-xs mt-1">Quét mã QR bằng ứng dụng MoMo để thanh toán</p>
-                          </div>
 
-                          {/* QR Code */}
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="bg-white p-3 border-2 border-primary/30">
-                              {momoPayment.qrCodeUrl ? (
-                                <img
-                                  src={momoPayment.qrCodeUrl}
-                                  alt="MoMo QR Code"
-                                  className="w-44 h-44 object-contain"
-                                />
-                              ) : (
-                                <div className="w-44 h-44 flex items-center justify-center text-secondary text-xs text-center p-4">
-                                  QR không khả dụng. Dùng link bên dưới.
+                          {/* ── Payment method selection ── */}
+                          {payMethod === null && (
+                            <>
+                              <div className="text-center mb-2">
+                                <span className="text-[10px] tracking-[0.3em] uppercase text-primary/80">Chọn phương thức thanh toán</span>
+                                <div className="bg-white/5 border border-primary/20 px-4 py-3 flex justify-between items-center mt-3">
+                                  <span className="text-[10px] tracking-widest uppercase text-white/50">Số tiền cần thanh toán</span>
+                                  <span className="font-serif text-primary text-lg">{fmtVND(bookingAmount)}</span>
                                 </div>
-                              )}
-                            </div>
-                            <a
-                              href={momoPayment.payUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-[10px] text-primary/80 uppercase tracking-widest hover:text-primary transition-colors"
-                            >
-                              <ExternalLink size={11} /> Mở trang thanh toán MoMo
-                            </a>
-                          </div>
+                              </div>
 
-                          {/* Amount */}
-                          <div className="bg-white/5 border border-primary/20 px-4 py-3 flex justify-between items-center">
-                            <span className="text-[10px] tracking-widest uppercase text-white/50">Số tiền</span>
-                            <span className="font-serif text-primary text-lg">{fmtVND(momoPayment.amount)}</span>
-                          </div>
+                              <div className="space-y-3">
+                                {paySettings.momo.enabled && paySettings.momo.configured && (
+                                  <button type="button"
+                                    disabled={loadingMomo}
+                                    onClick={() => bookingId && initMomo(bookingId)}
+                                    className="w-full flex items-center gap-4 border border-[#ae2070]/40 bg-[#ae2070]/10 hover:bg-[#ae2070]/20 px-5 py-4 transition-colors disabled:opacity-50">
+                                    <span className="w-10 h-10 rounded-full bg-[#ae2070] flex items-center justify-center shrink-0">
+                                      <span className="text-white text-base font-bold">M</span>
+                                    </span>
+                                    <div className="flex-1 text-left">
+                                      <div className="font-medium text-foreground text-sm">Ví MoMo</div>
+                                      <div className="text-xs text-white/50 mt-0.5">Quét QR bằng ứng dụng MoMo — xác nhận tức thì</div>
+                                    </div>
+                                    {loadingMomo ? <Loader2 size={16} className="animate-spin text-primary/60" /> : <ChevronRight size={16} className="text-primary/40" />}
+                                  </button>
+                                )}
 
-                          {/* Waiting indicator */}
-                          <div className="flex items-center justify-center gap-2 text-white/40 text-[10px] uppercase tracking-widest">
-                            <Loader2 size={12} className="animate-spin text-primary/60" />
-                            Đang chờ xác nhận thanh toán...
-                          </div>
+                                {paySettings.bank.enabled && paySettings.bank.accountNumber && (
+                                  <button type="button"
+                                    onClick={() => setPayMethod("bank")}
+                                    className="w-full flex items-center gap-4 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-5 py-4 transition-colors">
+                                    <span className="w-10 h-10 rounded-full bg-emerald-700 flex items-center justify-center shrink-0">
+                                      <Building2 size={18} className="text-white" />
+                                    </span>
+                                    <div className="flex-1 text-left">
+                                      <div className="font-medium text-foreground text-sm">Chuyển khoản ngân hàng</div>
+                                      <div className="text-xs text-white/50 mt-0.5">Quét mã VietQR — hỗ trợ tất cả ngân hàng Việt Nam</div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-primary/40" />
+                                  </button>
+                                )}
 
-                          {/* Manual check button */}
-                          <Button
-                            type="button"
-                            onClick={handleCheckPayment}
-                            disabled={paymentChecking}
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none py-3 uppercase tracking-[0.2em] text-xs"
-                          >
-                            {paymentChecking ? (
-                              <><Loader2 size={13} className="mr-2 animate-spin" /> Đang kiểm tra...</>
-                            ) : (
-                              "Tôi đã thanh toán xong"
-                            )}
-                          </Button>
+                                {!paySettings.momo.enabled && (!paySettings.bank.enabled || !paySettings.bank.accountNumber) && (
+                                  <div className="text-center text-white/50 text-sm py-6">
+                                    Chưa có phương thức thanh toán nào được cấu hình.<br />
+                                    <span className="text-xs">Liên hệ quản trị viên để thiết lập.</span>
+                                  </div>
+                                )}
+                              </div>
 
-                          <div className="text-[10px] text-center text-white/30 tracking-widest uppercase">
-                            Trang sẽ tự động cập nhật sau khi thanh toán thành công
-                          </div>
+                              <div className="text-[10px] text-center text-white/30 tracking-widest uppercase">
+                                <ShieldCheck size={11} className="inline mr-1 text-primary/60" />
+                                Thông tin đặt phòng đã được giữ chỗ
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── MoMo QR ── */}
+                          {payMethod === "momo" && momoPayment && (
+                            <>
+                              <div className="text-center">
+                                <button type="button" onClick={() => setPayMethod(null)} className="text-[10px] text-white/40 hover:text-primary uppercase tracking-widest mb-3 transition-colors">← Chọn lại</button>
+                                <div className="inline-flex items-center gap-2 mb-1">
+                                  <span className="w-5 h-5 rounded-full bg-[#ae2070] flex items-center justify-center">
+                                    <span className="text-white text-[9px] font-bold">M</span>
+                                  </span>
+                                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary/80">Thanh toán MoMo</span>
+                                </div>
+                                <p className="text-white/60 text-xs mt-1">Quét mã QR bằng ứng dụng MoMo để thanh toán</p>
+                              </div>
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="bg-white p-3 border-2 border-primary/30">
+                                  {momoPayment.qrCodeUrl ? (
+                                    <img src={momoPayment.qrCodeUrl} alt="MoMo QR Code" className="w-44 h-44 object-contain" />
+                                  ) : (
+                                    <div className="w-44 h-44 flex items-center justify-center text-secondary text-xs text-center p-4">QR không khả dụng. Dùng link bên dưới.</div>
+                                  )}
+                                </div>
+                                <a href={momoPayment.payUrl} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-[10px] text-primary/80 uppercase tracking-widest hover:text-primary transition-colors">
+                                  <ExternalLink size={11} /> Mở trang thanh toán MoMo
+                                </a>
+                              </div>
+                              <div className="bg-white/5 border border-primary/20 px-4 py-3 flex justify-between items-center">
+                                <span className="text-[10px] tracking-widest uppercase text-white/50">Số tiền</span>
+                                <span className="font-serif text-primary text-lg">{fmtVND(momoPayment.amount)}</span>
+                              </div>
+                              <div className="flex items-center justify-center gap-2 text-white/40 text-[10px] uppercase tracking-widest">
+                                <Loader2 size={12} className="animate-spin text-primary/60" />
+                                Đang chờ xác nhận thanh toán...
+                              </div>
+                              <Button type="button" onClick={handleCheckPayment} disabled={paymentChecking}
+                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none py-3 uppercase tracking-[0.2em] text-xs">
+                                {paymentChecking ? <><Loader2 size={13} className="mr-2 animate-spin" /> Đang kiểm tra...</> : "Tôi đã thanh toán xong"}
+                              </Button>
+                              <div className="text-[10px] text-center text-white/30 tracking-widest uppercase">Trang sẽ tự động cập nhật sau khi thanh toán thành công</div>
+                            </>
+                          )}
+
+                          {/* ── Bank Transfer / VietQR ── */}
+                          {payMethod === "bank" && (
+                            <>
+                              <div className="text-center">
+                                <button type="button" onClick={() => setPayMethod(null)} className="text-[10px] text-white/40 hover:text-primary uppercase tracking-widest mb-3 transition-colors">← Chọn lại</button>
+                                <div className="inline-flex items-center gap-2 mb-1">
+                                  <QrCode size={14} className="text-primary" />
+                                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary/80">Chuyển khoản ngân hàng</span>
+                                </div>
+                                <p className="text-white/60 text-xs mt-1">Quét mã VietQR hoặc chuyển khoản theo thông tin bên dưới</p>
+                              </div>
+
+                              <div className="flex flex-col items-center gap-3">
+                                {(() => {
+                                  const b = paySettings.bank;
+                                  const desc = encodeURIComponent(`${b.defaultDescription} ${bookingId ?? ""}`);
+                                  const qrUrl = `https://img.vietqr.io/image/${b.bankCode}-${b.accountNumber}-compact2.png?accountName=${encodeURIComponent(b.accountName)}&amount=${Math.round(bookingAmount)}&addInfo=${desc}`;
+                                  return (
+                                    <>
+                                      <div className="bg-white p-3 border-2 border-emerald-500/40">
+                                        <img src={qrUrl} alt="VietQR" className="w-44 h-44 object-contain" />
+                                      </div>
+                                      <div className="bg-white/5 border border-primary/20 px-4 py-3 space-y-2 w-full text-xs">
+                                        <div className="flex justify-between">
+                                          <span className="text-white/50 uppercase tracking-widest text-[10px]">Ngân hàng</span>
+                                          <span className="text-foreground font-medium">{b.bankCode}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-white/50 uppercase tracking-widest text-[10px]">Số tài khoản</span>
+                                          <span className="text-foreground font-mono font-semibold tracking-widest">{b.accountNumber}</span>
+                                        </div>
+                                        {b.accountName && (
+                                          <div className="flex justify-between">
+                                            <span className="text-white/50 uppercase tracking-widest text-[10px]">Tên TK</span>
+                                            <span className="text-foreground uppercase">{b.accountName}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                          <span className="text-white/50 uppercase tracking-widest text-[10px]">Số tiền</span>
+                                          <span className="text-primary font-serif text-base">{fmtVND(bookingAmount)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-white/50 uppercase tracking-widest text-[10px]">Nội dung</span>
+                                          <span className="text-foreground font-medium">{b.defaultDescription} {bookingId}</span>
+                                        </div>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+
+                              <div className="bg-amber-900/30 border border-amber-500/30 px-4 py-3 text-xs text-amber-300 text-center">
+                                Sau khi chuyển khoản, đặt phòng sẽ được xác nhận thủ công bởi nhân viên trong vòng 30 phút.
+                              </div>
+
+                              <Button type="button" onClick={handleCheckPayment} disabled={paymentChecking}
+                                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none py-3 uppercase tracking-[0.2em] text-xs">
+                                {paymentChecking ? <><Loader2 size={13} className="mr-2 animate-spin" /> Đang kiểm tra...</> : "Tôi đã chuyển khoản xong"}
+                              </Button>
+                            </>
+                          )}
                         </div>
                       )}
                     </form>
