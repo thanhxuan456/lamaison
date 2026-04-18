@@ -467,19 +467,47 @@ try {
     if ($LASTEXITCODE -ne 0) { Fail "pnpm install failed. See output above." }
     Write-OK "Dependencies installed"
 
-    # Ensure DB vars are visible to the drizzle-kit child process
-    $env:DATABASE_URL      = $DatabaseUrl
-    $env:NEON_DATABASE_URL = $NeonDatabaseUrl
-    Write-Info "DB URL (first 60 chars): $($DatabaseUrl.Substring(0, [Math]::Min(60, $DatabaseUrl.Length)))..."
+    # ------------------------------------------------------------------
+    # Re-load the .env file written in Step 6 so every child process
+    # (drizzle-kit, seed, esbuild...) inherits the correct values even
+    # when PowerShell's $env: inheritance is unreliable across pnpm's
+    # subprocess chain on Windows Server.
+    # ------------------------------------------------------------------
+    function Load-DotEnv([string]$path) {
+        if (-not (Test-Path $path)) { return }
+        Get-Content $path -Encoding UTF8 | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -eq "" -or $line.StartsWith("#")) { return }
+            $idx = $line.IndexOf("=")
+            if ($idx -lt 1) { return }
+            $k = $line.Substring(0, $idx).Trim()
+            $v = $line.Substring($idx + 1)
+            [System.Environment]::SetEnvironmentVariable($k, $v, "Process")
+        }
+    }
+    Load-DotEnv (Join-Path $Config.InstallDir ".env")
+
+    # Belt-and-suspenders: explicitly set the two critical DB vars so they
+    # are present even if the .env reload somehow misses them.
+    [System.Environment]::SetEnvironmentVariable("DATABASE_URL",      $DatabaseUrl,     "Process")
+    [System.Environment]::SetEnvironmentVariable("NEON_DATABASE_URL", $NeonDatabaseUrl, "Process")
+
+    $previewUrl = if ($DatabaseUrl.Length -gt 60) { $DatabaseUrl.Substring(0,60) + "..." } else { $DatabaseUrl }
+    Write-Info "DB URL (first 60 chars): $previewUrl"
+
+    if ([string]::IsNullOrEmpty($DatabaseUrl)) {
+        Fail "DATABASE_URL is empty before schema push -- check NeonDatabaseUrl in the Config block."
+    }
+
     Write-Info "Applying database schema..."
-    & pnpm --filter "@workspace/db" run push
-    if ($LASTEXITCODE -ne 0) { Fail "Database schema push failed. Check DATABASE_URL and connectivity." }
+    # Use cmd /c with inline SET so drizzle-kit inherits the vars even in
+    # restricted PowerShell execution environments on Windows Server.
+    & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && pnpm --filter `"@workspace/db`" run push"
+    if ($LASTEXITCODE -ne 0) { Fail "Database schema push failed. Check NeonDatabaseUrl and network connectivity to Neon." }
     Write-OK "Database schema applied"
 
-    $env:DATABASE_URL      = $DatabaseUrl
-    $env:NEON_DATABASE_URL = $NeonDatabaseUrl
     Write-Info "Seeding initial data (auto-skipped if data already exists)..."
-    & pnpm --filter "@workspace/scripts" run seed
+    & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && pnpm --filter `"@workspace/scripts`" run seed"
     if ($LASTEXITCODE -ne 0) { Fail "Database seed script failed. See output above." }
     Write-OK "Database seed complete"
 
@@ -489,10 +517,8 @@ try {
             Write-Info "Removing old API build..."
             Remove-Item $apiDistDir -Recurse -Force
         }
-        $env:DATABASE_URL      = $DatabaseUrl
-        $env:NEON_DATABASE_URL = $NeonDatabaseUrl
         Write-Info "Building API server..."
-        & pnpm --filter "@workspace/api-server" run build
+        & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && set NODE_ENV=production && pnpm --filter `"@workspace/api-server`" run build"
         if ($LASTEXITCODE -ne 0) { Fail "API server build failed." }
         Write-OK "API server built"
 
@@ -502,13 +528,7 @@ try {
             Remove-Item $frontendDistDir -Recurse -Force
         }
         Write-Info "Building frontend..."
-        $env:PORT                       = [string]$Config.FrontendPort
-        $env:BASE_PATH                  = "/"
-        $env:NODE_ENV                   = "production"
-        $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
-        $env:VITE_CLERK_PROXY_URL       = $clerkProxyUrl
-        $env:VITE_API_URL               = $Config.ApiPublicUrl
-        & pnpm --filter "@workspace/hotel-system" run build
+        & cmd /c "set PORT=$($Config.FrontendPort) && set BASE_PATH=/ && set NODE_ENV=production && set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey) && set VITE_CLERK_PROXY_URL=$clerkProxyUrl && set VITE_API_URL=$($Config.ApiPublicUrl) && pnpm --filter `"@workspace/hotel-system`" run build"
         if ($LASTEXITCODE -ne 0) { Fail "Frontend build failed." }
         Write-OK "Frontend built"
     } else {
