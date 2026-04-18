@@ -48,8 +48,20 @@ import InvoiceView from "@/pages/invoice-view";
 import { CancellationPage, MembershipBuilderPage, PrivacyBuilderPage, TermsBuilderPage, FaqPage } from "@/pages/builder-page";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function resolveClerkProxyUrl(): string | undefined {
+  const raw = import.meta.env.VITE_CLERK_PROXY_URL;
+  if (!raw) return undefined;
+  try {
+    const { hostname } = new URL(raw);
+    if (!hostname || hostname === "YOUR_SERVER_IP" || hostname === "localhost") return undefined;
+    return raw;
+  } catch {
+    return undefined;
+  }
+}
+const clerkProxyUrl = resolveClerkProxyUrl();
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
