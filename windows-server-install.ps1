@@ -165,6 +165,13 @@ robocopy $scriptDir $Config.InstallDir /E /XD ".git" "node_modules" "dist" ".rep
 if ($LASTEXITCODE -ge 8) { throw "File copy failed (robocopy exit code $LASTEXITCODE)." }
 Write-OK "Files copied"
 
+$schemaFile = Join-Path $Config.InstallDir "lib\db\src\schema\index.ts"
+if (-not (Test-Path $schemaFile)) {
+    Write-Info "lib directory missing, copying directly..."
+    robocopy (Join-Path $scriptDir "lib") (Join-Path $Config.InstallDir "lib") /E /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+    Write-OK "lib directory copied"
+}
+
 # ===========================================================
 # 6. WRITE .ENV FILE
 # ===========================================================
@@ -259,6 +266,10 @@ if (Test-Path $frontendDist) {
     Write-OK "Frontend already built, skipping"
 } else {
     Write-Info "Building frontend..."
+    $env:PORT     = [string]$Config.FrontendPort
+    $env:BASE_PATH = "/"
+    $env:NODE_ENV  = "production"
+    $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
     & pnpm --filter "@workspace/hotel-system" run build
     if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
     Write-OK "Frontend built"

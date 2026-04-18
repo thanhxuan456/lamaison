@@ -1,0 +1,51 @@
+ Error  No schema files found for path config ['C:\GrandPalace\lib\db\src\schema\index.ts']
+ Error  If path represents a file - please make sure to use .ts or other extension in the path
+C:\GrandPalace\lib\db:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/db@0.0.0 push: `drizzle-kit push --config ./drizzle.config.ts`
+Exit status 1
+  [WARN] DB push had warnings - may be OK if schema already exists
+  --> Building API server...
+
+> @workspace/api-server@0.0.0 build C:\GrandPalace\artifacts\api-server
+> node ./build.mjs
+
+
+  dist\index.mjs                       2.9mb
+  dist\pino-worker.mjs               153.4kb
+  dist\pino-file.mjs                 142.1kb
+  dist\pino-pretty.mjs               114.6kb
+  dist\thread-stream-worker.mjs        7.3kb
+  dist\index.mjs.map                   5.2mb
+  dist\pino-worker.mjs.map           256.9kb
+  dist\pino-file.mjs.map             229.0kb
+  dist\pino-pretty.mjs.map           204.0kb
+  dist\thread-stream-worker.mjs.map   12.0kb
+
+Done in 1261ms
+  [OK] API server built
+  --> Building frontend...
+
+> @workspace/hotel-system@0.0.0 build C:\GrandPalace\artifacts\hotel-system
+> vite build --config vite.config.ts
+
+failed to load config from C:\GrandPalace\artifacts\hotel-system\vite.config.ts
+error during build:
+Error: PORT environment variable is required but was not provided.
+    at file:///C:/GrandPalace/artifacts/hotel-system/node_modules/.vite-temp/vite.config.ts.timestamp-1776475991803-1de58452ae292.mjs:10:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async loadConfigFromBundledFile (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:35920:12)
+    at async bundleAndLoadConfigFile (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:35808:17)
+    at async loadConfigFromFile (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:35775:42)
+    at async resolveConfig (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:35424:22)
+    at async createBuilder (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:33879:19)
+    at async CAC.<anonymous> (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/cli.js:629:10)
+C:\GrandPalace\artifacts\hotel-system:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/hotel-system@0.0.0 build: `vite build --config vite.config.ts`
+Exit status 1
+Frontend build failed.
+At C:\Users\Administrator\Downloads\lamaison-main\lamaison-main\windows-server-install.ps1:263 char:32
++     if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
++                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Frontend build failed.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Frontend build failed.
