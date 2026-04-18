@@ -253,13 +253,27 @@ foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
     }
 }
 
+# Kill any node.exe / esbuild.exe processes that may lock files inside node_modules
+Write-Info "Releasing file locks (stopping node/esbuild processes)..."
+@("node", "esbuild") | ForEach-Object {
+    Get-Process -Name $_ -ErrorAction SilentlyContinue | ForEach-Object {
+        try { $_.Kill(); $_.WaitForExit(3000) } catch {}
+    }
+}
+Start-Sleep -Seconds 2
+
 # Remove node_modules for a clean install (fixes Windows native binary issues)
 $nodeModulesDir = Join-Path $Config.InstallDir "node_modules"
 if (Test-Path $nodeModulesDir) {
     Write-Info "Removing existing node_modules for a clean reinstall..."
-    # Use cmd rmdir which handles locked executables better than Remove-Item
+    # Use cmd rmdir /s /q — more reliable than Remove-Item for locked executables
     & cmd /c "rmdir /s /q `"$nodeModulesDir`""
-    if (Test-Path $nodeModulesDir) { throw "Failed to remove node_modules. Close any processes using files inside it and try again." }
+    # Retry once if the folder is still present (rare timing issue)
+    if (Test-Path $nodeModulesDir) {
+        Start-Sleep -Seconds 3
+        & cmd /c "rmdir /s /q `"$nodeModulesDir`""
+    }
+    if (Test-Path $nodeModulesDir) { throw "Failed to remove node_modules. A process may still be holding a file lock. Reboot the server and run this script again." }
     Write-OK "node_modules removed"
 }
 
