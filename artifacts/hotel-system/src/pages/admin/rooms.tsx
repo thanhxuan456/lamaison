@@ -62,6 +62,7 @@ function Select({ label, value, onChange, options }: any) {
 
 function RoomModal({ room, hotels, onClose, onSaved }: { room?: any; hotels: any[]; onClose: () => void; onSaved: () => void }) {
   const { toast } = useToast();
+  const { branding } = useBranding();
   const [form, setForm] = useState<RoomForm>(room ? {
     hotelId: room.hotelId, roomNumber: room.roomNumber, type: room.type,
     description: room.description, pricePerNight: String(room.pricePerNight),
