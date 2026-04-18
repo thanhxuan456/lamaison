@@ -649,7 +649,7 @@ Write-Host "  Services (auto-start on reboot):"
 Write-Host "    GrandPalaceAPI      -> port $($Config.ApiPort)"
 Write-Host "    GrandPalaceFrontend -> port $($Config.FrontendPort)"
 Write-Host ""
-Write-Host "  Logs      : $LogDir\"
+Write-Host ("  Logs      : " + $LogDir + "\")
 Write-Host "  Install log : $LogFile"
 Write-Host "  .env file : $envFile"
 Write-Host ""
