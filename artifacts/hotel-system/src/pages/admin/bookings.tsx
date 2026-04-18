@@ -3,20 +3,21 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarCheck, CalendarX, LogIn, LogOut, Loader2, Search, FileSignature } from "lucide-react";
+import { CalendarX, LogIn, LogOut, Loader2, Search, FileSignature, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
-type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "no_show";
+type BookingStatus = "pending" | "pending_payment" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "no_show";
 
 const STATUS_META: Record<BookingStatus, { label: string; cls: string }> = {
-  pending:     { label: "Chờ xác nhận", cls: "border-amber-400/40 text-amber-700 dark:text-amber-400 bg-amber-500/5" },
-  confirmed:   { label: "Đã xác nhận",  cls: "border-sky-400/40 text-sky-600 dark:text-sky-400 bg-sky-500/5" },
-  checked_in:  { label: "Đang ở",       cls: "border-rose-400/40 text-rose-600 dark:text-rose-400 bg-rose-500/5" },
-  checked_out: { label: "Đã trả phòng", cls: "border-zinc-400/40 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10" },
-  cancelled:   { label: "Đã hủy",       cls: "border-red-400/40 text-red-500 bg-red-500/5" },
-  no_show:     { label: "Không đến",    cls: "border-orange-400/40 text-orange-600 dark:text-orange-400 bg-orange-500/5" },
+  pending:         { label: "Chờ xác nhận",  cls: "border-amber-400/40 text-amber-700 dark:text-amber-400 bg-amber-500/5" },
+  pending_payment: { label: "Chờ thanh toán", cls: "border-yellow-400/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5" },
+  confirmed:       { label: "Đã xác nhận",   cls: "border-sky-400/40 text-sky-600 dark:text-sky-400 bg-sky-500/5" },
+  checked_in:      { label: "Đang ở",        cls: "border-rose-400/40 text-rose-600 dark:text-rose-400 bg-rose-500/5" },
+  checked_out:     { label: "Đã trả phòng",  cls: "border-zinc-400/40 text-zinc-600 dark:text-zinc-400 bg-zinc-500/10" },
+  cancelled:       { label: "Đã hủy",        cls: "border-red-400/40 text-red-500 bg-red-500/5" },
+  no_show:         { label: "Không đến",     cls: "border-orange-400/40 text-orange-600 dark:text-orange-400 bg-orange-500/5" },
 };
 
 const SOURCE_META: Record<string, { label: string; cls: string }> = {
@@ -45,7 +46,7 @@ function BookingsContent() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [filterStatus, setFilterStatus] = useState<BookingStatus | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<BookingStatus | "all" | string>("all");
   const [filterSource, setFilterSource] = useState<string>("all");
   const [search, setSearch] = useState("");
 
@@ -60,17 +61,25 @@ function BookingsContent() {
   };
   useEffect(() => { load(); }, []);
 
-  const action = async (id: number, kind: "check-in" | "check-out" | "cancel") => {
+  const action = async (id: number, kind: "check-in" | "check-out" | "cancel" | "delete") => {
     setBusyId(id);
     try {
-      const url = kind === "cancel"
-        ? `${API}/api/bookings/${id}`
-        : `${API}/api/bookings/${id}/${kind}`;
-      const method = kind === "cancel" ? "DELETE" : "POST";
+      let url: string;
+      let method: string;
+      if (kind === "cancel") {
+        url = `${API}/api/bookings/${id}`;
+        method = "DELETE";
+      } else if (kind === "delete") {
+        url = `${API}/api/bookings/${id}/force`;
+        method = "DELETE";
+      } else {
+        url = `${API}/api/bookings/${id}/${kind}`;
+        method = "POST";
+      }
       const res = await fetch(url, { method });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Lỗi");
-      const labelMap = { "check-in": "Check-in", "check-out": "Check-out", "cancel": "Hủy" };
+      const labelMap = { "check-in": "Check-in", "check-out": "Check-out", "cancel": "Hủy", "delete": "Xóa" };
       toast({ title: `${labelMap[kind]} thành công`, description: `Booking #${id}` });
       load();
     } catch (e: any) {
@@ -163,8 +172,9 @@ function BookingsContent() {
                     </td>
                     <td className="px-4 py-3 text-foreground whitespace-nowrap">{fmtMoney(b.totalPrice)} ₫</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {(status === "confirmed" || status === "pending") && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Check-in: only for confirmed/pending/pending_payment */}
+                        {(status === "confirmed" || status === "pending" || status === "pending_payment") && (
                           <button disabled={busyId === b.id}
                             onClick={() => action(b.id, "check-in")}
                             title="Check-in"
@@ -172,6 +182,7 @@ function BookingsContent() {
                             {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <LogIn size={12} />}
                           </button>
                         )}
+                        {/* Check-out: only for checked_in */}
                         {status === "checked_in" && (
                           <button disabled={busyId === b.id}
                             onClick={() => action(b.id, "check-out")}
@@ -180,18 +191,29 @@ function BookingsContent() {
                             {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
                           </button>
                         )}
+                        {/* Contract */}
                         <Link href={`/bookings/${b.id}/contract`}>
                           <button title="Tải hợp đồng"
                             className="p-1.5 border border-primary/40 text-primary hover:bg-primary/10">
                             <FileSignature size={12} />
                           </button>
                         </Link>
-                        {status !== "cancelled" && status !== "checked_out" && (
+                        {/* Cancel: not for checked_in, checked_out, or already cancelled */}
+                        {(status === "pending" || status === "pending_payment" || status === "confirmed") && (
                           <button disabled={busyId === b.id}
-                            onClick={() => { if (confirm("Hủy đặt phòng này?")) action(b.id, "cancel"); }}
-                            title="Hủy"
+                            onClick={() => { if (confirm(`Hủy đặt phòng #${b.id}?`)) action(b.id, "cancel"); }}
+                            title="Hủy đặt phòng"
                             className="p-1.5 border border-red-400/40 text-red-500 hover:bg-red-500/10 disabled:opacity-40">
-                            <CalendarX size={12} />
+                            {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <CalendarX size={12} />}
+                          </button>
+                        )}
+                        {/* Hard delete: for cancelled, checked_out, no_show */}
+                        {(status === "cancelled" || status === "checked_out" || status === "no_show") && (
+                          <button disabled={busyId === b.id}
+                            onClick={() => { if (confirm(`Xóa vĩnh viễn đặt phòng #${b.id}? Thao tác này không thể khôi phục.`)) action(b.id, "delete"); }}
+                            title="Xóa vĩnh viễn"
+                            className="p-1.5 border border-red-500/50 text-red-600 hover:bg-red-500/15 disabled:opacity-40">
+                            {busyId === b.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                           </button>
                         )}
                       </div>

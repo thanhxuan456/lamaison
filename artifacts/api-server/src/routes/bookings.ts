@@ -244,7 +244,11 @@ router.delete("/bookings/:id", async (req, res) => {
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(bookingsTable)
-      .where(sql`${bookingsTable.roomId} = ${booking.roomId} AND ${bookingsTable.status} IN ('confirmed','checked_in')`);
+      .where(
+        sql`${bookingsTable.roomId} = ${booking.roomId}
+            AND ${bookingsTable.id} != ${id}
+            AND ${bookingsTable.status} IN ('pending_payment','confirmed','checked_in')`,
+      );
     if (Number(count) === 0) {
       await db
         .update(roomsTable)
@@ -256,6 +260,43 @@ router.delete("/bookings/:id", async (req, res) => {
     res.json(enriched);
   } catch (err) {
     req.log.error({ err }, "Failed to cancel booking");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/bookings/:id/force", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid booking ID" });
+      return;
+    }
+    const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id));
+    if (!booking) {
+      res.status(404).json({ error: "Booking not found" });
+      return;
+    }
+
+    // Free the room if no other active booking holds it
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookingsTable)
+      .where(
+        sql`${bookingsTable.roomId} = ${booking.roomId}
+            AND ${bookingsTable.id} != ${id}
+            AND ${bookingsTable.status} IN ('pending_payment','confirmed','checked_in')`,
+      );
+    if (Number(count) === 0) {
+      await db
+        .update(roomsTable)
+        .set({ isAvailable: true, status: "available" })
+        .where(eq(roomsTable.id, booking.roomId));
+    }
+
+    await db.delete(bookingsTable).where(eq(bookingsTable.id, id));
+    res.json({ message: "Booking permanently deleted" });
+  } catch (err) {
+    req.log.error({ err }, "Failed to force-delete booking");
     res.status(500).json({ error: "Internal server error" });
   }
 });
