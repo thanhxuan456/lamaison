@@ -1,0 +1,53 @@
+Reading config file 'C:\GrandPalace\lib\db\drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+C:\GrandPalace\lib\db:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/db@0.0.0 push: `drizzle-kit push --config ./drizzle.config.ts`
+Exit status 1
+  [WARN] DB push had warnings - may be OK if schema already exists
+  --> Building API server...
+
+> @workspace/api-server@0.0.0 build C:\GrandPalace\artifacts\api-server
+> node ./build.mjs
+
+
+  dist\index.mjs                       2.9mb
+  dist\pino-worker.mjs               153.4kb
+  dist\pino-file.mjs                 142.1kb
+  dist\pino-pretty.mjs               114.6kb
+  dist\thread-stream-worker.mjs        7.3kb
+  dist\index.mjs.map                   5.2mb
+  dist\pino-worker.mjs.map           256.9kb
+  dist\pino-file.mjs.map             229.0kb
+  dist\pino-pretty.mjs.map           204.0kb
+  dist\thread-stream-worker.mjs.map   12.0kb
+
+Done in 1418ms
+  [OK] API server built
+  --> Building frontend...
+
+> @workspace/hotel-system@0.0.0 build C:\GrandPalace\artifacts\hotel-system
+> vite build --config vite.config.ts
+
+vite v7.3.2 building client environment for production...
+✓ 6 modules transformed.
+✗ Build failed in 821ms
+error during build:
+[vite:css] Failed to load PostCSS config (searchPath: C:/GrandPalace/artifacts/hotel-system): [SyntaxError] Unexpected token '﻿', "﻿{
+    "n"... is not valid JSON
+SyntaxError: Unexpected token '﻿', "﻿{
+    "n"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at jsonLoader (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:7265:42)
+    at Object.search (file:///C:/GrandPalace/node_modules/.pnpm/vite@7.3.2_@types+node@25.6_4a5fde7658ae5671349e89b5d013ed77/node_modules/vite/dist/node/chunks/config.js:7381:62)
+file: C:/GrandPalace/artifacts/hotel-system/src/index.css
+
+C:\GrandPalace\artifacts\hotel-system:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/hotel-system@0.0.0 build: `vite build --config vite.config.ts`
+Exit status 1
+Frontend build failed.
+At C:\Users\Administrator\Downloads\lamaison-main\windows-server-install.ps1:274 char:32
++     if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
++                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Frontend build failed.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Frontend build failed.

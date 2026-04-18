@@ -69,6 +69,8 @@ function Update-EnvPath {
 $TempDir = Join-Path $env:TEMP "GrandPalaceSetup"
 New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+
 # ===========================================================
 # 1. NODE.JS
 # ===========================================================
@@ -188,7 +190,7 @@ $envContent = @(
     "BASE_PATH=/",
     "NODE_ENV=production"
 )
-$envContent | Set-Content -Path $envFile -Encoding UTF8
+[System.IO.File]::WriteAllText($envFile, ($envContent -join "`n") + "`n", $utf8NoBom)
 Write-OK ".env written to $envFile"
 
 # Load env vars into this session
@@ -208,7 +210,7 @@ $pkgJson = Get-Content $rootPkg -Raw | ConvertFrom-Json
 
 if ($pkgJson.scripts.PSObject.Properties.Name -contains "preinstall") {
     $pkgJson.scripts.PSObject.Properties.Remove("preinstall")
-    $pkgJson | ConvertTo-Json -Depth 10 | Set-Content $rootPkg -Encoding UTF8
+    [System.IO.File]::WriteAllText($rootPkg, ($pkgJson | ConvertTo-Json -Depth 10), $utf8NoBom)
     Write-OK "Removed Linux-only preinstall script from package.json"
 } else {
     Write-OK "No preinstall script found, nothing to patch"
@@ -222,7 +224,7 @@ Write-Step "Step 8: Patching pnpm-workspace.yaml for Windows"
 $wsYaml = Join-Path $Config.InstallDir "pnpm-workspace.yaml"
 $lines = Get-Content $wsYaml
 $filtered = $lines | Where-Object { $_ -notmatch '^\s+"[^"]+>.*":\s+[''"]-[''"]' }
-$filtered | Set-Content $wsYaml -Encoding UTF8
+[System.IO.File]::WriteAllText($wsYaml, ($filtered -join "`n") + "`n", $utf8NoBom)
 Write-OK "Removed Linux-only platform exclusions from pnpm-workspace.yaml"
 
 # ===========================================================
