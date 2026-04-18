@@ -92,7 +92,8 @@ $Config = @{
 
 # Paths
 $LogDir  = Join-Path $Config.InstallDir "logs"
-$LogFile = Join-Path $env:TEMP "GrandPalaceInstall_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+$installTimestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$LogFile = Join-Path $env:TEMP ("GrandPalaceInstall_" + $installTimestamp + ".log")
 $TempDir = Join-Path $env:TEMP "GrandPalaceSetup"
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
@@ -106,7 +107,8 @@ Write-Host "Installation log: $LogFile" -ForegroundColor DarkGray
 function Write-Step([string]$n, [string]$msg) {
     Write-Host ""
     Write-Host "[$n] $msg" -ForegroundColor Cyan
-    Write-Host "    $('─' * 55)" -ForegroundColor DarkGray
+    $sep = "-" * 55
+    Write-Host "    $sep" -ForegroundColor DarkGray
 }
 function Write-OK([string]$msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Info([string]$msg) { Write-Host "  --> $msg" -ForegroundColor Yellow }
@@ -283,7 +285,8 @@ if ($Config.UseLocalPg) {
     }
     $DatabaseUrl     = $Config.NeonDatabaseUrl
     $NeonDatabaseUrl = $Config.NeonDatabaseUrl
-    Write-OK "Neon database: $($NeonDatabaseUrl.Split('@')[1].Split('/')[0])"
+    $neonHost = $NeonDatabaseUrl.Split([char]64)[1].Split([char]47)[0]
+    Write-OK "Neon database: $neonHost"
 }
 
 # ===========================================================
@@ -434,7 +437,8 @@ Write-Info "Running pnpm install (may take several minutes)..."
 if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
 Write-OK "Dependencies installed"
 
-Write-Info "Pushing database schema to $( if ($Config.UseLocalPg) { 'local PostgreSQL' } else { 'Neon' } )..."
+$dbTarget = if ($Config.UseLocalPg) { "local PostgreSQL" } else { "Neon" }
+Write-Info "Pushing database schema to $dbTarget..."
 & pnpm --filter "@workspace/db" run push
 if ($LASTEXITCODE -ne 0) { throw "Database schema push failed. Check your database URL and connectivity." }
 Write-OK "Database schema applied"
