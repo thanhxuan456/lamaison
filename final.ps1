@@ -376,11 +376,17 @@ $envLines = @(
 [System.IO.File]::WriteAllText($envFile, ($envLines -join "`n") + "`n", $utf8NoBom)
 Write-OK ".env written to $envFile"
 
+# Load all env vars into the session so every child process inherits them
 foreach ($line in $envLines) {
-    if ($line -match "^([^=]+)=(.*)") {
-        [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], "Process")
+    if ($line -match "^([^#][^=]*)=(.*)") {
+        $k = $Matches[1].Trim()
+        $v = $Matches[2]
+        Set-Item -Path "Env:$k" -Value $v
     }
 }
+# Belt-and-suspenders: ensure the critical DB vars are explicitly visible
+$env:DATABASE_URL      = $DatabaseUrl
+$env:NEON_DATABASE_URL = $NeonDatabaseUrl
 
 # ===========================================================
 # STEP 7 -- PATCH package.json FOR WINDOWS
@@ -461,11 +467,17 @@ try {
     if ($LASTEXITCODE -ne 0) { Fail "pnpm install failed. See output above." }
     Write-OK "Dependencies installed"
 
+    # Ensure DB vars are visible to the drizzle-kit child process
+    $env:DATABASE_URL      = $DatabaseUrl
+    $env:NEON_DATABASE_URL = $NeonDatabaseUrl
+    Write-Info "DB URL (first 60 chars): $($DatabaseUrl.Substring(0, [Math]::Min(60, $DatabaseUrl.Length)))..."
     Write-Info "Applying database schema..."
     & pnpm --filter "@workspace/db" run push
     if ($LASTEXITCODE -ne 0) { Fail "Database schema push failed. Check DATABASE_URL and connectivity." }
     Write-OK "Database schema applied"
 
+    $env:DATABASE_URL      = $DatabaseUrl
+    $env:NEON_DATABASE_URL = $NeonDatabaseUrl
     Write-Info "Seeding initial data (auto-skipped if data already exists)..."
     & pnpm --filter "@workspace/scripts" run seed
     if ($LASTEXITCODE -ne 0) { Fail "Database seed script failed. See output above." }
@@ -477,6 +489,8 @@ try {
             Write-Info "Removing old API build..."
             Remove-Item $apiDistDir -Recurse -Force
         }
+        $env:DATABASE_URL      = $DatabaseUrl
+        $env:NEON_DATABASE_URL = $NeonDatabaseUrl
         Write-Info "Building API server..."
         & pnpm --filter "@workspace/api-server" run build
         if ($LASTEXITCODE -ne 0) { Fail "API server build failed." }
