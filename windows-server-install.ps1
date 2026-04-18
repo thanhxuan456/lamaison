@@ -44,11 +44,11 @@ $Config = @{
     # API back-end port (internal)
     ApiPort             = 8080
 
-    # Front-end port (exposed to users — open this in your firewall)
+    # Front-end port (exposed to users - open this in your firewall)
     FrontendPort        = 3000
 
     # ── DATABASE (choose one) ─────────────────────────────────────────────
-    # Option A: Neon cloud database (recommended — no local PG install needed)
+    # Option A: Neon cloud database (recommended - no local PG install needed)
     #   Set NeonDatabaseUrl to your Neon connection string, leave UseLocalPg = $false
     # Option B: Local PostgreSQL
     #   Set UseLocalPg = $true, NeonDatabaseUrl = ""
@@ -62,7 +62,7 @@ $Config = @{
     PgDbPassword        = "ChangeMe456!"
 
     # ── CLERK AUTHENTICATION ──────────────────────────────────────────────
-    # Get these from https://dashboard.clerk.com → Your App → API Keys
+    # Get these from https://dashboard.clerk.com -> Your App -> API Keys
     # Use PRODUCTION keys for live deployments (pk_live_... / sk_live_...)
     ClerkPublishableKey = "pk_live_REPLACE_WITH_YOUR_KEY"
     ClerkSecretKey      = "sk_live_REPLACE_WITH_YOUR_SECRET"
@@ -170,7 +170,7 @@ New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 New-Item -ItemType Directory -Force -Path $Config.InstallDir | Out-Null
 
 # ===========================================================
-# STEP 1 — SYSTEM REQUIREMENTS CHECK
+# STEP 1 - SYSTEM REQUIREMENTS CHECK
 # ===========================================================
 Write-Step "1/12" "System requirements check"
 
@@ -198,7 +198,7 @@ if ($freeGB -lt $Config.MinDiskGB) {
 Write-OK "Disk free: $freeGB GB"
 
 # ===========================================================
-# STEP 2 — NODE.JS
+# STEP 2 - NODE.JS
 # ===========================================================
 Write-Step "2/12" "Node.js $($Config.NodeVersion)"
 
@@ -216,7 +216,7 @@ if ((Test-CommandExists "node") -and -not $Reinstall) {
 }
 
 # ===========================================================
-# STEP 3 — PNPM
+# STEP 3 - PNPM
 # ===========================================================
 Write-Step "3/12" "pnpm package manager"
 
@@ -230,7 +230,7 @@ if ((Test-CommandExists "pnpm") -and -not $Reinstall) {
 }
 
 # ===========================================================
-# STEP 4 — DATABASE SETUP
+# STEP 4 - DATABASE SETUP
 # ===========================================================
 Write-Step "4/12" "Database setup"
 
@@ -287,7 +287,7 @@ if ($Config.UseLocalPg) {
 }
 
 # ===========================================================
-# STEP 5 — COPY APPLICATION FILES
+# STEP 5 - COPY APPLICATION FILES
 # ===========================================================
 Write-Step "5/12" "Copying application files"
 
@@ -300,13 +300,13 @@ if ($LASTEXITCODE -ge 8) { throw "File copy failed (robocopy exit code $LASTEXIT
 
 $schemaFile = Join-Path $Config.InstallDir "lib\db\src\schema\index.ts"
 if (-not (Test-Path $schemaFile)) {
-    Write-Info "lib directory missing — copying directly..."
+    Write-Info "lib directory missing - copying directly..."
     robocopy (Join-Path $scriptDir "lib") (Join-Path $Config.InstallDir "lib") /E /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
 }
 Write-OK "Files copied"
 
 # ===========================================================
-# STEP 6 — WRITE .ENV FILE
+# STEP 6 - WRITE .ENV FILE
 # ===========================================================
 Write-Step "6/12" "Writing environment configuration"
 
@@ -355,7 +355,7 @@ foreach ($line in $envContent) {
 }
 
 # ===========================================================
-# STEP 7 — PATCH PACKAGE.JSON FOR WINDOWS
+# STEP 7 - PATCH PACKAGE.JSON FOR WINDOWS
 # ===========================================================
 Write-Step "7/12" "Patching package.json for Windows compatibility"
 
@@ -367,11 +367,11 @@ if ($pkgJson.scripts.PSObject.Properties.Name -contains "preinstall") {
     [System.IO.File]::WriteAllText($rootPkg, ($pkgJson | ConvertTo-Json -Depth 10), $utf8NoBom)
     Write-OK "Removed Linux-only preinstall script"
 } else {
-    Write-OK "No preinstall script found — nothing to patch"
+    Write-OK "No preinstall script found - nothing to patch"
 }
 
 # ===========================================================
-# STEP 8 — PATCH PNPM-WORKSPACE.YAML FOR WINDOWS
+# STEP 8 - PATCH PNPM-WORKSPACE.YAML FOR WINDOWS
 # ===========================================================
 Write-Step "8/12" "Patching pnpm-workspace.yaml for Windows"
 
@@ -382,7 +382,7 @@ $filtered = $lines | Where-Object { $_ -notmatch '^\s+"[^"]+>.*":\s+[''"]+-[''"]
 Write-OK "Removed Linux-only platform exclusions"
 
 # ===========================================================
-# STEP 9 — INSTALL, MIGRATE & BUILD
+# STEP 9 - INSTALL, MIGRATE & BUILD
 # ===========================================================
 Write-Step "9/12" "Install dependencies, migrate database, and build"
 
@@ -426,7 +426,7 @@ if (Test-Path $nodeModulesDir) {
 $lockFile = Join-Path $Config.InstallDir "pnpm-lock.yaml"
 if (Test-Path $lockFile) {
     Remove-Item $lockFile -Force
-    Write-Info "Lockfile removed — pnpm will resolve Windows-native binaries fresh"
+    Write-Info "Lockfile removed - pnpm will resolve Windows-native binaries fresh"
 }
 
 Write-Info "Running pnpm install (may take several minutes)..."
@@ -473,13 +473,13 @@ if (-not $SkipBuild) {
     if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
     Write-OK "Frontend built"
 } else {
-    Write-Warn "SkipBuild flag set — skipping API and frontend build"
+    Write-Warn "SkipBuild flag set - skipping API and frontend build"
 }
 
 Pop-Location
 
 # ===========================================================
-# STEP 10 — WINDOWS SERVICES (NSSM)
+# STEP 10 - WINDOWS SERVICES (NSSM)
 # ===========================================================
 Write-Step "10/12" "Installing Windows Services via NSSM"
 
@@ -512,7 +512,7 @@ Write-OK "Found Vite at: $viteJs"
 $viteConfig       = Join-Path $Config.InstallDir "artifacts\hotel-system\vite.config.ts"
 $frontendLauncher = Join-Path $Config.InstallDir "start-frontend.cmd"
 
-# Write launcher scripts (env vars embedded — NSSM service env inheritance is unreliable)
+# Write launcher scripts (env vars embedded - NSSM service env inheritance is unreliable)
 $apiCmd = @(
     "@echo off",
     "set PORT=$($Config.ApiPort)",
@@ -575,7 +575,7 @@ Install-NssmService -svcName "GrandPalaceAPI"      -displayName "Grand Palace - 
 Install-NssmService -svcName "GrandPalaceFrontend" -displayName "Grand Palace - Frontend"   -launcher $frontendLauncher
 
 # ===========================================================
-# STEP 11 — START SERVICES
+# STEP 11 - START SERVICES
 # ===========================================================
 Write-Step "11/12" "Starting services"
 
@@ -596,7 +596,7 @@ foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
 }
 
 # ===========================================================
-# STEP 12 — FIREWALL & HEALTH CHECK
+# STEP 12 - FIREWALL & HEALTH CHECK
 # ===========================================================
 Write-Step "12/12" "Firewall rules and health check"
 
@@ -607,7 +607,7 @@ netsh advfirewall firewall add rule name="Grand Palace API"      dir=in action=a
 netsh advfirewall firewall add rule name="Grand Palace Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
 Write-OK "Firewall rules set for ports $($Config.ApiPort) (API) and $($Config.FrontendPort) (Frontend)"
 
-# Health check — ping the API health endpoint
+# Health check - ping the API health endpoint
 Write-Info "Waiting for API server to become ready..."
 $apiReady   = $false
 $retries    = 12
@@ -617,7 +617,7 @@ for ($i = 1; $i -le $retries; $i++) {
         $resp = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
         if ($resp.StatusCode -lt 400) { $apiReady = $true; break }
     } catch {}
-    Write-Info "  Attempt $i/$retries — waiting 5 s..."
+    Write-Info "  Attempt $i/$retries - waiting 5 s..."
     Start-Sleep -Seconds 5
 }
 if ($apiReady) { Write-OK "API health check passed" }
@@ -638,7 +638,7 @@ $serverIp = (Test-Connection -ComputerName $env:COMPUTERNAME -Count 1).IPV4Addre
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║         Grand Palace Hotels & Resorts — INSTALLED         ║" -ForegroundColor Green
+Write-Host "║         Grand Palace Hotels & Resorts - INSTALLED         ║" -ForegroundColor Green
 Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Frontend  : http://$($serverIp):$($Config.FrontendPort)/"    -ForegroundColor White
@@ -646,12 +646,12 @@ Write-Host "  API       : http://$($serverIp):$($Config.ApiPort)/api/"     -Fore
 Write-Host "  Admin     : http://$($serverIp):$($Config.FrontendPort)/admin" -ForegroundColor White
 Write-Host ""
 Write-Host "  Services (auto-start on reboot):"
-Write-Host "    GrandPalaceAPI      → port $($Config.ApiPort)"
-Write-Host "    GrandPalaceFrontend → port $($Config.FrontendPort)"
+Write-Host "    GrandPalaceAPI      -> port $($Config.ApiPort)"
+Write-Host "    GrandPalaceFrontend -> port $($Config.FrontendPort)"
 Write-Host ""
 Write-Host "  Logs      : $LogDir\"
 Write-Host "  Install log : $LogFile"
-Write-Host "  .env file : $(Join-Path $Config.InstallDir '.env')"
+Write-Host "  .env file : $envFile"
 Write-Host ""
 if ($Config.ClerkPublishableKey -like "*REPLACE*") {
     Write-Host "  ACTION REQUIRED:" -ForegroundColor Red
