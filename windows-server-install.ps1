@@ -214,24 +214,16 @@ Write-Step "Step 8: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
+$lockFile = Join-Path $Config.InstallDir "pnpm-lock.yaml"
+if (Test-Path $lockFile) {
+    Write-Info "Removing Linux lockfile so pnpm resolves Windows-native binaries..."
+    Remove-Item $lockFile -Force
+}
+
 Write-Info "Running pnpm install..."
-& pnpm install --no-frozen-lockfile
+& pnpm install
 if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
 Write-OK "Dependencies installed"
-
-$rollupWinBin = Join-Path $Config.InstallDir "node_modules\.pnpm\@rollup+rollup-win32-x64-msvc*"
-if (-not (Test-Path $rollupWinBin)) {
-    Write-Info "Installing Windows-specific Rollup native binary..."
-    & pnpm add -w @rollup/rollup-win32-x64-msvc 2>&1 | Out-Null
-    Write-OK "Rollup Windows binary installed"
-}
-
-$lightningWinBin = Join-Path $Config.InstallDir "node_modules\.pnpm\lightningcss-win32-x64-msvc*"
-if (-not (Test-Path $lightningWinBin)) {
-    Write-Info "Installing Windows-specific LightningCSS native binary..."
-    & pnpm add -w lightningcss-win32-x64-msvc 2>&1 | Out-Null
-    Write-OK "LightningCSS Windows binary installed"
-}
 
 Write-Info "Applying database schema..."
 & pnpm --filter "@workspace/db" run push
