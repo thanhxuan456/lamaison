@@ -298,7 +298,10 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Write-Info "Source : $scriptDir"
 Write-Info "Target : $($Config.InstallDir)"
 
-robocopy $scriptDir $Config.InstallDir /E /XD ".git" "node_modules" "dist" ".replit-artifact" /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
+robocopy $scriptDir $Config.InstallDir /E `
+    /XD ".git" "node_modules" "dist" ".replit-artifact" "attached_assets" ".local" `
+    /XF ".env" "*.log" "*.map" `
+    /NFL /NDL /NJH /NJS /NC /NS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "File copy failed (robocopy exit code $LASTEXITCODE)." }
 
 $schemaFile = Join-Path $Config.InstallDir "lib\db\src\schema\index.ts"
@@ -315,14 +318,18 @@ Write-Step "6/12" "Writing environment configuration"
 
 $envFile = Join-Path $Config.InstallDir ".env"
 
-# Re-use existing SESSION_SECRET if already present (so services keep sessions valid after reinstall)
-$existingSecret = ""
+# Re-use existing secrets if already present (so sessions stay valid across reinstalls)
+$existingSecret         = ""
+$existingEncryptionKey  = ""
 if (Test-Path $envFile) {
     $existingLines = Get-Content $envFile -ErrorAction SilentlyContinue
-    $secretLine = $existingLines | Where-Object { $_ -match "^SESSION_SECRET=" } | Select-Object -First 1
-    if ($secretLine) { $existingSecret = $secretLine.Split("=", 2)[1] }
+    $secretLine    = $existingLines | Where-Object { $_ -match "^SESSION_SECRET=" }          | Select-Object -First 1
+    $encLine       = $existingLines | Where-Object { $_ -match "^CONTACT_ENCRYPTION_KEY=" }  | Select-Object -First 1
+    if ($secretLine) { $existingSecret        = $secretLine.Split("=", 2)[1] }
+    if ($encLine)    { $existingEncryptionKey = $encLine.Split("=", 2)[1] }
 }
-$sessionSecret = if ($existingSecret) { $existingSecret } else { New-RandomSecret 64 }
+$sessionSecret      = if ($existingSecret)        { $existingSecret }        else { New-RandomSecret 64 }
+$contactEncKey      = if ($existingEncryptionKey) { $existingEncryptionKey } else { New-RandomSecret 32 }
 
 # Build Clerk proxy URL for frontend (proxied through API server)
 $clerkProxyUrl = "$($Config.ApiPublicUrl)/api/__clerk"
@@ -336,6 +343,7 @@ $envContent = @(
     "VITE_CLERK_PROXY_URL=$clerkProxyUrl",
     "VITE_API_URL=$($Config.ApiPublicUrl)",
     "SESSION_SECRET=$sessionSecret",
+    "CONTACT_ENCRYPTION_KEY=$contactEncKey",
     "PORT=$($Config.ApiPort)",
     "FRONTEND_PORT=$($Config.FrontendPort)",
     "BASE_PATH=/",
@@ -433,7 +441,7 @@ if (Test-Path $lockFile) {
 }
 
 Write-Info "Running pnpm install (may take several minutes)..."
-& pnpm install
+& pnpm install --no-frozen-lockfile
 if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
 Write-OK "Dependencies installed"
 
@@ -525,6 +533,7 @@ $apiCmd = @(
     "set CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
     "set CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "set SESSION_SECRET=$sessionSecret",
+    "set CONTACT_ENCRYPTION_KEY=$contactEncKey",
     "set NODE_ENV=production",
     "set MOMO_PARTNER_CODE=$($Config.MomoPartnerCode)",
     "set MOMO_ACCESS_KEY=$($Config.MomoAccessKey)",
@@ -570,8 +579,11 @@ function Install-NssmService {
     & $nssmPath set      $svcName Start        SERVICE_AUTO_START
     & $nssmPath set      $svcName AppStdout    (Join-Path $LogDir "$svcName-out.log")
     & $nssmPath set      $svcName AppStderr    (Join-Path $LogDir "$svcName-err.log")
-    & $nssmPath set      $svcName AppRotateFiles 1
-    & $nssmPath set      $svcName AppRotateBytes 10485760  # 10 MB
+    & $nssmPath set      $svcName AppRotateFiles   1
+    & $nssmPath set      $svcName AppRotateBytes   10485760  # 10 MB
+    & $nssmPath set      $svcName AppRotateOnline  1         # rotate without stopping
+    & $nssmPath set      $svcName AppRestartDelay  3000      # 3 s delay before restart on crash
+    & $nssmPath set      $svcName AppThrottle      10000     # avoid rapid restart loops
     Write-OK "Service registered: $svcName"
 }
 
@@ -615,7 +627,7 @@ Write-OK "Firewall rules set for ports $($Config.ApiPort) (API) and $($Config.Fr
 Write-Info "Waiting for API server to become ready..."
 $apiReady   = $false
 $retries    = 12
-$healthUrl  = "http://localhost:$($Config.ApiPort)/api/health"
+$healthUrl  = "http://localhost:$($Config.ApiPort)/api/healthz"
 for ($i = 1; $i -le $retries; $i++) {
     try {
         $resp = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
@@ -638,7 +650,15 @@ Write-OK "GrandPalaceFrontend: $frontendStatus"
 # ===========================================================
 Stop-Transcript | Out-Null
 
-$serverIp = (Test-Connection -ComputerName $env:COMPUTERNAME -Count 1).IPV4Address.IPAddressToString
+# Resolve server IP reliably across PS5 and PS7
+$serverIp = try {
+    (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop |
+     Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } |
+     Select-Object -First 1 -ExpandProperty IPAddress)
+} catch {
+    try { (Test-Connection -ComputerName $env:COMPUTERNAME -Count 1).IPV4Address.IPAddressToString } catch { "YOUR_SERVER_IP" }
+}
+if (-not $serverIp) { $serverIp = "YOUR_SERVER_IP" }
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Green
