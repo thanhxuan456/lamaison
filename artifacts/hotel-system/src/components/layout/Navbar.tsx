@@ -162,11 +162,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
             ) : (
-              <div className="flex flex-col items-center">
-                <span className="text-2xl md:text-3xl font-serif text-primary tracking-[0.1em] uppercase group-hover:text-primary/80 transition-colors">
+              <div className="flex flex-col items-center text-center">
+                <span className="text-2xl md:text-3xl font-serif text-primary tracking-[0.1em] uppercase group-hover:text-primary/80 transition-colors leading-tight">
                   {branding.brandName}
                 </span>
-                <span className="flex items-center justify-center gap-0.5 mt-0.5 w-full">
+                <span className="flex items-center justify-center gap-0.5 mt-1">
                   {Array.from({ length: Math.min(Math.max(branding.starRating ?? 5, 1), 10) }).map((_, i) => (
                     <span key={i} className="text-primary text-[10px] md:text-[12px] leading-none">★</span>
                   ))}
