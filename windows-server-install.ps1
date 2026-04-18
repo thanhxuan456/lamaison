@@ -256,9 +256,15 @@ Write-OK "Dependencies installed"
 
 Write-Info "Applying database schema..."
 $env:DATABASE_URL = $DatabaseUrl
+$env:NEON_DATABASE_URL = $NeonDatabaseUrl
 & pnpm --filter "@workspace/db" run push
 if ($LASTEXITCODE -ne 0) { throw "Database schema push failed. Check your DATABASE_URL and ensure PostgreSQL is running." }
 Write-OK "Database schema applied"
+
+Write-Info "Seeding database with initial data..."
+& pnpm --filter "@workspace/scripts" run seed
+if ($LASTEXITCODE -ne 0) { throw "Database seeding failed." }
+Write-OK "Database seeded"
 
 $apiDist = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
 if (Test-Path $apiDist) {

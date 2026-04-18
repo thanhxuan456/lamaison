@@ -136,6 +136,14 @@ const roomTemplates = [
 async function seed() {
   console.log("🌱 Seeding database...");
 
+  // Skip if already seeded
+  const existing = await db.select().from(hotelsTable).limit(1);
+  if (existing.length > 0) {
+    console.log("⏭️  Database already seeded, skipping.");
+    await pool.end();
+    return;
+  }
+
   // Insert hotels
   const insertedHotels = await db.insert(hotelsTable).values(hotels).returning();
   console.log(`✅ Inserted ${insertedHotels.length} hotels`);
