@@ -324,8 +324,8 @@ function Install-NssmService {
     & $nssmPath set $svcName AppRotateFiles 1
     & $nssmPath set $svcName AppRotateBytes 10485760
 
-    foreach ($envLine in $envLines) {
-        & $nssmPath set $svcName AppEnvironmentExtra $envLine
+    if ($envLines.Count -gt 0) {
+        & $nssmPath set $svcName AppEnvironmentExtra @envLines
     }
 
     Write-OK "Service registered: $svcName"
@@ -363,9 +363,24 @@ Install-NssmService `
 # ===========================================================
 Write-Step "Step 10: Starting services"
 
-Start-Service -Name "GrandPalaceAPI"
+try {
+    Start-Service -Name "GrandPalaceAPI"
+    Write-OK "GrandPalaceAPI started"
+} catch {
+    Write-Host "  [ERROR] GrandPalaceAPI failed to start. Check logs:" -ForegroundColor Red
+    Write-Host "    $($Config.InstallDir)\logs\GrandPalaceAPI-err.log" -ForegroundColor Red
+    Get-Content (Join-Path $Config.InstallDir "logs\GrandPalaceAPI-err.log") -ErrorAction SilentlyContinue | Select-Object -Last 20 | ForEach-Object { Write-Host "    $_" }
+}
 Start-Sleep -Seconds 3
-Start-Service -Name "GrandPalaceFrontend"
+
+try {
+    Start-Service -Name "GrandPalaceFrontend"
+    Write-OK "GrandPalaceFrontend started"
+} catch {
+    Write-Host "  [ERROR] GrandPalaceFrontend failed to start. Check logs:" -ForegroundColor Red
+    Write-Host "    $($Config.InstallDir)\logs\GrandPalaceFrontend-err.log" -ForegroundColor Red
+    Get-Content (Join-Path $Config.InstallDir "logs\GrandPalaceFrontend-err.log") -ErrorAction SilentlyContinue | Select-Object -Last 20 | ForEach-Object { Write-Host "    $_" }
+}
 Start-Sleep -Seconds 3
 
 $apiStatus      = (Get-Service -Name "GrandPalaceAPI").Status
