@@ -246,12 +246,10 @@ if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
 Write-OK "Dependencies installed"
 
 Write-Info "Applying database schema..."
+$env:DATABASE_URL = $DatabaseUrl
 & pnpm --filter "@workspace/db" run push
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  [WARN] DB push had warnings - may be OK if schema already exists" -ForegroundColor Yellow
-} else {
-    Write-OK "Database schema applied"
-}
+if ($LASTEXITCODE -ne 0) { throw "Database schema push failed. Check your DATABASE_URL and ensure PostgreSQL is running." }
+Write-OK "Database schema applied"
 
 $apiDist = Join-Path $Config.InstallDir "artifacts\api-server\dist\index.mjs"
 if (Test-Path $apiDist) {
