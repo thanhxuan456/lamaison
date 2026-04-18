@@ -243,11 +243,23 @@ Write-Step "Step 9: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
+# Stop any running Grand Palace services so their binaries are not locked
+foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
+    $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
+    if ($s -and $s.Status -ne "Stopped") {
+        Write-Info "Stopping service $svc before removing node_modules..."
+        try { Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue } catch {}
+        Start-Sleep -Seconds 2
+    }
+}
+
 # Remove node_modules for a clean install (fixes Windows native binary issues)
 $nodeModulesDir = Join-Path $Config.InstallDir "node_modules"
 if (Test-Path $nodeModulesDir) {
     Write-Info "Removing existing node_modules for a clean reinstall..."
-    Remove-Item $nodeModulesDir -Recurse -Force
+    # Use cmd rmdir which handles locked executables better than Remove-Item
+    & cmd /c "rmdir /s /q `"$nodeModulesDir`""
+    if (Test-Path $nodeModulesDir) { throw "Failed to remove node_modules. Close any processes using files inside it and try again." }
     Write-OK "node_modules removed"
 }
 
