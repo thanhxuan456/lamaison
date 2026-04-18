@@ -82,6 +82,7 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+NEON_DATABASE_URL = "postgresql://neondb_owner:npg_YCEZLyV6gwi7@ep-fragrant-sunset-a18l1eva-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
 [userenv.development]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
