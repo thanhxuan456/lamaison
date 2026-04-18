@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const hotelsTable = pgTable("hotels", {
   id: serial("id").primaryKey(),
+  slug: text("slug").notNull().default(""),
   name: text("name").notNull(),
   location: text("location").notNull(),
   city: text("city").notNull(),

@@ -88,7 +88,7 @@ function DestinationsBlock({ s }: { s: Record<string, any> }) {
                   viewport={{ once: true, margin: "-100px" }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                   className="group relative overflow-hidden border border-primary/30 cursor-pointer h-[500px]"
-                  onClick={() => setLocation(`/hotels/${hotel.id}`)}
+                  onClick={() => setLocation(`/hotels/${(hotel as any).slug || hotel.id}`)}
                 >
                   <div className="absolute inset-0">
                     <img src={imageSrc} alt={hotel.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />

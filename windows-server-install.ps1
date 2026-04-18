@@ -21,7 +21,15 @@ $Config = @{
     # Front-end port (open this in your firewall)
     FrontendPort        = 3000
 
-    # PostgreSQL settings
+    # ── DATABASE (choose one) ─────────────────────────────────────────────
+    # Option A: Neon cloud database (recommended — no local PG install needed)
+    #   Set NeonDatabaseUrl to your Neon connection string, leave UseLocalPg = $false
+    # Option B: Local PostgreSQL
+    #   Set UseLocalPg = $true, NeonDatabaseUrl = ""
+    UseLocalPg          = $false
+    NeonDatabaseUrl     = "postgresql://neondb_owner:PASS@ep-xxx.neon.tech/neondb?sslmode=require"
+
+    # Local PostgreSQL settings (used only when UseLocalPg = $true)
     PgSuperPassword     = "ChangeMe123!"
     PgDbName            = "grandpalace"
     PgDbUser            = "grandpalace"
@@ -104,52 +112,52 @@ if (Test-CommandExists "pnpm") {
 }
 
 # ===========================================================
-# 3. POSTGRESQL
+# 3. POSTGRESQL (skipped when using Neon cloud)
 # ===========================================================
-Write-Step "Step 3: PostgreSQL $($Config.PgVersion)"
+Write-Step "Step 3: Database setup"
 
-$pgService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
-if ($pgService) {
-    Write-OK "PostgreSQL already installed: $($pgService.Name)"
-    $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue
-    if ($pgBinSearch) {
-        $pgBin = ($pgBinSearch | Select-Object -First 1).FullName
+if ($Config.UseLocalPg) {
+    Write-Info "Using local PostgreSQL $($Config.PgVersion)"
+    $pgService = Get-Service -Name "postgresql*" -ErrorAction SilentlyContinue
+    if ($pgService) {
+        Write-OK "PostgreSQL already installed: $($pgService.Name)"
+        $pgBinSearch = Get-ChildItem "C:\Program Files\PostgreSQL" -Filter "bin" -Recurse -Directory -ErrorAction SilentlyContinue
+        if ($pgBinSearch) { $pgBin = ($pgBinSearch | Select-Object -First 1).FullName }
+    } else {
+        $pgInstaller = Join-Path $TempDir "pg-installer.exe"
+        $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-" + $Config.PgVersion + ".4-1-windows-x64.exe"
+        Invoke-Download $pgUrl $pgInstaller
+        Write-Info "Installing PostgreSQL silently (this takes a few minutes)..."
+        $pgArgs = "--mode unattended --unattendedmodeui none --superpassword " + $Config.PgSuperPassword + " --serverport 5432"
+        Start-Process $pgInstaller -ArgumentList $pgArgs -Wait -NoNewWindow
+        Update-EnvPath
+        $pgBin = "C:\Program Files\PostgreSQL\" + $Config.PgVersion + "\bin"
+        Write-OK "PostgreSQL $($Config.PgVersion) installed"
     }
+    if ($pgBin -and (Test-Path $pgBin)) { $env:Path = $env:Path + ";" + $pgBin }
+
+    $env:PGPASSWORD = $Config.PgSuperPassword
+    $checkDb = & psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($Config.PgDbName)'" 2>&1
+    if ($checkDb -match "1") {
+        Write-OK "Database '$($Config.PgDbName)' already exists"
+    } else {
+        Write-Info "Creating database user and database..."
+        & psql -U postgres -c "CREATE ROLE `"$($Config.PgDbUser)`" WITH LOGIN PASSWORD '$($Config.PgDbPassword)';" 2>&1 | Out-Null
+        & psql -U postgres -c "CREATE DATABASE `"$($Config.PgDbName)`" OWNER `"$($Config.PgDbUser)`";" 2>&1 | Out-Null
+        & psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE `"$($Config.PgDbName)`" TO `"$($Config.PgDbUser)`";" 2>&1 | Out-Null
+        Write-OK "Database '$($Config.PgDbName)' created"
+    }
+    $DatabaseUrl    = "postgresql://" + $Config.PgDbUser + ":" + $Config.PgDbPassword + "@localhost:5432/" + $Config.PgDbName
+    $NeonDatabaseUrl = ""
 } else {
-    $pgInstaller = Join-Path $TempDir "pg-installer.exe"
-    $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-" + $Config.PgVersion + ".4-1-windows-x64.exe"
-    Invoke-Download $pgUrl $pgInstaller
-    Write-Info "Installing PostgreSQL silently (this takes a few minutes)..."
-    $pgArgs = "--mode unattended --unattendedmodeui none --superpassword " + $Config.PgSuperPassword + " --serverport 5432"
-    Start-Process $pgInstaller -ArgumentList $pgArgs -Wait -NoNewWindow
-    Update-EnvPath
-    $pgBin = "C:\Program Files\PostgreSQL\" + $Config.PgVersion + "\bin"
-    Write-OK "PostgreSQL $($Config.PgVersion) installed"
+    Write-Info "Using Neon cloud database (no local PostgreSQL install required)"
+    if (-not $Config.NeonDatabaseUrl -or $Config.NeonDatabaseUrl -like "*PASS*" -or $Config.NeonDatabaseUrl -like "*ep-xxx*") {
+        throw "NeonDatabaseUrl is not configured. Edit the `$Config block at the top of this script."
+    }
+    $DatabaseUrl     = $Config.NeonDatabaseUrl
+    $NeonDatabaseUrl = $Config.NeonDatabaseUrl
+    Write-OK "Neon database URL configured"
 }
-
-if ($pgBin -and (Test-Path $pgBin)) {
-    $env:Path = $env:Path + ";" + $pgBin
-}
-
-# ===========================================================
-# 4. CREATE DATABASE
-# ===========================================================
-Write-Step "Step 4: Database setup"
-
-$env:PGPASSWORD = $Config.PgSuperPassword
-
-$checkDb = & psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$($Config.PgDbName)'" 2>&1
-if ($checkDb -match "1") {
-    Write-OK "Database '$($Config.PgDbName)' already exists"
-} else {
-    Write-Info "Creating database user and database..."
-    & psql -U postgres -c "CREATE ROLE `"$($Config.PgDbUser)`" WITH LOGIN PASSWORD '$($Config.PgDbPassword)';" 2>&1 | Out-Null
-    & psql -U postgres -c "CREATE DATABASE `"$($Config.PgDbName)`" OWNER `"$($Config.PgDbUser)`";" 2>&1 | Out-Null
-    & psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE `"$($Config.PgDbName)`" TO `"$($Config.PgDbUser)`";" 2>&1 | Out-Null
-    Write-OK "Database '$($Config.PgDbName)' created"
-}
-
-$DatabaseUrl = "postgresql://" + $Config.PgDbUser + ":" + $Config.PgDbPassword + "@localhost:5432/" + $Config.PgDbName
 
 # ===========================================================
 # 5. COPY APP FILES
@@ -182,6 +190,7 @@ Write-Step "Step 6: Writing environment config"
 $envFile = Join-Path $Config.InstallDir ".env"
 $envContent = @(
     "DATABASE_URL=" + $DatabaseUrl,
+    "NEON_DATABASE_URL=" + $NeonDatabaseUrl,
     "CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
     "CLERK_SECRET_KEY=" + $Config.ClerkSecretKey,
     "VITE_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
@@ -303,7 +312,9 @@ $apiCmd = @(
     "@echo off",
     "set PORT=$($Config.ApiPort)",
     "set DATABASE_URL=$DatabaseUrl",
+    "set NEON_DATABASE_URL=$NeonDatabaseUrl",
     "set CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
+    "set CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "set NODE_ENV=production",
     "`"$nodePath`" --enable-source-maps `"$apiDistPath`""
 ) -join "`r`n"

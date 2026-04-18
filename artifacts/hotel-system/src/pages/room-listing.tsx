@@ -13,12 +13,12 @@ import { useFormatPrice } from "@/lib/branding";
 type Sort = "featured" | "priceAsc" | "priceDesc" | "capacity";
 
 export default function RoomListing() {
-  const [, params] = useRoute("/hotels/:id/rooms");
-  const hotelId = params?.id ? parseInt(params.id) : 0;
+  const [, params] = useRoute("/hotels/:slug/rooms");
+  const slug = params?.slug ?? "";
   const { t } = useT();
 
-  const { data: hotel, isLoading: loadingHotel } = useGetHotel(hotelId);
-  const { data: rooms, isLoading: loadingRooms } = useListHotelRooms(hotelId);
+  const { data: hotel, isLoading: loadingHotel } = useGetHotel(slug as any);
+  const { data: rooms, isLoading: loadingRooms } = useListHotelRooms(slug as any);
 
   const [capacity, setCapacity] = useState<number | null>(null);
   const [sort, setSort] = useState<Sort>("featured");

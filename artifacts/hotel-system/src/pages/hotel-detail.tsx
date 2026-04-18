@@ -8,14 +8,14 @@ import { useT } from "@/lib/i18n";
 import { useFormatPrice } from "@/lib/branding";
 
 export default function HotelDetail() {
-  const [, params] = useRoute("/hotels/:id");
-  const hotelId = params?.id ? parseInt(params.id) : 0;
+  const [, params] = useRoute("/hotels/:slug");
+  const slug = params?.slug ?? "";
   const { t } = useT();
   const fmtPrice = useFormatPrice();
 
-  const { data: hotel, isLoading: loadingHotel } = useGetHotel(hotelId);
-  const { data: summary, isLoading: loadingSummary } = useGetHotelSummary(hotelId);
-  const { data: rooms, isLoading: loadingRooms } = useListHotelRooms(hotelId);
+  const { data: hotel, isLoading: loadingHotel } = useGetHotel(slug as any);
+  const { data: summary, isLoading: loadingSummary } = useGetHotelSummary(slug as any);
+  const { data: rooms, isLoading: loadingRooms } = useListHotelRooms(slug as any);
 
   if (loadingHotel) {
     return (
@@ -129,7 +129,7 @@ export default function HotelDetail() {
 
                   <div className="pt-4">
                     <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none py-6 tracking-widest uppercase">
-                      <Link href={`/hotels/${hotel.id}/rooms`}>{t("hotel.book.viewRooms")}</Link>
+                      <Link href={`/hotels/${hotel.slug || hotel.id}/rooms`}>{t("hotel.book.viewRooms")}</Link>
                     </Button>
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export default function HotelDetail() {
               <h2 className="text-primary font-serif tracking-[0.2em] text-sm uppercase mb-4">{t("hotel.rooms.kicker")}</h2>
               <h3 className="text-3xl md:text-4xl font-serif text-foreground">{t("hotel.rooms.title")}</h3>
             </div>
-            <Link href={`/hotels/${hotel.id}/rooms`} className="hidden md:flex items-center text-primary text-sm uppercase tracking-widest font-medium hover:text-primary/80 transition-colors group">
+            <Link href={`/hotels/${hotel.slug || hotel.id}/rooms`} className="hidden md:flex items-center text-primary text-sm uppercase tracking-widest font-medium hover:text-primary/80 transition-colors group">
               {t("hotel.rooms.viewAll")} <ChevronRight size={16} className="ml-1 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
@@ -194,7 +194,7 @@ export default function HotelDetail() {
 
           <div className="mt-8 text-center md:hidden">
             <Button asChild variant="link" className="text-primary uppercase tracking-widest">
-              <Link href={`/hotels/${hotel.id}/rooms`}>{t("hotel.rooms.viewAllMobile")}</Link>
+              <Link href={`/hotels/${hotel.slug || hotel.id}/rooms`}>{t("hotel.rooms.viewAllMobile")}</Link>
             </Button>
           </div>
         </div>

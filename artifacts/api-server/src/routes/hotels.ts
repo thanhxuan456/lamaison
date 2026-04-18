@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { hotelsTable, roomsTable, bookingsTable, insertHotelSchema } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, or } from "drizzle-orm";
 
 const router = Router();
 
@@ -39,11 +39,14 @@ router.post("/hotels", async (req, res) => {
 
 router.get("/hotels/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid hotel ID" }); return; }
-    const [hotel] = await db.select().from(hotelsTable).where(eq(hotelsTable.id, id));
+    const raw = req.params.id;
+    const numericId = parseInt(raw);
+    const byId = !isNaN(numericId);
+    const [hotel] = byId
+      ? await db.select().from(hotelsTable).where(eq(hotelsTable.id, numericId))
+      : await db.select().from(hotelsTable).where(eq(hotelsTable.slug, raw));
     if (!hotel) { res.status(404).json({ error: "Hotel not found" }); return; }
-    const rooms = await db.select().from(roomsTable).where(eq(roomsTable.hotelId, id));
+    const rooms = await db.select().from(roomsTable).where(eq(roomsTable.hotelId, hotel.id));
     const availableRooms = rooms.filter((r) => r.isAvailable).length;
     res.json({ ...hotel, rating: parseFloat(hotel.rating), priceFrom: parseFloat(hotel.priceFrom), availableRooms, totalRooms: rooms.length });
   } catch (err) {
@@ -82,9 +85,15 @@ router.delete("/hotels/:id", async (req, res) => {
 
 router.get("/hotels/:id/rooms", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid hotel ID" }); return; }
-    const rooms = await db.select().from(roomsTable).where(eq(roomsTable.hotelId, id));
+    const raw = req.params.id;
+    const numericId = parseInt(raw);
+    let hotelId = numericId;
+    if (isNaN(numericId)) {
+      const [hotel] = await db.select().from(hotelsTable).where(eq(hotelsTable.slug, raw));
+      if (!hotel) { res.status(404).json({ error: "Hotel not found" }); return; }
+      hotelId = hotel.id;
+    }
+    const rooms = await db.select().from(roomsTable).where(eq(roomsTable.hotelId, hotelId));
     res.json(rooms.map((r) => ({ ...r, pricePerNight: parseFloat(r.pricePerNight) })));
   } catch (err) {
     req.log.error({ err }, "Failed to list hotel rooms");
@@ -94,10 +103,13 @@ router.get("/hotels/:id/rooms", async (req, res) => {
 
 router.get("/hotels/:id/summary", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid hotel ID" }); return; }
-    const [hotel] = await db.select().from(hotelsTable).where(eq(hotelsTable.id, id));
-    if (!hotel) { res.status(404).json({ error: "Hotel not found" }); return; }
+    const raw = req.params.id;
+    const numericId = parseInt(raw);
+    const [hotel] = !isNaN(numericId)
+      ? await db.select().from(hotelsTable).where(eq(hotelsTable.id, numericId))
+      : await db.select().from(hotelsTable).where(eq(hotelsTable.slug, raw));
+    const id = hotel?.id;
+    if (!hotel || !id) { res.status(404).json({ error: "Hotel not found" }); return; }
     const rooms = await db.select().from(roomsTable).where(eq(roomsTable.hotelId, id));
     const bookings = await db.select().from(bookingsTable).where(eq(bookingsTable.hotelId, id));
     const totalRooms = rooms.length;

@@ -165,8 +165,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/hotels/:id" component={HotelDetail} />
-      <Route path="/hotels/:id/rooms" component={RoomListing} />
+      <Route path="/hotels/:slug" component={HotelDetail} />
+      <Route path="/hotels/:slug/rooms" component={RoomListing} />
       <Route path="/rooms/:id" component={RoomDetail} />
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/:id/contract" component={ContractView} />

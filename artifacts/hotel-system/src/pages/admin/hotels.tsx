@@ -12,18 +12,30 @@ import { Link } from "wouter";
 const API = import.meta.env.VITE_API_URL ?? "";
 
 const EMPTY_HOTEL = {
-  name: "", location: "", city: "", address: "", description: "",
+  slug: "", name: "", location: "", city: "", address: "", description: "",
   rating: "5.0", imageUrl: "/images/hero.png", amenities: [] as string[],
   priceFrom: "500", totalRooms: 50, phone: "", email: "",
 };
 
 type HotelForm = typeof EMPTY_HOTEL;
 
+function toSlug(name: string) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
 function HotelModal({ hotel, onClose, onSaved }: {
   hotel?: any; onClose: () => void; onSaved: () => void;
 }) {
   const { toast } = useToast();
   const [form, setForm] = useState<HotelForm>(hotel ? {
+    slug: hotel.slug || toSlug(hotel.name),
     name: hotel.name, location: hotel.location, city: hotel.city,
     address: hotel.address, description: hotel.description,
     rating: String(hotel.rating), imageUrl: hotel.imageUrl,
@@ -33,7 +45,11 @@ function HotelModal({ hotel, onClose, onSaved }: {
   const [saving, setSaving] = useState(false);
   const [amenityInput, setAmenityInput] = useState("");
 
-  const set = (k: keyof HotelForm, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof HotelForm, v: any) => setForm((f) => {
+    const updated = { ...f, [k]: v };
+    if (k === "name" && !hotel) updated.slug = toSlug(v as string);
+    return updated;
+  });
 
   const addAmenity = () => {
     const a = amenityInput.trim();
@@ -83,6 +99,7 @@ function HotelModal({ hotel, onClose, onSaved }: {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Hotel Name *" value={form.name} onChange={(v) => set("name", v)} />
+            <Field label="URL Slug *" value={form.slug} onChange={(v) => set("slug", v)} placeholder="e.g. grand-palace-ha-noi" />
             <Field label="City *" value={form.city} onChange={(v) => set("city", v)} placeholder="e.g. Hà Nội" />
             <Field label="Location / District" value={form.location} onChange={(v) => set("location", v)} />
             <Field label="Address *" value={form.address} onChange={(v) => set("address", v)} />
@@ -240,7 +257,7 @@ function HotelsContent() {
                   <td className="px-4 py-3 text-foreground">${parseFloat(h.priceFrom).toFixed(0)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <Link href={`/hotels/${h.id}`}>
+                      <Link href={`/hotels/${h.slug || h.id}`}>
                         <button className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"><Eye size={12} /></button>
                       </Link>
                       <button onClick={() => setEditHotel(h)} className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"><Edit size={12} /></button>
