@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
 import { useMainMenu } from "@/lib/site-config";
-import { useUser, useClerk, Show } from "@clerk/react";
+import { useUser, useClerk, Show, useAuth } from "@clerk/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,7 +105,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const { t } = useT();
   const { branding } = useBranding();
   const { menu } = useMainMenu();
-  const visibleItems = menu.items.filter((i) => i.enabled);
+  const { isSignedIn } = useAuth();
+  const visibleItems = menu.items.filter((i) => i.enabled && (i.id !== "bookings" || isSignedIn));
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);

@@ -35,6 +35,7 @@ export interface FooterConfig {
 export const DEFAULT_MAIN_MENU: MainMenu = {
   items: [
     { id: "home", label: "Trang chủ", href: "/", enabled: true, target: "_self" },
+    { id: "about", label: "Về chúng tôi", href: "/about", enabled: true, target: "_self" },
     { id: "rooms", label: "Phòng & Suite", href: "/hotels/1/rooms", enabled: true, target: "_self" },
     { id: "contact", label: "Liên hệ", href: "/contact", enabled: true, target: "_self" },
     { id: "bookings", label: "Đặt phòng của tôi", href: "/bookings", enabled: true, target: "_self" },
@@ -50,7 +51,7 @@ export const DEFAULT_FOOTER: FooterConfig = {
   contact: { enabled: true, title: "Liên hệ", email: "contact@grandpalace.vn", phone: "+84 1800 9999", address: "Hà Nội · Đà Nẵng · TP.HCM" },
   columns: [
     { id: "explore", title: "Khám phá", enabled: true, links: [
-      { id: "1", label: "Về chúng tôi", href: "/contact" },
+      { id: "1", label: "Về chúng tôi", href: "/about" },
       { id: "2", label: "Phòng & Suite", href: "/hotels/1/rooms" },
       { id: "3", label: "Ẩm thực", href: "/" },
       { id: "4", label: "Spa & Thư giãn", href: "/" },

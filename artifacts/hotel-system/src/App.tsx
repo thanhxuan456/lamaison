@@ -40,6 +40,7 @@ import AdminBookings from "@/pages/admin/bookings";
 import AdminGuests from "@/pages/admin/guests";
 import AdminMenus from "@/pages/admin/menus";
 import AdminBlogs from "@/pages/admin/blogs";
+import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import NewsList from "@/pages/news";
 import NewsDetail from "@/pages/news-detail";
@@ -171,6 +172,7 @@ function Router() {
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/:id/contract" component={ContractView} />
       <Route path="/bookings/:id" component={BookingDetail} />
+      <Route path="/about" component={AboutPage} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/news" component={NewsList} />
       <Route path="/news/:slug" component={NewsDetail} />

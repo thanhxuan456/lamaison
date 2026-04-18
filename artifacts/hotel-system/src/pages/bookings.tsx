@@ -1,14 +1,49 @@
 import { useListBookings } from "@workspace/api-client-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
-import { Calendar, MapPin, ChevronRight } from "lucide-react";
+import { Calendar, MapPin, ChevronRight, Lock } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { useAuth } from "@clerk/react";
 
 export default function Bookings() {
   const { data: bookings, isLoading } = useListBookings();
   const { t } = useT();
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <PageLayout>
+        <div className="bg-secondary pt-32 pb-16 border-b border-primary/20">
+          <div className="container mx-auto px-4 md:px-8">
+            <h1 className="text-4xl md:text-5xl font-serif text-white mb-6">{t("bookings.title")}</h1>
+            <div className="w-16 h-[2px] bg-primary mb-6" />
+          </div>
+        </div>
+        <div className="py-24 bg-background flex items-center justify-center min-h-[50vh]">
+          <div className="text-center border border-primary/20 bg-card p-14 max-w-md mx-4">
+            <div className="p-4 bg-primary/10 text-primary inline-flex mb-6">
+              <Lock size={28} />
+            </div>
+            <h2 className="text-2xl font-serif text-foreground mb-3">Yêu cầu đăng nhập</h2>
+            <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+              Vui lòng đăng nhập để xem lịch sử đặt phòng và quản lý các đơn đặt phòng của bạn.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild className="bg-primary text-primary-foreground rounded-none px-8 uppercase tracking-widest text-xs">
+                <Link href="/sign-in">Đăng nhập</Link>
+              </Button>
+              <Button asChild variant="outline" className="border-primary text-primary rounded-none px-8 uppercase tracking-widest text-xs">
+                <Link href="/register">Đăng ký</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
