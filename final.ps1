@@ -599,19 +599,52 @@ $apiLines = @(
 [System.IO.File]::WriteAllText($apiLauncher, ($apiLines -join "`r`n"), $utf8NoBom)
 Write-OK "Created start-api.cmd"
 
+# Write a self-contained Node.js static file server that avoids all Vite/Replit
+# plugin dependencies. It serves the built frontend and proxies /api/* to the API.
+$serveScript = Join-Path $Config.InstallDir "serve-frontend.mjs"
+$serveLines = @(
+    "import http from 'http';",
+    "import https from 'https';",
+    "import fs from 'fs';",
+    "import path from 'path';",
+    "import { fileURLToPath } from 'url';",
+    "const PORT = parseInt(process.env.PORT || '3000', 10);",
+    "const API_URL = process.env.VITE_API_URL || 'http://localhost:8080';",
+    "const __dirname = path.dirname(fileURLToPath(import.meta.url));",
+    "const ROOT = path.join(__dirname, 'artifacts', 'hotel-system', 'dist', 'public');",
+    "const MIME = { '.html':'text/html', '.js':'application/javascript', '.mjs':'application/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff':'font/woff', '.woff2':'font/woff2', '.ttf':'font/ttf', '.webp':'image/webp', '.txt':'text/plain' };",
+    "const parsed = new URL(API_URL);",
+    "const apiHost = parsed.hostname;",
+    "const apiPort = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');",
+    "const apiMod = parsed.protocol === 'https:' ? https : http;",
+    "http.createServer((req, res) => {",
+    "  if (req.url.startsWith('/api/')) {",
+    "    const opts = { hostname: apiHost, port: apiPort, path: req.url, method: req.method, headers: { ...req.headers, host: apiHost + ':' + apiPort } };",
+    "    const pr = apiMod.request(opts, ps => { res.writeHead(ps.statusCode, ps.headers); ps.pipe(res); });",
+    "    pr.on('error', () => { res.writeHead(502); res.end('Bad Gateway'); });",
+    "    req.pipe(pr); return;",
+    "  }",
+    "  let fp = path.join(ROOT, req.url.split('?')[0].split('#')[0]);",
+    "  if (!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) fp = path.join(ROOT, 'index.html');",
+    "  if (!fs.existsSync(fp)) { res.writeHead(404); res.end('Not found'); return; }",
+    "  const ext = path.extname(fp).toLowerCase();",
+    "  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });",
+    "  fs.createReadStream(fp).pipe(res);",
+    "}).listen(PORT, '0.0.0.0', () => console.log('Frontend serving on port ' + PORT));"
+)
+[System.IO.File]::WriteAllText($serveScript, ($serveLines -join "`r`n") + "`r`n", $utf8NoBom)
+Write-OK "Created serve-frontend.mjs"
+
 $frontendLauncher = Join-Path $Config.InstallDir "start-frontend.cmd"
 $frontendLines = @(
     "@echo off",
     'set "PORT=' + $Config.FrontendPort + '"',
-    'set "BASE_PATH=/"',
-    'set "VITE_CLERK_PUBLISHABLE_KEY=' + $Config.ClerkPublishableKey + '"',
-    'set "VITE_CLERK_PROXY_URL=' + $clerkProxyUrl + '"',
-    'set "VITE_API_URL=' + $Config.ApiPublicUrl + '"',
     'set "NODE_ENV=production"',
-    "`"" + $nodePath + "`" `"" + $viteJs + "`" preview --config `"" + $viteConfigPath + "`" --host 0.0.0.0 --port " + $Config.FrontendPort
+    'set "VITE_API_URL=' + $Config.ApiPublicUrl + '"',
+    "`"" + $nodePath + "`" `"" + $serveScript + "`""
 )
 [System.IO.File]::WriteAllText($frontendLauncher, ($frontendLines -join "`r`n"), $utf8NoBom)
-Write-OK "Created start-frontend.cmd"
+Write-OK "Created start-frontend.cmd (uses built-in Node.js static server)"
 
 function Install-NssmService {
     param([string]$SvcName, [string]$DisplayName, [string]$Launcher)
