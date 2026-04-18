@@ -208,9 +208,20 @@ if ($pkgJson.scripts.PSObject.Properties.Name -contains "preinstall") {
 }
 
 # ===========================================================
-# 8. INSTALL & BUILD
+# 8. PATCH pnpm-workspace.yaml FOR WINDOWS
 # ===========================================================
-Write-Step "Step 8: Installing dependencies (may take several minutes)"
+Write-Step "Step 8: Patching pnpm-workspace.yaml for Windows"
+
+$wsYaml = Join-Path $Config.InstallDir "pnpm-workspace.yaml"
+$lines = Get-Content $wsYaml
+$filtered = $lines | Where-Object { $_ -notmatch '^\s+"[^"]+>.*":\s+[''"]-[''"]' }
+$filtered | Set-Content $wsYaml -Encoding UTF8
+Write-OK "Removed Linux-only platform exclusions from pnpm-workspace.yaml"
+
+# ===========================================================
+# 9. INSTALL & BUILD
+# ===========================================================
+Write-Step "Step 9: Installing dependencies (may take several minutes)"
 
 Push-Location $Config.InstallDir
 
