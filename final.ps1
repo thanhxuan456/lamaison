@@ -646,8 +646,17 @@ $frontendLines = @(
 [System.IO.File]::WriteAllText($frontendLauncher, ($frontendLines -join "`r`n"), $utf8NoBom)
 Write-OK "Created start-frontend.cmd (uses built-in Node.js static server)"
 
+# Register a service with NSSM to run node.exe directly (no cmd.exe / batch file),
+# then write all environment variables into the Windows registry as REG_MULTI_SZ.
+# This completely avoids cmd.exe quoting issues with &, :, //, spaces, etc.
 function Install-NssmService {
-    param([string]$SvcName, [string]$DisplayName, [string]$Launcher)
+    param(
+        [string]$SvcName,
+        [string]$DisplayName,
+        [string]$Application,
+        [string]$AppParameters,
+        [string[]]$EnvVars
+    )
     $existing = Get-Service -Name $SvcName -ErrorAction SilentlyContinue
     if ($existing) {
         Write-Info "Removing old service: $SvcName"
@@ -656,23 +665,66 @@ function Install-NssmService {
         try { & $nssmPath remove $SvcName confirm 2>&1 | Out-Null } catch {}
         Start-Sleep -Seconds 2
     }
-    & $nssmPath install     $SvcName "cmd.exe" "/c `"$Launcher`""
-    & $nssmPath set         $SvcName DisplayName    $DisplayName
-    & $nssmPath set         $SvcName Description    "Grand Palace Hotels and Resorts - $DisplayName"
-    & $nssmPath set         $SvcName AppDirectory   $Config.InstallDir
-    & $nssmPath set         $SvcName Start          SERVICE_AUTO_START
-    & $nssmPath set         $SvcName AppStdout      (Join-Path $LogDir "$SvcName-out.log")
-    & $nssmPath set         $SvcName AppStderr      (Join-Path $LogDir "$SvcName-err.log")
-    & $nssmPath set         $SvcName AppRotateFiles  1
-    & $nssmPath set         $SvcName AppRotateBytes  10485760
-    & $nssmPath set         $SvcName AppRotateOnline 1
-    & $nssmPath set         $SvcName AppRestartDelay 3000
-    & $nssmPath set         $SvcName AppThrottle     10000
+    & $nssmPath install $SvcName $Application $AppParameters
+    & $nssmPath set $SvcName DisplayName    $DisplayName
+    & $nssmPath set $SvcName Description    "Grand Palace Hotels and Resorts - $DisplayName"
+    & $nssmPath set $SvcName AppDirectory   $Config.InstallDir
+    & $nssmPath set $SvcName Start          SERVICE_AUTO_START
+    & $nssmPath set $SvcName AppStdout      (Join-Path $LogDir "$SvcName-out.log")
+    & $nssmPath set $SvcName AppStderr      (Join-Path $LogDir "$SvcName-err.log")
+    & $nssmPath set $SvcName AppRotateFiles  1
+    & $nssmPath set $SvcName AppRotateBytes  10485760
+    & $nssmPath set $SvcName AppRotateOnline 1
+    & $nssmPath set $SvcName AppRestartDelay 3000
+    & $nssmPath set $SvcName AppThrottle     10000
+
+    # Write environment variables directly to the registry as REG_MULTI_SZ.
+    # Values with &, :, //, spaces are stored verbatim -- no cmd.exe parsing at all.
+    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$SvcName\Parameters"
+    if (Test-Path $regPath) {
+        New-ItemProperty -Path $regPath -Name "AppEnvironmentExtra" `
+            -Value $EnvVars -PropertyType MultiString -Force | Out-Null
+        Write-Info "Environment variables written to registry for $SvcName"
+    } else {
+        Write-Warn "Registry path not found for $SvcName -- env vars may not be set"
+    }
     Write-OK "Service registered: $SvcName"
 }
 
-Install-NssmService -SvcName "GrandPalaceAPI"      -DisplayName "Grand Palace - API Server" -Launcher $apiLauncher
-Install-NssmService -SvcName "GrandPalaceFrontend" -DisplayName "Grand Palace - Frontend"   -Launcher $frontendLauncher
+$apiEnvVars = @(
+    "PORT=$($Config.ApiPort)",
+    "DATABASE_URL=$DatabaseUrl",
+    "NEON_DATABASE_URL=$NeonDatabaseUrl",
+    "CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
+    "CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
+    "SESSION_SECRET=$sessionSecret",
+    "CONTACT_ENCRYPTION_KEY=$contactEncKey",
+    "NODE_ENV=production",
+    "MOMO_PARTNER_CODE=$($Config.MomoPartnerCode)",
+    "MOMO_ACCESS_KEY=$($Config.MomoAccessKey)",
+    "MOMO_SECRET_KEY=$($Config.MomoSecretKey)",
+    "MOMO_ENDPOINT=$($Config.MomoEndpoint)",
+    "API_PUBLIC_URL=$($Config.ApiPublicUrl)",
+    "FRONTEND_URL=$($Config.FrontendUrl)"
+)
+Install-NssmService `
+    -SvcName      "GrandPalaceAPI" `
+    -DisplayName  "Grand Palace - API Server" `
+    -Application  $nodePath `
+    -AppParameters "--enable-source-maps `"$apiDistPath`"" `
+    -EnvVars      $apiEnvVars
+
+$frontendEnvVars = @(
+    "PORT=$($Config.FrontendPort)",
+    "NODE_ENV=production",
+    "VITE_API_URL=$($Config.ApiPublicUrl)"
+)
+Install-NssmService `
+    -SvcName      "GrandPalaceFrontend" `
+    -DisplayName  "Grand Palace - Frontend" `
+    -Application  $nodePath `
+    -AppParameters "`"$serveScript`"" `
+    -EnvVars      $frontendEnvVars
 
 # ===========================================================
 # STEP 11 -- START SERVICES + HEALTH CHECK
