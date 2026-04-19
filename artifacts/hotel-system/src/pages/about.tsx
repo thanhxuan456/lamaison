@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { useListHotels } from "@workspace/api-client-react";
-import { MapPin, Award, Users, Heart, Shield, Star, ChevronRight, Phone, Mail, Building2, BedDouble, BookOpen, CalendarCheck, Settings } from "lucide-react";
+import { MapPin, Award, Users, Heart, Shield, Star, ChevronRight, Phone, Mail, Building2 } from "lucide-react";
 import { useBranding } from "@/lib/branding";
 
 const VALUES = [
@@ -22,14 +22,6 @@ const MILESTONES = [
   { year: "2024", event: "Phục vụ hơn 500.000 lượt khách, khẳng định vị thế hàng đầu ngành khách sạn cao cấp Việt Nam." },
 ];
 
-const MANAGEMENT_LINKS = [
-  { icon: Building2, label: "Quản lý khách sạn", href: "/admin/hotels", desc: "Xem và chỉnh sửa thông tin các chi nhánh" },
-  { icon: BedDouble, label: "Quản lý phòng", href: "/admin/rooms", desc: "Danh sách phòng và cập nhật trạng thái" },
-  { icon: CalendarCheck, label: "Quản lý đặt phòng", href: "/admin/bookings", desc: "Theo dõi và xử lý các đơn đặt phòng" },
-  { icon: BookOpen, label: "Hóa đơn & Doanh thu", href: "/admin/invoices", desc: "Báo cáo tài chính và hóa đơn khách hàng" },
-  { icon: Users, label: "Khách hàng", href: "/admin/guests", desc: "Danh sách và lịch sử khách hàng" },
-  { icon: Settings, label: "Bảng điều khiển", href: "/admin", desc: "Tổng quan hệ thống quản lý khách sạn" },
-];
 
 export default function AboutPage() {
   const { branding } = useBranding();
@@ -194,36 +186,6 @@ export default function AboutPage() {
           </div>
         </section>
       )}
-
-      {/* Management Links */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4 md:px-8 max-w-6xl">
-          <div className="text-center mb-14">
-            <p className="text-primary tracking-[0.3em] text-xs uppercase mb-4 font-serif">Quản lý hệ thống</p>
-            <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Trang quản trị</h2>
-            <div className="w-12 h-[2px] bg-primary mx-auto mb-4" />
-            <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-              Dành cho đội ngũ quản lý — truy cập nhanh đến các chức năng quản trị của hệ thống Grand Palace.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {MANAGEMENT_LINKS.map((l) => (
-              <Link key={l.href} href={l.href}>
-                <div className="group flex items-center gap-4 border border-primary/20 hover:border-primary/60 bg-card p-5 cursor-pointer transition-all hover:shadow-md">
-                  <div className="p-3 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors flex-shrink-0">
-                    <l.icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-foreground">{l.label}</div>
-                    <div className="text-xs text-muted-foreground truncate mt-0.5">{l.desc}</div>
-                  </div>
-                  <ChevronRight size={14} className="text-primary/40 group-hover:text-primary transition-colors flex-shrink-0" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Contact CTA */}
       <section className="py-20 bg-secondary relative overflow-hidden">

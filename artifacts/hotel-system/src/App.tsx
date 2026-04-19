@@ -181,6 +181,7 @@ function Router() {
       <Route path="/hotels/:slug" component={HotelDetail} />
       <Route path="/hotels/:slug/rooms" component={RoomListing} />
       <Route path="/rooms/:id" component={RoomDetail} />
+      <Route path="/rooms"><Redirect to="/hotels/hanoi/rooms" /></Route>
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/:id/contract" component={ContractView} />
       <Route path="/bookings/:id" component={BookingDetail} />
