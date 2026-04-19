@@ -3,35 +3,184 @@ import { Link, useLocation } from "wouter";
 import { BackToTop } from "@/components/BackToTop";
 import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
-  Palette, ChevronRight, Menu, FileText, ArrowLeft, Settings, Search, Layers,
-  UtensilsCrossed, Receipt, CalendarCheck, UserCircle2, ListTree, Newspaper,
+  Palette, ChevronRight, ChevronDown, Menu, FileText, ArrowLeft,
+  Settings, Search, Layers, UtensilsCrossed, Receipt, CalendarCheck,
+  UserCircle2, ListTree, Newspaper, Building2, Ruler,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
 
-const NAV_ITEMS = [
-  { icon: LayoutDashboard, labelKey: "admin.nav.dashboard", path: "/admin" },
-  { icon: Hotel,           labelKey: "admin.nav.hotels",    path: "/admin/hotels" },
-  { icon: BedDouble,       labelKey: "admin.nav.rooms",     path: "/admin/rooms" },
-  { icon: CalendarCheck,   labelKey: "Đặt phòng",           path: "/admin/bookings" },
-  { icon: UserCircle2,     labelKey: "Khách hàng",          path: "/admin/guests" },
-  { icon: ListTree,        labelKey: "Menu & Footer",       path: "/admin/menus" },
-  { icon: Newspaper,       labelKey: "Tin tức & Blog",      path: "/admin/blogs" },
-  { icon: Users,           labelKey: "admin.nav.users",     path: "/admin/users" },
-  { icon: MessageSquare,   labelKey: "admin.nav.chat",      path: "/admin/chat" },
-  { icon: UtensilsCrossed, labelKey: "admin.nav.menu",      path: "/admin/menu" },
-  { icon: Receipt,         labelKey: "admin.nav.invoices",  path: "/admin/invoices" },
-  { icon: Layers,          labelKey: "admin.nav.builder",   path: "/admin/builder" },
-  { icon: FileText,        labelKey: "admin.nav.pages",     path: "/admin/pages" },
-  { icon: Search,          labelKey: "admin.nav.seo",       path: "/admin/seo" },
-  { icon: Palette,         labelKey: "admin.nav.theme",     path: "/admin/theme" },
-  { icon: Settings,        labelKey: "admin.nav.settings",  path: "/admin/settings" },
+type NavLeaf = {
+  kind: "item";
+  icon: React.ElementType;
+  label: string;
+  path: string;
+};
+
+type NavGroup = {
+  kind: "group";
+  icon: React.ElementType;
+  label: string;
+  children: NavLeaf[];
+};
+
+type NavEntry = NavLeaf | NavGroup;
+
+const NAV: NavEntry[] = [
+  {
+    kind: "item",
+    icon: LayoutDashboard,
+    label: "admin.nav.dashboard",
+    path: "/admin",
+  },
+  {
+    kind: "group",
+    icon: Building2,
+    label: "Quản Lý Khách Sạn",
+    children: [
+      { kind: "item", icon: Hotel,         label: "Khách Sạn",  path: "/admin/hotels"   },
+      { kind: "item", icon: BedDouble,     label: "Phòng",      path: "/admin/rooms"    },
+      { kind: "item", icon: CalendarCheck, label: "Đặt Phòng",  path: "/admin/bookings" },
+      { kind: "item", icon: Receipt,       label: "Hóa Đơn",    path: "/admin/invoices" },
+    ],
+  },
+  {
+    kind: "group",
+    icon: Users,
+    label: "Quản Lý Người Dùng",
+    children: [
+      { kind: "item", icon: UserCircle2, label: "Khách Hàng",          path: "/admin/guests" },
+      { kind: "item", icon: Users,       label: "Tài Khoản Hệ Thống",  path: "/admin/users"  },
+    ],
+  },
+  {
+    kind: "group",
+    icon: Palette,
+    label: "Quản Lý Giao Diện",
+    children: [
+      { kind: "item", icon: Newspaper,       label: "Blogs",                        path: "/admin/blogs"   },
+      { kind: "item", icon: ListTree,        label: "Menu & Footer",                path: "/admin/menus"   },
+      { kind: "item", icon: Ruler,           label: "Kích Thước Main Menu Nav",     path: "/admin/theme"   },
+      { kind: "item", icon: UtensilsCrossed, label: "Thực Đơn Nhà Hàng",           path: "/admin/menu"    },
+      { kind: "item", icon: FileText,        label: "Trang & Nội Dung",             path: "/admin/pages"   },
+      { kind: "item", icon: Layers,          label: "Trình Tạo Trang",              path: "/admin/builder" },
+      { kind: "item", icon: Search,          label: "SEO",                          path: "/admin/seo"     },
+      { kind: "item", icon: Palette,         label: "Giao Diện & Màu Sắc",         path: "/admin/theme"   },
+    ],
+  },
+  {
+    kind: "item",
+    icon: MessageSquare,
+    label: "admin.nav.chat",
+    path: "/admin/chat",
+  },
+  {
+    kind: "item",
+    icon: Settings,
+    label: "admin.nav.settings",
+    path: "/admin/settings",
+  },
 ];
 
 interface AdminLayoutProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
+}
+
+function NavItem({
+  icon: Icon,
+  label,
+  path,
+  active,
+  indent = false,
+  onClose,
+}: {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+  active: boolean;
+  indent?: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  return (
+    <Link href={path} onClick={onClose}>
+      <div
+        className={[
+          "group relative flex items-center gap-3 transition-all cursor-pointer select-none",
+          indent ? "px-5 py-2 pl-10" : "px-5 py-3",
+          active
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground hover:bg-primary/10 hover:text-foreground",
+        ].join(" ")}
+      >
+        {active && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
+        )}
+        <Icon size={indent ? 14 : 16} strokeWidth={active ? 2 : 1.5} className="shrink-0" />
+        <span className={`text-sm tracking-wide ${active ? "font-medium" : ""} ${indent ? "text-[13px]" : ""}`}>
+          {t(label as any)}
+        </span>
+        {active && !indent && (
+          <ChevronRight size={12} className="ml-auto text-primary/60" />
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function NavGroupItem({
+  group,
+  isActive,
+  onClose,
+}: {
+  group: NavGroup;
+  isActive: (path: string) => boolean;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const anyChildActive = group.children.some((c) => isActive(c.path));
+  const [open, setOpen] = useState(anyChildActive);
+  const Icon = group.icon;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "w-full flex items-center gap-3 px-5 py-3 transition-all cursor-pointer select-none",
+          anyChildActive
+            ? "text-primary"
+            : "text-muted-foreground hover:bg-primary/10 hover:text-foreground",
+        ].join(" ")}
+      >
+        <Icon size={16} strokeWidth={anyChildActive ? 2 : 1.5} className="shrink-0" />
+        <span className={`text-sm tracking-wide flex-1 text-left ${anyChildActive ? "font-medium" : ""}`}>
+          {t(group.label as any)}
+        </span>
+        {open
+          ? <ChevronDown size={13} className="text-primary/60" />
+          : <ChevronRight size={13} className="opacity-40" />}
+      </button>
+
+      {open && (
+        <div className="border-l border-primary/15 ml-8 my-0.5">
+          {group.children.map((child) => (
+            <NavItem
+              key={child.path + child.label}
+              icon={child.icon}
+              label={child.label}
+              path={child.path}
+              active={isActive(child.path)}
+              indent
+              onClose={onClose}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
@@ -43,16 +192,17 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
   const isActive = (path: string) =>
     path === "/admin" ? location === "/admin" : location.startsWith(path);
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <>
-      {/* Full-viewport admin shell — no site navbar */}
       <div className="fixed inset-0 flex">
 
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
             className="absolute inset-0 z-30 bg-black/50 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
           />
         )}
 
@@ -82,34 +232,27 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
             </div>
           </div>
 
-          {/* Nav items */}
+          {/* Nav */}
           <nav className="flex-1 py-3 overflow-y-auto">
-            {NAV_ITEMS.map(({ icon: Icon, labelKey, path }) => {
-              const active = isActive(path);
-              return (
-                <Link key={path} href={path} onClick={() => setSidebarOpen(false)}>
-                  <div
-                    className={[
-                      "group relative flex items-center gap-3 px-5 py-3 transition-all cursor-pointer select-none",
-                      active
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground hover:bg-primary/10 hover:text-foreground",
-                    ].join(" ")}
-                  >
-                    {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r" />
-                    )}
-                    <Icon size={16} strokeWidth={active ? 2 : 1.5} className="shrink-0" />
-                    <span className={`text-sm tracking-wide ${active ? "font-medium" : ""}`}>
-                      {t(labelKey as any)}
-                    </span>
-                    {active && (
-                      <ChevronRight size={12} className="ml-auto text-primary/60" />
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
+            {NAV.map((entry, i) =>
+              entry.kind === "item" ? (
+                <NavItem
+                  key={entry.path}
+                  icon={entry.icon}
+                  label={entry.label}
+                  path={entry.path}
+                  active={isActive(entry.path)}
+                  onClose={closeSidebar}
+                />
+              ) : (
+                <NavGroupItem
+                  key={entry.label + i}
+                  group={entry}
+                  isActive={isActive}
+                  onClose={closeSidebar}
+                />
+              )
+            )}
           </nav>
 
           {/* Footer — back to site */}
@@ -124,7 +267,6 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
 
         {/* ── Main content ── */}
         <main className="flex-1 min-w-0 overflow-y-auto bg-background">
-          {/* Sticky page header — dark luxury bar with gold title */}
           <div className="sticky top-0 z-20 flex items-center gap-4 px-6 py-5 border-b-2 border-primary bg-[#1a1410] dark:bg-[#0f0c08] shadow-md">
             <button
               className="lg:hidden p-1.5 text-primary/70 hover:text-primary transition-colors"
@@ -132,7 +274,6 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
             >
               <Menu size={18} />
             </button>
-            {/* Vertical gold accent bar */}
             <div aria-hidden className="hidden sm:block w-1 h-10 bg-gradient-to-b from-primary via-primary/80 to-primary/40 rounded-sm shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-3 flex-wrap">
