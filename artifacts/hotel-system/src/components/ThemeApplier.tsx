@@ -10,6 +10,8 @@ interface ThemeSettings {
   primaryDarkHsl: string;
   fontFamily: string;
   radius: string;
+  taglineSize?: string;
+  navTextSize?: string;
 }
 
 function applyTheme(t: Partial<ThemeSettings>) {
@@ -36,6 +38,12 @@ function applyTheme(t: Partial<ThemeSettings>) {
   }
   if (t.radius !== undefined) {
     root.style.setProperty("--radius", t.radius);
+  }
+  if (t.taglineSize) {
+    root.style.setProperty("--tagline-size", t.taglineSize);
+  }
+  if (t.navTextSize) {
+    root.style.setProperty("--nav-text-size", t.navTextSize);
   }
 }
 

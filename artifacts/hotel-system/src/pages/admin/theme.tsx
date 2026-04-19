@@ -25,6 +25,8 @@ interface ThemeSettings {
   showLiveChat: boolean;
   footerNewsletter: boolean;
   navTransparent: boolean;
+  taglineSize: string;
+  navTextSize: string;
 }
 
 /**
@@ -91,7 +93,24 @@ const DEFAULT: ThemeSettings = {
   showLiveChat: true,
   footerNewsletter: true,
   navTransparent: true,
+  taglineSize: "0.625rem",
+  navTextSize: "0.75rem",
 };
+
+const TAGLINE_SIZES = [
+  { label: "Rất nhỏ",  value: "0.5rem",   sample: "★★★★★ · 5 SAO" },
+  { label: "Nhỏ",      value: "0.625rem",  sample: "★★★★★ · 5 SAO" },
+  { label: "Vừa",      value: "0.75rem",   sample: "★★★★★ · 5 SAO" },
+  { label: "Lớn",      value: "0.875rem",  sample: "★★★★★ · 5 SAO" },
+  { label: "Rất lớn",  value: "1rem",      sample: "★★★★★ · 5 SAO" },
+];
+
+const NAV_TEXT_SIZES = [
+  { label: "Nhỏ",      value: "0.625rem",  sample: "PHÒNG & SUITE" },
+  { label: "Vừa",      value: "0.75rem",   sample: "PHÒNG & SUITE" },
+  { label: "Lớn",      value: "0.8125rem", sample: "PHÒNG & SUITE" },
+  { label: "Rất lớn",  value: "0.875rem",  sample: "PHÒNG & SUITE" },
+];
 
 // HSL "h s% l%" → CSS color string
 const hsl = (s: string, alpha = 1) => `hsl(${s} / ${alpha})`;
@@ -290,6 +309,49 @@ function ThemeContent() {
             })}
           </div>
         </Section>
+
+        {/* Tagline & Nav Text Sizes */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Section icon={<Type size={15} />} title="Kích thước Tagline">
+            <div className="space-y-2">
+              {TAGLINE_SIZES.map(({ label, value, sample }) => {
+                const active = settings.taglineSize === value;
+                return (
+                  <button key={value} onClick={() => set("taglineSize", value)}
+                    className={`w-full px-4 py-3 border text-left transition-all flex items-center justify-between gap-3 ${
+                      active ? "border-primary bg-primary/10" : "border-primary/20 hover:border-primary/50"
+                    }`}>
+                    <div>
+                      <div className="text-sm text-foreground">{label}</div>
+                      <div className="text-muted-foreground tracking-widest uppercase mt-0.5" style={{ fontSize: value }}>{sample}</div>
+                    </div>
+                    {active && <Check size={14} className="text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+
+          <Section icon={<Type size={15} />} title="Kích thước chữ Menu Nav">
+            <div className="space-y-2">
+              {NAV_TEXT_SIZES.map(({ label, value, sample }) => {
+                const active = settings.navTextSize === value;
+                return (
+                  <button key={value} onClick={() => set("navTextSize", value)}
+                    className={`w-full px-4 py-3 border text-left transition-all flex items-center justify-between gap-3 ${
+                      active ? "border-primary bg-primary/10" : "border-primary/20 hover:border-primary/50"
+                    }`}>
+                    <div>
+                      <div className="text-sm text-foreground">{label}</div>
+                      <div className="text-muted-foreground tracking-[0.2em] uppercase font-medium mt-0.5" style={{ fontSize: value }}>{sample}</div>
+                    </div>
+                    {active && <Check size={14} className="text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+        </div>
 
         {/* Layout + Radius */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

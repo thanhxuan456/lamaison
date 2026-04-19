@@ -168,7 +168,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 </span>
                 <span className="flex items-center justify-center gap-0.5 mt-1">
                   {Array.from({ length: Math.min(Math.max(branding.starRating ?? 5, 1), 10) }).map((_, i) => (
-                    <span key={i} className="text-primary text-[10px] md:text-[12px] leading-none">★</span>
+                    <span key={i} className="text-primary leading-none" style={{ fontSize: "var(--tagline-size, 0.625rem)" }}>★</span>
                   ))}
                 </span>
               </div>
@@ -180,12 +180,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             {visibleItems.map((item) => (
               item.target === "_blank" ? (
                 <a key={item.id} href={item.href} target="_blank" rel="noreferrer"
-                  className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
+                  className="font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+                  style={{ fontSize: "var(--nav-text-size, 0.75rem)" }}>
                   {item.label}
                 </a>
               ) : (
                 <Link key={item.id} href={item.href}
-                  className="text-sm font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300">
+                  className="font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+                  style={{ fontSize: "var(--nav-text-size, 0.75rem)" }}>
                   {item.label}
                 </Link>
               )
