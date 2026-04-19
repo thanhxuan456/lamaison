@@ -67,11 +67,27 @@ const DEFAULT_EINVOICE: EInvoiceConfig = {
   autoIssue: false,
 };
 
-const EINVOICE_PROVIDERS: { value: EInvoiceConfig["provider"]; label: string; logo: string; color: string; hint: string }[] = [
-  { value: "viettel", label: "Viettel sinvoice", logo: "VT", color: "#e53e3e", hint: "sinvoice.viettel.vn" },
-  { value: "misa", label: "MISA meInvoice", logo: "MI", color: "#2b6cb0", hint: "api.misaeinvoice.vn" },
-  { value: "vnpt", label: "VNPT Invoice", logo: "VN", color: "#2d9147", hint: "hoadon.vnpt-invoice.vn" },
-  { value: "fast", label: "FAST Invoice", logo: "FA", color: "#744210", hint: "api.fastinvoice.vn" },
+const EINVOICE_PROVIDERS: { value: EInvoiceConfig["provider"]; label: string; abbr: string; color: string; hint: string; logoUrl: string }[] = [
+  {
+    value: "viettel", label: "Viettel sinvoice", abbr: "VT", color: "#e53e3e",
+    hint: "sinvoice.viettel.vn",
+    logoUrl: "https://logo.clearbit.com/viettel.com.vn",
+  },
+  {
+    value: "misa", label: "MISA meInvoice", abbr: "MI", color: "#2b6cb0",
+    hint: "api.misaeinvoice.vn",
+    logoUrl: "https://logo.clearbit.com/misa.com.vn",
+  },
+  {
+    value: "vnpt", label: "VNPT Invoice", abbr: "VN", color: "#2d9147",
+    hint: "hoadon.vnpt-invoice.vn",
+    logoUrl: "https://logo.clearbit.com/vnpt.vn",
+  },
+  {
+    value: "fast", label: "FAST Invoice", abbr: "FA", color: "#744210",
+    hint: "api.fastinvoice.vn",
+    logoUrl: "https://logo.clearbit.com/fast.com.vn",
+  },
 ];
 
 const TEMPLATES = [
@@ -362,8 +378,24 @@ function EInvoicePanel() {
                       onClick={() => setConfig(prev => ({ ...prev, provider: p.value }))}
                       className={`border-2 rounded p-4 flex flex-col items-center gap-2 transition-all ${config.provider === p.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
                     >
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                        style={{ backgroundColor: p.color }}>{p.logo}</div>
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border border-border flex items-center justify-center p-1.5 relative">
+                        <img
+                          src={p.logoUrl}
+                          alt={p.label}
+                          className="w-full h-full object-contain"
+                          onError={e => {
+                            e.currentTarget.style.display = "none";
+                            const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                            if (fb) fb.style.display = "flex";
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0 hidden items-center justify-center text-white text-sm font-bold rounded-lg"
+                          style={{ backgroundColor: p.color }}
+                        >
+                          {p.abbr}
+                        </div>
+                      </div>
                       <span className="text-[11px] text-center text-foreground leading-tight font-medium">{p.label}</span>
                       <span className="text-[10px] text-muted-foreground font-mono">{p.hint}</span>
                       {config.provider === p.value && <CheckCircle2 size={14} className="text-primary" />}
