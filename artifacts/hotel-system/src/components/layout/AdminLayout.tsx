@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
   Palette, ChevronRight, ChevronDown, Menu, FileText, ArrowLeft,
   Settings, Search, Layers, UtensilsCrossed, Receipt, CalendarCheck,
-  UserCircle2, ListTree, Newspaper, Building2, Ruler,
+  UserCircle2, ListTree, Newspaper, Building2, Ruler, Puzzle, Shield,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
@@ -73,6 +73,16 @@ const NAV: NavEntry[] = [
     icon: MessageSquare,
     label: "admin.nav.chat",
     path: "/admin/chat",
+  },
+  {
+    kind: "group",
+    icon: Puzzle,
+    label: "Tích Hợp",
+    children: [
+      { kind: "item", icon: Receipt,  label: "Hóa Đơn & Mẫu",       path: "/admin/integrations" },
+      { kind: "item", icon: FileText, label: "Hóa Đơn Điện Tử",     path: "/admin/integrations?tab=einvoice" },
+      { kind: "item", icon: Shield,   label: "Bảo Mật Hệ Thống",    path: "/admin/integrations?tab=security" },
+    ],
   },
   {
     kind: "item",

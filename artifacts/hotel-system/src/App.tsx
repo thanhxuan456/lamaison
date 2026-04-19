@@ -40,6 +40,7 @@ import AdminBookings from "@/pages/admin/bookings";
 import AdminGuests from "@/pages/admin/guests";
 import AdminMenus from "@/pages/admin/menus";
 import AdminBlogs from "@/pages/admin/blogs";
+import AdminIntegrations from "@/pages/admin/integrations";
 import RoomsLandingPage from "@/pages/rooms";
 import SpaPage from "@/pages/spa";
 import AboutPage from "@/pages/about";
@@ -216,6 +217,7 @@ function Router() {
       <Route path="/admin/guests" component={AdminGuests} />
       <Route path="/admin/menus" component={AdminMenus} />
       <Route path="/admin/blogs" component={AdminBlogs} />
+      <Route path="/admin/integrations" component={AdminIntegrations} />
       <Route path="/invoices/:id" component={InvoiceView} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/error" component={() => <ServerError code={500} />} />
