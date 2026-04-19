@@ -176,22 +176,30 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-8">
-            {visibleItems.map((item) => (
-              item.target === "_blank" ? (
+          <div className="hidden lg:flex items-center gap-8 flex-nowrap">
+            {visibleItems.map((item) => {
+              const linkStyle: React.CSSProperties = {
+                fontSize: menu.fontSize ? `${menu.fontSize}px` : "var(--nav-text-size, 0.75rem)",
+                ...(menu.textColor ? { color: menu.textColor } : {}),
+              };
+              return item.target === "_blank" ? (
                 <a key={item.id} href={item.href} target="_blank" rel="noreferrer"
-                  className="font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
-                  style={{ fontSize: "var(--nav-text-size, 0.75rem)" }}>
+                  className="font-medium transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300 whitespace-nowrap"
+                  style={{ ...linkStyle, opacity: 0.9 }}
+                  onMouseEnter={e => { if (menu.textColor) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                  onMouseLeave={e => { if (menu.textColor) (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}>
                   {item.label}
                 </a>
               ) : (
                 <Link key={item.id} href={item.href}
-                  className="font-medium text-primary/90 hover:text-primary transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300"
-                  style={{ fontSize: "var(--nav-text-size, 0.75rem)" }}>
+                  className="font-medium transition-colors tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-0 after:h-[1px] after:bg-primary hover:after:w-full after:transition-all after:duration-300 whitespace-nowrap"
+                  style={{ ...linkStyle, opacity: 0.9 }}
+                  onMouseEnter={e => { if (menu.textColor) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                  onMouseLeave={e => { if (menu.textColor) (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}>
                   {item.label}
                 </Link>
-              )
-            ))}
+              );
+            })}
             {menu.ctaEnabled && menu.ctaLabel && (
               <Link href={menu.ctaHref}
                 className="text-xs font-medium tracking-[0.2em] uppercase bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 transition-colors">

@@ -16,6 +16,8 @@ export interface MainMenu {
   ctaLabel: string;
   ctaHref: string;
   ctaEnabled: boolean;
+  textColor?: string;
+  fontSize?: number;
 }
 
 export interface FooterLink { id: string; label: string; href: string }
@@ -43,6 +45,8 @@ export const DEFAULT_MAIN_MENU: MainMenu = {
   ctaLabel: "Đặt phòng ngay",
   ctaHref: "/hotels/1/rooms",
   ctaEnabled: false,
+  textColor: "",
+  fontSize: 12,
 };
 
 export const DEFAULT_FOOTER: FooterConfig = {

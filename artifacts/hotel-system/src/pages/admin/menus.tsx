@@ -172,6 +172,79 @@ export default function AdminMenusPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Tùy chỉnh hiển thị Menu</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Màu chữ menu</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={m.textColor || "#c9a84c"}
+                    onChange={(e) => setM({ ...m, textColor: e.target.value })}
+                    className="w-10 h-10 rounded border border-input cursor-pointer p-0.5 bg-background"
+                  />
+                  <Input
+                    value={m.textColor || ""}
+                    placeholder="Mặc định (theo theme)"
+                    onChange={(e) => setM({ ...m, textColor: e.target.value })}
+                    className="flex-1 font-mono text-sm"
+                  />
+                  {m.textColor && (
+                    <Button variant="ghost" size="sm" onClick={() => setM({ ...m, textColor: "" })}
+                      className="text-xs text-muted-foreground hover:text-foreground px-2">
+                      Đặt lại
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Để trống để dùng màu mặc định của theme.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Cỡ chữ menu (px)</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={10}
+                    max={20}
+                    step={1}
+                    value={m.fontSize ?? 12}
+                    onChange={(e) => setM({ ...m, fontSize: Number(e.target.value) })}
+                    className="flex-1 accent-primary"
+                  />
+                  <Input
+                    type="number"
+                    min={10}
+                    max={20}
+                    value={m.fontSize ?? 12}
+                    onChange={(e) => setM({ ...m, fontSize: Number(e.target.value) })}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">px</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cỡ chữ nhỏ hơn giúp các mục menu hiển thị inline trên cùng một hàng.
+                </p>
+                <div className="mt-2 p-3 border border-dashed border-primary/30 bg-muted/30 rounded">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">Xem trước</p>
+                  <div className="flex flex-wrap gap-4">
+                    {m.items.filter(i => i.enabled).map(i => (
+                      <span
+                        key={i.id}
+                        className="font-medium tracking-wider uppercase whitespace-nowrap"
+                        style={{
+                          fontSize: `${m.fontSize ?? 12}px`,
+                          color: m.textColor || "hsl(var(--primary))",
+                        }}
+                      >
+                        {i.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ============ FOOTER ============ */}
