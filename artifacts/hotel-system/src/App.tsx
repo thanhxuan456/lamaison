@@ -41,6 +41,7 @@ import AdminGuests from "@/pages/admin/guests";
 import AdminMenus from "@/pages/admin/menus";
 import AdminBlogs from "@/pages/admin/blogs";
 import RoomsLandingPage from "@/pages/rooms";
+import SpaPage from "@/pages/spa";
 import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import NewsList from "@/pages/news";
@@ -183,6 +184,7 @@ function Router() {
       <Route path="/hotels/:slug/rooms" component={RoomListing} />
       <Route path="/rooms/:id" component={RoomDetail} />
       <Route path="/rooms" component={RoomsLandingPage} />
+      <Route path="/spa" component={SpaPage} />
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/:id/contract" component={ContractView} />
       <Route path="/bookings/:id" component={BookingDetail} />

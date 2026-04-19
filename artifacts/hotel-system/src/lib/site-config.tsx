@@ -36,7 +36,7 @@ export const DEFAULT_MAIN_MENU: MainMenu = {
   items: [
     { id: "home", label: "Trang chủ", href: "/", enabled: true, target: "_self" },
     { id: "about", label: "Về chúng tôi", href: "/about", enabled: true, target: "_self" },
-    { id: "rooms", label: "Phòng & Suite", href: "/hotels/1/rooms", enabled: true, target: "_self" },
+    { id: "rooms", label: "Spa & Thư Giãn", href: "/spa", enabled: true, target: "_self" },
     { id: "contact", label: "Liên hệ", href: "/contact", enabled: true, target: "_self" },
     { id: "bookings", label: "Đặt phòng của tôi", href: "/bookings", enabled: true, target: "_self" },
   ],
