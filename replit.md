@@ -90,3 +90,15 @@ Only `tthanhxuan456@gmail.com` can access `/admin`. Guard is client-side via Cle
 - `Navbar.tsx` and `Footer.tsx` consume these hooks (no more hardcoded links).
 - Admin editor at `/admin/menus`: drag-order menu items, add/toggle/edit, optional CTA button, footer widget editor (brand about, newsletter, columns w/ links, socials, contact, bottom bar).
 - `/contact` route registered in App.tsx, page at `src/pages/contact.tsx`.
+
+## E-Invoice Integration (Real Backend)
+
+- Admin page `/admin/integrations?tab=einvoice` — real integration (not mockup)
+- Credentials stored securely in Neon PostgreSQL (`app_settings` table, key: `einvoice-config`)
+- API routes in `artifacts/api-server/src/routes/integrations.ts`:
+  - `GET /api/integrations/einvoice` — returns config with password masked as `••••••••`
+  - `PUT /api/integrations/einvoice` — saves to DB; if password sent as `••••••••`, keeps existing
+  - `POST /api/integrations/einvoice/test` — makes real HTTP call to provider's login API
+- Supports 4 Vietnamese providers: **Viettel sinvoice**, **MISA meInvoice**, **VNPT Invoice**, **FAST Invoice**
+- Each provider has a dedicated test function with real `fetch()` calls and proper response parsing
+- Frontend (`integrations.tsx`) loads from API on mount, shows DB badge, has "Test kết nối thực tế" button

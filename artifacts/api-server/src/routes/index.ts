@@ -14,10 +14,12 @@ import settingsRouter from "./settings";
 import contactMessagesRouter from "./contact-messages";
 import blogPostsRouter from "./blog-posts";
 import paymentsRouter from "./payments";
+import integrationsRouter from "./integrations";
 
 const router: IRouter = Router();
 
 router.use(paymentsRouter);
+router.use(integrationsRouter);
 router.use(healthRouter);
 router.use(hotelsRouter);
 router.use(roomsRouter);
