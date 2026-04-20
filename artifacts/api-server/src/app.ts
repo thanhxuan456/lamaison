@@ -7,6 +7,11 @@ import { logger } from "./lib/logger";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
+const hasClerkSecret = Boolean(process.env.CLERK_SECRET_KEY);
+
+if (process.env.NODE_ENV === "production" && !hasClerkSecret) {
+  throw new Error("CLERK_SECRET_KEY is required in production.");
+}
 
 app.use(
   pinoHttp({
@@ -33,7 +38,10 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(clerkMiddleware());
+
+if (hasClerkSecret) {
+  app.use(clerkMiddleware());
+}
 
 app.use("/api", router);
 

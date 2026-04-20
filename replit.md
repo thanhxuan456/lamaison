@@ -80,6 +80,7 @@ Only `tthanhxuan456@gmail.com` can access `/admin`. Guard is client-side via Cle
 - LANGUAGES constant lives in `lib/languages.ts` to allow Vite fast-refresh
 - useT() returns safe fallback when context null (prevents HMR crashes)
 - API routes are mounted at `/api/` by Express, so route handlers use paths WITHOUT `/api/` prefix (e.g. `/hotels` not `/api/hotels`)
+- API server requires `CLERK_SECRET_KEY` in production. In local Replit development, Clerk server middleware is enabled only when that secret is present so public/API health routes can run during import.
 - Dark mode: `--secondary` color is inverted (cream in dark mode) — intentional for alternating section contrast
 - Navbar scrolled state uses `dark:bg-card/95` since secondary is cream in dark mode
 
