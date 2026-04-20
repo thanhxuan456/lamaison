@@ -236,7 +236,7 @@ function ClerkProviderWithRoutes() {
       appearance={clerkAppearance}
       localization={{
         signIn: { start: { title: "Chào mừng trở lại", subtitle: "Đăng nhập để tiếp tục" } },
-        signUp: { start: { title: "Tạo tài khoản", subtitle: "Tham gia Grand Palace ngay hôm nay" } },
+        signUp: { start: { title: "Tạo tài khoản", subtitle: "Tham gia MAISON DELUXE ngay hôm nay" } },
       }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}

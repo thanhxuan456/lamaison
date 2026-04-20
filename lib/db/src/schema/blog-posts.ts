@@ -8,7 +8,7 @@ export const blogPostsTable = pgTable("blog_posts", {
   content: text("content").notNull().default(""),
   coverImage: text("cover_image").notNull().default(""),
   category: varchar("category", { length: 80 }).notNull().default("news"),
-  author: varchar("author", { length: 120 }).notNull().default("Grand Palace"),
+  author: varchar("author", { length: 120 }).notNull().default("MAISON DELUXE"),
   tags: text("tags").notNull().default(""),
   published: boolean("published").notNull().default(false),
   views: integer("views").notNull().default(0),

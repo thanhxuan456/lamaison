@@ -46,7 +46,7 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
   exp: {
     kicker: "Trải nghiệm",
     title: "Dấu ấn khó phai",
-    body: "Tại Grand Palace, mỗi khoảnh khắc đều được thiết kế để trở thành một kỷ niệm vô giá. Từ nghệ thuật ẩm thực tinh tế tại các nhà hàng đạt sao Michelin, đến những liệu trình spa phục hồi sinh lực, chúng tôi mang đến một định nghĩa mới về sự xa xỉ.",
+    body: "Tại MAISON DELUXE, mỗi khoảnh khắc đều được thiết kế để trở thành một kỷ niệm vô giá. Từ nghệ thuật ẩm thực tinh tế tại các nhà hàng đạt sao Michelin, đến những liệu trình spa phục hồi sinh lực, chúng tôi mang đến một định nghĩa mới về sự xa xỉ.",
     quote: "\u201cNghệ thuật ẩm thực đỉnh cao\u201d",
     item1: "Ẩm thực đẳng cấp quốc tế",
     item2: "Spa & Wellness chuẩn 5 sao",

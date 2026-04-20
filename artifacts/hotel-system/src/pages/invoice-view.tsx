@@ -132,7 +132,7 @@ function LuxuryTemplate({ invoice, cfg, branding, fmt }: {
         <div className="mt-10 pt-6 border-t border-primary/15 text-center">
           <p className="text-xs text-muted-foreground italic">{cfg.footerNote || `Cảm ơn quý khách đã lựa chọn ${branding.brandName}.`}</p>
           <div className="mt-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-primary/60">
-            <span>contact@grandpalace.vn</span> · <span>+84 1800 9999</span> · <span>grandpalace.vn</span>
+            <span>contact@maisondeluxe.vn</span> · <span>+84 1800 9999</span> · <span>maisondeluxe.vn</span>
           </div>
         </div>
       </div>
@@ -228,7 +228,7 @@ function CorporateTemplate({ invoice, cfg, branding, fmt }: {
         )}
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-400">{cfg.footerNote || `Cảm ơn quý khách đã lựa chọn ${branding.brandName}.`}</p>
-          <div className="mt-2 text-xs text-gray-400">contact@grandpalace.vn · +84 1800 9999 · grandpalace.vn</div>
+          <div className="mt-2 text-xs text-gray-400">contact@maisondeluxe.vn · +84 1800 9999 · maisondeluxe.vn</div>
         </div>
       </div>
     </div>
@@ -304,7 +304,7 @@ function MinimalTemplate({ invoice, cfg, branding, fmt }: {
       )}
       <div className="border-t border-gray-100 pt-6 text-xs text-gray-400 text-center">
         {cfg.footerNote || `Cảm ơn quý khách đã lựa chọn ${branding.brandName}.`}<br />
-        contact@grandpalace.vn · +84 1800 9999 · grandpalace.vn
+        contact@maisondeluxe.vn · +84 1800 9999 · maisondeluxe.vn
       </div>
     </div>
   );

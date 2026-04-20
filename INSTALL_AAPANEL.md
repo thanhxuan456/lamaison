@@ -29,14 +29,14 @@
 
 1. aaPanel → **Database** → chọn tab **PostgreSQL**
 2. Nhấn **Add Database**:
-   - Database Name: `grandpalace_db`
-   - Username: `grandpalace_user`
+   - Database Name: `maisondeluxe_db`
+   - Username: `maisondeluxe_user`
    - Password: đặt mật khẩu mạnh (ghi lại!)
    - Encoding: `UTF8`
 3. Nhấn **Submit**
 4. Ghi lại connection string:
    ```
-   postgresql://grandpalace_user:YOUR_PASSWORD@127.0.0.1:5432/grandpalace_db
+   postgresql://maisondeluxe_user:YOUR_PASSWORD@127.0.0.1:5432/maisondeluxe_db
    ```
 
 ---
@@ -46,14 +46,14 @@
 **Cách A — Upload ZIP:**
 1. Nén toàn bộ project thành `.zip` (bỏ qua thư mục `node_modules`, `dist`, `.git`)
 2. aaPanel → **File Manager** → vào `/www/wwwroot/`
-3. Nhấn **Upload** → chọn file zip → **Extract** vào `/www/wwwroot/grandpalace/`
+3. Nhấn **Upload** → chọn file zip → **Extract** vào `/www/wwwroot/maisondeluxe/`
 
 **Cách B — Clone từ Git:**
 1. aaPanel → **Terminal** (hoặc SSH vào server)
 2. Chạy:
    ```bash
    cd /www/wwwroot
-   git clone https://github.com/youruser/grandpalace.git grandpalace
+   git clone https://github.com/youruser/maisondeluxe.git maisondeluxe
    ```
 
 ---
@@ -63,13 +63,13 @@
 1. SSH vào server hoặc dùng aaPanel Terminal
 2. Tạo file `.env`:
    ```bash
-   cd /www/wwwroot/grandpalace
+   cd /www/wwwroot/maisondeluxe
    cp .env.example .env 2>/dev/null || touch .env
    nano .env
    ```
 3. Nội dung file `.env`:
    ```env
-   DATABASE_URL=postgresql://grandpalace_user:YOUR_PASSWORD@127.0.0.1:5432/grandpalace_db
+   DATABASE_URL=postgresql://maisondeluxe_user:YOUR_PASSWORD@127.0.0.1:5432/maisondeluxe_db
    PORT=8080
    NODE_ENV=production
 
@@ -100,7 +100,7 @@ SSH vào server, chạy lần lượt:
 npm install -g pnpm
 
 # Di chuyển vào thư mục app
-cd /www/wwwroot/grandpalace
+cd /www/wwwroot/maisondeluxe
 
 # Cài đặt dependencies
 pnpm install --frozen-lockfile
@@ -123,14 +123,14 @@ pnpm --filter @workspace/api-server run build
 **Cách A — Qua aaPanel PM2 Manager:**
 1. aaPanel → **PM2 Manager** → **Add**
 2. Điền thông tin:
-   - Name: `grandpalace-api`
-   - Script: `/www/wwwroot/grandpalace/artifacts/api-server/dist/index.mjs`
-   - Working dir: `/www/wwwroot/grandpalace`
+   - Name: `maisondeluxe-api`
+   - Script: `/www/wwwroot/maisondeluxe/artifacts/api-server/dist/index.mjs`
+   - Working dir: `/www/wwwroot/maisondeluxe`
 3. Nhấn **Save** → **Start**
 
 **Cách B — Qua terminal:**
 ```bash
-cd /www/wwwroot/grandpalace
+cd /www/wwwroot/maisondeluxe
 pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
@@ -142,8 +142,8 @@ pm2 startup
 
 1. aaPanel → **Website** → **Add site**
 2. Điền:
-   - Domain: `grandpalace.vn` (hoặc IP server nếu chưa có domain)
-   - Document root: `/www/wwwroot/grandpalace/artifacts/hotel-system/dist/public`
+   - Domain: `maisondeluxe.vn` (hoặc IP server nếu chưa có domain)
+   - Document root: `/www/wwwroot/maisondeluxe/artifacts/hotel-system/dist/public`
    - PHP: **không chọn** (chọn **Pure Static** hoặc **Other**)
 3. Nhấn **Submit**
 
@@ -152,9 +152,9 @@ pm2 startup
 ```nginx
 server {
     listen 80;
-    server_name grandpalace.vn www.grandpalace.vn;
+    server_name maisondeluxe.vn www.maisondeluxe.vn;
 
-    root /www/wwwroot/grandpalace/artifacts/hotel-system/dist/public;
+    root /www/wwwroot/maisondeluxe/artifacts/hotel-system/dist/public;
     index index.html;
 
     gzip on;
@@ -218,20 +218,20 @@ server {
 pm2 status
 
 # Xem log API
-pm2 logs grandpalace-api
+pm2 logs maisondeluxe-api
 
 # Test API
 curl http://localhost:8080/api/healthz
 ```
 
-Truy cập `http://YOUR_DOMAIN` — website sẽ hiển thị trang chủ Grand Palace.
+Truy cập `http://YOUR_DOMAIN` — website sẽ hiển thị trang chủ MAISON DELUXE.
 
 ---
 
 ## Cập nhật code sau này
 
 ```bash
-cd /www/wwwroot/grandpalace
+cd /www/wwwroot/maisondeluxe
 git pull                                      # nếu dùng git
 
 pnpm install --frozen-lockfile                # nếu có thay đổi dependency
@@ -243,5 +243,5 @@ VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY BASE_PATH=/ \
   pnpm --filter @workspace/hotel-system run build
 pnpm --filter @workspace/api-server run build
 
-pm2 restart grandpalace-api
+pm2 restart maisondeluxe-api
 ```

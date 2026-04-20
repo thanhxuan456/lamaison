@@ -161,7 +161,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       images: [
         { url: "/images/hero.png", caption: "Lobby sang trọng" },
         { url: "/images/restaurant.png", caption: "Nhà hàng đẳng cấp" },
-        { url: "/images/hotel-hanoi.png", caption: "Grand Palace Hà Nội" },
+        { url: "/images/hotel-hanoi.png", caption: "MAISON DELUXE Hà Nội" },
       ],
     },
   },
@@ -179,7 +179,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       { key: "posterUrl", label: "Ảnh poster (tùy chọn)", type: "image" },
     ],
     defaultSettings: {
-      title: "Khám phá Grand Palace",
+      title: "Khám phá MAISON DELUXE",
       subtitle: "Một thước phim ngắn về không gian sang trọng của chúng tôi",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       posterUrl: "",
@@ -351,7 +351,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       imageUrl: "/images/restaurant.png",
       kicker: "Trải nghiệm",
       title: "Dấu ấn khó phai",
-      body: "Tại Grand Palace, mỗi khoảnh khắc đều được thiết kế để trở thành kỷ niệm vô giá.",
+      body: "Tại MAISON DELUXE, mỗi khoảnh khắc đều được thiết kế để trở thành kỷ niệm vô giá.",
       quote: "\"Nghệ thuật ẩm thực đỉnh cao\"",
       item1: "Nhà hàng đạt chuẩn quốc tế",
       item2: "Spa & Wellness cao cấp",
@@ -410,7 +410,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
       },
     ],
     defaultSettings: {
-      title: "Grand Palace bằng những con số",
+      title: "MAISON DELUXE bằng những con số",
       items: [
         { number: "3", label: "Khách sạn 5 sao" },
         { number: "850+", label: "Phòng cao cấp" },
@@ -440,7 +440,7 @@ export const BLOCK_DEFINITIONS: BlockDefinition[] = [
     ],
     defaultSettings: {
       title: "Đội Ngũ Lãnh Đạo",
-      subtitle: "Những con người tạo nên sự khác biệt của Grand Palace",
+      subtitle: "Những con người tạo nên sự khác biệt của MAISON DELUXE",
       items: [
         { name: "Trần Văn Hùng", role: "Tổng Giám Đốc", avatar: "" },
         { name: "Lê Thị Hoa", role: "Giám đốc Vận hành", avatar: "" },
@@ -498,7 +498,7 @@ const CONTACT_BLOCKS: PageBlock[] = [
       ...defaultSettingsFor("hero"),
       kicker: "Chào mừng",
       title1: "Liên Hệ",
-      title2: "Với Grand Palace",
+      title2: "Với MAISON DELUXE",
       subtitle: "Đội ngũ Concierge của chúng tôi luôn sẵn sàng phục vụ 24/7.",
       cta: "Cuộn xuống để liên hệ",
     },
@@ -517,11 +517,11 @@ function makeFaq(title: string, items: { question: string; answer: string }[], k
 const FAQ_BLOCKS: PageBlock[] = [
   makeText(
     "Câu hỏi thường gặp",
-    "Tổng hợp những thắc mắc phổ biến nhất từ quý khách về dịch vụ, đặt phòng, thanh toán và lưu trú tại Grand Palace Hotels & Resorts. Nếu không tìm thấy câu trả lời, vui lòng liên hệ Concierge 24/7.",
+    "Tổng hợp những thắc mắc phổ biến nhất từ quý khách về dịch vụ, đặt phòng, thanh toán và lưu trú tại MAISON DELUXE Hotels & Resorts. Nếu không tìm thấy câu trả lời, vui lòng liên hệ Concierge 24/7.",
     "Hỗ trợ khách hàng",
   ),
   makeFaq("Đặt phòng & Thanh toán", [
-    { question: "Tôi có thể đặt phòng bằng những phương thức nào?", answer: "Quý khách có thể đặt phòng trực tuyến tại website Grand Palace, gọi Hotline 0900 000 000 24/7, hoặc qua các kênh OTA: Booking.com, Agoda, Expedia, Airbnb, Traveloka, Trip.com." },
+    { question: "Tôi có thể đặt phòng bằng những phương thức nào?", answer: "Quý khách có thể đặt phòng trực tuyến tại website MAISON DELUXE, gọi Hotline 0900 000 000 24/7, hoặc qua các kênh OTA: Booking.com, Agoda, Expedia, Airbnb, Traveloka, Trip.com." },
     { question: "Hệ thống chấp nhận thanh toán nào?", answer: "Chúng tôi chấp nhận: VietQR (chuyển khoản nhanh), thẻ tín dụng Visa/Mastercard/JCB/Amex, ví MoMo/ZaloPay/VNPay, và thanh toán tại quầy bằng tiền mặt VND/USD." },
     { question: "Tôi có cần đặt cọc khi đặt phòng?", answer: "Phòng hạng Standard và Deluxe yêu cầu đặt cọc 30% giá trị đơn. Phòng Suite và Villa yêu cầu thanh toán 100% trước. Hoàn tiền theo chính sách huỷ." },
     { question: "Giá phòng đã bao gồm thuế và phí dịch vụ?", answer: "Tất cả giá hiển thị đã bao gồm 10% VAT và 5% phí dịch vụ. Không có phụ phí ẩn." },
@@ -543,7 +543,7 @@ const FAQ_BLOCKS: PageBlock[] = [
 const CANCELLATION_BLOCKS: PageBlock[] = [
   makeText(
     "Chính sách huỷ phòng",
-    `<p>Tại <strong>Grand Palace Hotels & Resorts</strong>, chúng tôi cam kết minh bạch và linh hoạt trong mọi giao dịch. Vui lòng đọc kỹ chính sách huỷ phòng dưới đây trước khi xác nhận đặt phòng.</p>
+    `<p>Tại <strong>MAISON DELUXE Hotels & Resorts</strong>, chúng tôi cam kết minh bạch và linh hoạt trong mọi giao dịch. Vui lòng đọc kỹ chính sách huỷ phòng dưới đây trước khi xác nhận đặt phòng.</p>
 
 <h2>1. Huỷ miễn phí</h2>
 <p>Quý khách được huỷ miễn phí 100% nếu thông báo trước <strong>48 giờ</strong> so với giờ check-in (14:00 ngày đến). Tiền hoàn về ví/thẻ trong 5-7 ngày làm việc.</p>
@@ -564,15 +564,15 @@ const CANCELLATION_BLOCKS: PageBlock[] = [
 <p>Đối với đặt phòng qua Booking.com, Agoda, Expedia, Airbnb, Traveloka, Trip.com — chính sách huỷ áp dụng theo kênh đó. Vui lòng liên hệ trực tiếp OTA quý vị đã đặt.</p>
 
 <h2>6. Liên hệ huỷ phòng</h2>
-<p>Email: <strong>cancel@grandpalace.vn</strong> · Hotline: <strong>0900 000 000</strong> (24/7)</p>`,
+<p>Email: <strong>cancel@maisondeluxe.vn</strong> · Hotline: <strong>0900 000 000</strong> (24/7)</p>`,
     "Chính sách",
   ),
 ];
 
 const MEMBERSHIP_BLOCKS: PageBlock[] = [
   makeText(
-    "Grand Palace Privilege",
-    `<p>Chương trình khách hàng thân thiết <strong>Grand Palace Privilege</strong> tri ân quý khách với những đặc quyền được thiết kế riêng — từ ưu đãi giá phòng, nâng cấp miễn phí đến trải nghiệm độc quyền tại 3 khu nghỉ dưỡng của chúng tôi.</p>`,
+    "MAISON DELUXE Privilege",
+    `<p>Chương trình khách hàng thân thiết <strong>MAISON DELUXE Privilege</strong> tri ân quý khách với những đặc quyền được thiết kế riêng — từ ưu đãi giá phòng, nâng cấp miễn phí đến trải nghiệm độc quyền tại 3 khu nghỉ dưỡng của chúng tôi.</p>`,
     "Chương trình thành viên",
   ),
   {
@@ -594,14 +594,14 @@ const MEMBERSHIP_BLOCKS: PageBlock[] = [
 
 <h2>Đổi điểm thế nào?</h2>
 <ul>
-<li><strong>100 điểm</strong> = 1 đêm Standard tại bất kỳ Grand Palace nào</li>
+<li><strong>100 điểm</strong> = 1 đêm Standard tại bất kỳ MAISON DELUXE nào</li>
 <li><strong>250 điểm</strong> = 1 đêm Suite + bữa sáng</li>
 <li><strong>500 điểm</strong> = Voucher spa cao cấp 90 phút</li>
 <li><strong>1000 điểm</strong> = Trọn gói nghỉ dưỡng 3 ngày 2 đêm Villa</li>
 </ul>
 
 <h2>Điểm có hết hạn?</h2>
-<p>Điểm có giá trị <strong>24 tháng</strong> kể từ ngày tích. Đăng ký miễn phí trọn đời tại quầy lễ tân hoặc qua app Grand Palace.</p>`,
+<p>Điểm có giá trị <strong>24 tháng</strong> kể từ ngày tích. Đăng ký miễn phí trọn đời tại quầy lễ tân hoặc qua app MAISON DELUXE.</p>`,
   ),
   {
     id: genBlockId(), type: "cta_banner", visible: true, settings: {
@@ -617,7 +617,7 @@ const MEMBERSHIP_BLOCKS: PageBlock[] = [
 const PRIVACY_BLOCKS: PageBlock[] = [
   makeText(
     "Chính sách bảo mật thông tin",
-    `<p>Grand Palace Hotels & Resorts tôn trọng và cam kết bảo vệ thông tin cá nhân của quý khách theo đúng quy định của <strong>Luật An toàn thông tin mạng 2015</strong> và <strong>Nghị định 13/2023/NĐ-CP</strong> về bảo vệ dữ liệu cá nhân.</p>
+    `<p>MAISON DELUXE Hotels & Resorts tôn trọng và cam kết bảo vệ thông tin cá nhân của quý khách theo đúng quy định của <strong>Luật An toàn thông tin mạng 2015</strong> và <strong>Nghị định 13/2023/NĐ-CP</strong> về bảo vệ dữ liệu cá nhân.</p>
 
 <h2>1. Thông tin chúng tôi thu thập</h2>
 <ul>
@@ -658,7 +658,7 @@ const PRIVACY_BLOCKS: PageBlock[] = [
 <p>Website sử dụng cookie để ghi nhớ tuỳ chọn ngôn ngữ, giỏ hàng và phân tích hành vi (Google Analytics ẩn danh). Quý khách có thể tắt cookie tại trình duyệt.</p>
 
 <h2>7. Liên hệ về quyền riêng tư</h2>
-<p>Data Protection Officer: <strong>privacy@grandpalace.vn</strong> · Hotline: <strong>0900 000 000</strong></p>`,
+<p>Data Protection Officer: <strong>privacy@maisondeluxe.vn</strong> · Hotline: <strong>0900 000 000</strong></p>`,
     "Bảo mật",
   ),
 ];
@@ -666,10 +666,10 @@ const PRIVACY_BLOCKS: PageBlock[] = [
 const TERMS_BLOCKS: PageBlock[] = [
   makeText(
     "Điều khoản sử dụng",
-    `<p>Khi truy cập và sử dụng website, ứng dụng và dịch vụ của <strong>Grand Palace Hotels & Resorts</strong>, quý khách đồng ý tuân thủ các điều khoản dưới đây.</p>
+    `<p>Khi truy cập và sử dụng website, ứng dụng và dịch vụ của <strong>MAISON DELUXE Hotels & Resorts</strong>, quý khách đồng ý tuân thủ các điều khoản dưới đây.</p>
 
 <h2>1. Định nghĩa</h2>
-<p>"Grand Palace", "chúng tôi", "công ty" — chỉ Công ty TNHH Grand Palace Hotels & Resorts, có trụ sở tại Việt Nam.<br/>"Khách hàng", "quý khách", "bạn" — chỉ cá nhân/tổ chức sử dụng dịch vụ.</p>
+<p>"MAISON DELUXE", "chúng tôi", "công ty" — chỉ Công ty TNHH MAISON DELUXE Hotels & Resorts, có trụ sở tại Việt Nam.<br/>"Khách hàng", "quý khách", "bạn" — chỉ cá nhân/tổ chức sử dụng dịch vụ.</p>
 
 <h2>2. Tài khoản người dùng</h2>
 <ul>
@@ -694,10 +694,10 @@ const TERMS_BLOCKS: PageBlock[] = [
 </ul>
 
 <h2>5. Sở hữu trí tuệ</h2>
-<p>Toàn bộ nội dung (logo, hình ảnh, văn bản, video, mã nguồn) trên website thuộc sở hữu của Grand Palace. <strong>Cấm sao chép, phân phối, sửa đổi</strong> dưới mọi hình thức nếu không có văn bản chấp thuận.</p>
+<p>Toàn bộ nội dung (logo, hình ảnh, văn bản, video, mã nguồn) trên website thuộc sở hữu của MAISON DELUXE. <strong>Cấm sao chép, phân phối, sửa đổi</strong> dưới mọi hình thức nếu không có văn bản chấp thuận.</p>
 
 <h2>6. Giới hạn trách nhiệm</h2>
-<p>Grand Palace không chịu trách nhiệm với:</p>
+<p>MAISON DELUXE không chịu trách nhiệm với:</p>
 <ul>
 <li>Tài sản cá nhân không gửi két an toàn.</li>
 <li>Thiệt hại gián tiếp/ngẫu nhiên ngoài tầm kiểm soát.</li>
@@ -711,7 +711,7 @@ const TERMS_BLOCKS: PageBlock[] = [
 <p>Điều khoản này tuân theo <strong>luật pháp Việt Nam</strong>. Mọi tranh chấp sẽ được giải quyết tại Toà án có thẩm quyền tại TP.HCM.</p>
 
 <h2>9. Liên hệ pháp lý</h2>
-<p>Phòng Pháp chế: <strong>legal@grandpalace.vn</strong> · Hotline: <strong>0900 000 000</strong></p>`,
+<p>Phòng Pháp chế: <strong>legal@maisondeluxe.vn</strong> · Hotline: <strong>0900 000 000</strong></p>`,
     "Pháp lý",
   ),
 ];

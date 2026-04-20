@@ -972,7 +972,7 @@ export function BrandingPanel() {
             <div>
               <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tên thương hiệu</label>
               <input value={local.brandName} onChange={e => set("brandName", e.target.value)}
-                className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="Grand Palace" />
+                className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="MAISON DELUXE" />
             </div>
             <div>
               <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Số sao hiển thị</label>
@@ -1000,7 +1000,7 @@ export function BrandingPanel() {
             <div className="sm:col-span-2">
               <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tiêu đề trang (Browser tab)</label>
               <input value={local.pageTitle} onChange={e => set("pageTitle", e.target.value)}
-                className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="Grand Palace Hotels & Resorts" />
+                className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm outline-none" placeholder="MAISON DELUXE Hotels & Resorts" />
               <p className="text-[10px] text-muted-foreground/70 mt-1">Hiển thị trên tab trình duyệt và kết quả tìm kiếm Google</p>
             </div>
             <div className="sm:col-span-2">
@@ -1111,7 +1111,7 @@ export function BrandingPanel() {
                     backdropFilter: local.navbarStyle === "glass" ? "blur(8px)" : undefined,
                   }}
                 >
-                  <span className="font-serif text-sm text-primary tracking-widest uppercase">Grand Palace</span>
+                  <span className="font-serif text-sm text-primary tracking-widest uppercase">MAISON DELUXE</span>
                   <div className="flex gap-3 ml-4">
                     {["Trang chủ","Phòng","Liên hệ"].map(m => (
                       <span key={m} className="text-[10px] tracking-wider text-white/70">{m}</span>

@@ -57,7 +57,7 @@ export default function NewsPage() {
             <Crown size={14} className="text-primary" />
             <span className="w-12 h-px bg-primary" />
           </div>
-          <h1 className="font-serif text-4xl md:text-6xl text-white mb-4">Câu chuyện Grand Palace</h1>
+          <h1 className="font-serif text-4xl md:text-6xl text-white mb-4">Câu chuyện MAISON DELUXE</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Khám phá những bài viết mới nhất về khuyến mãi, ẩm thực, văn hoá Việt và những trải nghiệm đẳng cấp tại các khu nghỉ dưỡng của chúng tôi.
           </p>

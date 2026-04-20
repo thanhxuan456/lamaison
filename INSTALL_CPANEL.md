@@ -1,6 +1,6 @@
 # Hướng dẫn cài đặt trên cPanel
 
-> **Lưu ý quan trọng:** cPanel truyền thống dùng MySQL/MariaDB. Grand Palace dùng **PostgreSQL**. Bạn cần một trong hai phương án:
+> **Lưu ý quan trọng:** cPanel truyền thống dùng MySQL/MariaDB. MAISON DELUXE dùng **PostgreSQL**. Bạn cần một trong hai phương án:
 > - **A (Khuyến nghị):** Dùng PostgreSQL bên ngoài (ví dụ: Supabase, Neon, Aiven — đều có free tier)
 > - **B:** Yêu cầu host cài thêm PostgreSQL (nhiều VPS cPanel cho phép)
 >
@@ -31,25 +31,25 @@
 2. Nhấn **Create Application**:
    - **Node.js version:** chọn 20 hoặc 22 (tùy host cung cấp)
    - **Application mode:** Production
-   - **Application root:** `grandpalace` (tạo thư mục mới)
+   - **Application root:** `maisondeluxe` (tạo thư mục mới)
    - **Application URL:** chọn domain hoặc subdomain
    - **Application startup file:** `artifacts/api-server/dist/index.mjs`
 3. Nhấn **Create**
-4. Ghi lại **virtual environment path** (ví dụ: `/home/username/nodevenv/grandpalace/...`)
+4. Ghi lại **virtual environment path** (ví dụ: `/home/username/nodevenv/maisondeluxe/...`)
 
 ---
 
 ### 3. Upload source code
 
 **Cách A — Upload ZIP qua File Manager:**
-1. Nén project (bỏ `node_modules`, `dist`, `.git`) → tạo `grandpalace.zip`
-2. cPanel → **File Manager** → vào `/home/username/grandpalace/`
+1. Nén project (bỏ `node_modules`, `dist`, `.git`) → tạo `maisondeluxe.zip`
+2. cPanel → **File Manager** → vào `/home/username/maisondeluxe/`
 3. Upload → Extract
 
 **Cách B — qua SSH (nếu host hỗ trợ):**
 ```bash
-cd ~/grandpalace
-git clone https://github.com/youruser/grandpalace.git .
+cd ~/maisondeluxe
+git clone https://github.com/youruser/maisondeluxe.git .
 ```
 
 ---
@@ -78,11 +78,11 @@ BASE_PATH=/
 ### 5. Cài đặt dependencies
 
 1. cPanel → **Setup Node.js App** → chọn app → **Run NPM Install**
-   - Hoặc SSH: `cd ~/grandpalace && npm install -g pnpm && pnpm install`
+   - Hoặc SSH: `cd ~/maisondeluxe && npm install -g pnpm && pnpm install`
 
 2. Chạy migration database qua SSH:
    ```bash
-   cd ~/grandpalace
+   cd ~/maisondeluxe
    source .env
    npx drizzle-kit push --config=lib/db/drizzle.config.ts
    ```
@@ -94,7 +94,7 @@ BASE_PATH=/
 
 Qua SSH:
 ```bash
-cd ~/grandpalace
+cd ~/maisondeluxe
 
 # Build frontend
 VITE_CLERK_PUBLISHABLE_KEY=$(grep VITE_CLERK_PUBLISHABLE_KEY .env | cut -d= -f2) \
@@ -175,13 +175,13 @@ sudo systemctl enable --now postgresql
 
 # Tạo database
 sudo -u postgres psql << SQL
-CREATE USER grandpalace_user WITH ENCRYPTED PASSWORD 'your_strong_password';
-CREATE DATABASE grandpalace_db OWNER grandpalace_user;
-GRANT ALL PRIVILEGES ON DATABASE grandpalace_db TO grandpalace_user;
+CREATE USER maisondeluxe_user WITH ENCRYPTED PASSWORD 'your_strong_password';
+CREATE DATABASE maisondeluxe_db OWNER maisondeluxe_user;
+GRANT ALL PRIVILEGES ON DATABASE maisondeluxe_db TO maisondeluxe_user;
 SQL
 ```
 
-Sau đó dùng `DATABASE_URL=postgresql://grandpalace_user:your_strong_password@localhost:5432/grandpalace_db` trong file `.env`.
+Sau đó dùng `DATABASE_URL=postgresql://maisondeluxe_user:your_strong_password@localhost:5432/maisondeluxe_db` trong file `.env`.
 
 ---
 
@@ -189,7 +189,7 @@ Sau đó dùng `DATABASE_URL=postgresql://grandpalace_user:your_strong_password@
 
 ```bash
 # Xem log app
-~/.pm2/logs/grandpalace-api-out.log   # nếu dùng PM2
+~/.pm2/logs/maisondeluxe-api-out.log   # nếu dùng PM2
 # hoặc qua cPanel → Logs → Error log
 
 # Test API
@@ -197,7 +197,7 @@ curl http://YOUR_DOMAIN/api/healthz
 
 # Restart app
 # cPanel → Setup Node.js App → Restart
-# hoặc: pm2 restart grandpalace-api
+# hoặc: pm2 restart maisondeluxe-api
 ```
 
 ---
@@ -208,14 +208,14 @@ curl http://YOUR_DOMAIN/api/healthz
 # Upload file mới qua File Manager hoặc git pull
 
 # Rebuild
-cd ~/grandpalace
+cd ~/maisondeluxe
 source .env
 VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY BASE_PATH=/ \
   pnpm --filter @workspace/hotel-system run build
 pnpm --filter @workspace/api-server run build
 
 # Restart qua cPanel UI hoặc SSH:
-pm2 restart grandpalace-api
+pm2 restart maisondeluxe-api
 ```
 
 ---

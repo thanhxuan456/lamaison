@@ -14,7 +14,7 @@ const VALUES = [
 ];
 
 const MILESTONES = [
-  { year: "2005", event: "Khai trương Grand Palace Hà Nội, khởi đầu hành trình 5 sao tại Việt Nam." },
+  { year: "2005", event: "Khai trương MAISON DELUXE Hà Nội, khởi đầu hành trình 5 sao tại Việt Nam." },
   { year: "2010", event: "Mở rộng ra Đà Nẵng với resort biển đầu tiên trực tiếp trên bãi biển Mỹ Khê." },
   { year: "2015", event: "Nhận giải thưởng Best Luxury Hotel Vietnam lần đầu tiên từ World Travel Awards." },
   { year: "2018", event: "Khai trương tổ hợp khách sạn flagship tại TP. Hồ Chí Minh — tòa tháp 45 tầng biểu tượng." },
@@ -32,7 +32,7 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="relative h-[60vh] min-h-[480px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img src="/images/hotel-hanoi.png" alt="Grand Palace" className="w-full h-full object-cover" />
+          <img src="/images/hotel-hanoi.png" alt="MAISON DELUXE" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-secondary/70" />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/40 to-transparent" />
         </div>
@@ -60,10 +60,10 @@ export default function AboutPage() {
               <div className="w-12 h-[2px] bg-primary mb-8" />
               <div className="space-y-4 text-muted-foreground font-light leading-relaxed">
                 <p>
-                  Grand Palace Hotels & Resorts được thành lập năm 2005 với sứ mệnh mang đến trải nghiệm nghỉ dưỡng sang trọng đẳng cấp quốc tế ngay trên đất nước Việt Nam. Khởi đầu từ một khách sạn boutique giữa lòng phố cổ Hà Nội, chúng tôi đã không ngừng phát triển thành chuỗi khách sạn 5 sao uy tín hàng đầu.
+                  MAISON DELUXE Hotels & Resorts được thành lập năm 2005 với sứ mệnh mang đến trải nghiệm nghỉ dưỡng sang trọng đẳng cấp quốc tế ngay trên đất nước Việt Nam. Khởi đầu từ một khách sạn boutique giữa lòng phố cổ Hà Nội, chúng tôi đã không ngừng phát triển thành chuỗi khách sạn 5 sao uy tín hàng đầu.
                 </p>
                 <p>
-                  Mỗi chi nhánh của Grand Palace được xây dựng với triết lý riêng biệt — kết hợp kiến trúc đặc trưng của từng vùng miền với tiêu chuẩn dịch vụ quốc tế, tạo nên bản sắc độc đáo không thể nhầm lẫn. Từ cung điện Đông Dương tại Hà Nội, resort biển tại Đà Nẵng đến tòa tháp đương đại tại TP. Hồ Chí Minh.
+                  Mỗi chi nhánh của MAISON DELUXE được xây dựng với triết lý riêng biệt — kết hợp kiến trúc đặc trưng của từng vùng miền với tiêu chuẩn dịch vụ quốc tế, tạo nên bản sắc độc đáo không thể nhầm lẫn. Từ cung điện Đông Dương tại Hà Nội, resort biển tại Đà Nẵng đến tòa tháp đương đại tại TP. Hồ Chí Minh.
                 </p>
                 <p>
                   Với đội ngũ hơn 2.000 nhân viên được đào tạo bởi các chuyên gia khách sạn hàng đầu thế giới, chúng tôi cam kết mang đến dịch vụ butler cá nhân hóa, ẩm thực fine dining và trải nghiệm spa phục hồi toàn diện cho mỗi vị khách quý.
@@ -203,7 +203,7 @@ export default function AboutPage() {
             </div>
             <div className="flex items-center gap-2">
               <Mail size={14} className="text-primary" />
-              <span>contact@grandpalace.vn</span>
+              <span>contact@maisondeluxe.vn</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin size={14} className="text-primary" />

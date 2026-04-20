@@ -26,7 +26,7 @@ const TREATMENTS = [
     category: "Gói nghỉ dưỡng trọn vẹn",
     icon: Star,
     items: [
-      { name: "Grand Palace Day Spa", duration: "4 giờ", price: "5.500.000 ₫", desc: "Trải nghiệm toàn diện bao gồm tắm ngâm thảo dược, facial, massage và bữa trà chiều sang trọng." },
+      { name: "MAISON DELUXE Day Spa", duration: "4 giờ", price: "5.500.000 ₫", desc: "Trải nghiệm toàn diện bao gồm tắm ngâm thảo dược, facial, massage và bữa trà chiều sang trọng." },
       { name: "Couple's Retreat", duration: "3 giờ", price: "8.800.000 ₫", desc: "Gói spa đôi trong phòng suite riêng biệt, bao gồm champagne, hoa tươi và hai liệu trình massage." },
       { name: "Detox & Renewal", duration: "5 giờ", price: "6.800.000 ₫", desc: "Chương trình thanh lọc toàn diện với body wrap, massage detox, facial và tắm muối khoáng." },
     ],
@@ -52,7 +52,7 @@ export default function SpaPage() {
         <div className="absolute inset-0">
           <img
             src="/images/hotel-hanoi.png"
-            alt="Grand Palace Spa"
+            alt="MAISON DELUXE Spa"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/50 to-secondary/10" />

@@ -31,16 +31,16 @@ interface SocialLink { id: string; label: string; href: string; enabled: boolean
 
 /* ──────────── Default data ──────────── */
 const DEFAULT_PAGES: Page[] = [
-  { id: "home",   title: "Trang Chủ",       slug: "/",       content: "Nội dung trang chủ Grand Palace Hotels & Resorts.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Grand Palace Hotels & Resorts", metaDesc: "Chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", ogImage: "" },
-  { id: "about",  title: "Về Chúng Tôi",    slug: "/about",  content: "Grand Palace — chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Về Chúng Tôi — Grand Palace", metaDesc: "Tìm hiểu về lịch sử và sứ mệnh của Grand Palace Hotels & Resorts.", ogImage: "" },
-  { id: "dining", title: "Ẩm Thực",         slug: "/dining", content: "Trải nghiệm ẩm thực đỉnh cao tại các nhà hàng đạt sao Michelin.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Ẩm Thực — Grand Palace", metaDesc: "Ẩm thực Việt Nam và quốc tế tại Grand Palace.", ogImage: "" },
-  { id: "spa",    title: "Spa & Wellness",   slug: "/spa",    content: "Không gian thư giãn hoàng gia với các liệu trình spa cao cấp.", status: "draft",     updatedAt: new Date().toISOString(), metaTitle: "Spa & Wellness — Grand Palace", metaDesc: "Thư giãn tâm hồn tại Spa Grand Palace.", ogImage: "" },
-  { id: "offers", title: "Ưu Đãi Đặc Biệt", slug: "/offers", content: "Khám phá những ưu đãi độc quyền dành riêng cho thành viên.", status: "draft",     updatedAt: new Date().toISOString(), metaTitle: "Ưu Đãi — Grand Palace", metaDesc: "Ưu đãi đặc biệt cho thành viên Grand Palace.", ogImage: "" },
+  { id: "home",   title: "Trang Chủ",       slug: "/",       content: "Nội dung trang chủ MAISON DELUXE Hotels & Resorts.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "MAISON DELUXE Hotels & Resorts", metaDesc: "Chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", ogImage: "" },
+  { id: "about",  title: "Về Chúng Tôi",    slug: "/about",  content: "MAISON DELUXE — chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Về Chúng Tôi — MAISON DELUXE", metaDesc: "Tìm hiểu về lịch sử và sứ mệnh của MAISON DELUXE Hotels & Resorts.", ogImage: "" },
+  { id: "dining", title: "Ẩm Thực",         slug: "/dining", content: "Trải nghiệm ẩm thực đỉnh cao tại các nhà hàng đạt sao Michelin.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Ẩm Thực — MAISON DELUXE", metaDesc: "Ẩm thực Việt Nam và quốc tế tại MAISON DELUXE.", ogImage: "" },
+  { id: "spa",    title: "Spa & Wellness",   slug: "/spa",    content: "Không gian thư giãn hoàng gia với các liệu trình spa cao cấp.", status: "draft",     updatedAt: new Date().toISOString(), metaTitle: "Spa & Wellness — MAISON DELUXE", metaDesc: "Thư giãn tâm hồn tại Spa MAISON DELUXE.", ogImage: "" },
+  { id: "offers", title: "Ưu Đãi Đặc Biệt", slug: "/offers", content: "Khám phá những ưu đãi độc quyền dành riêng cho thành viên.", status: "draft",     updatedAt: new Date().toISOString(), metaTitle: "Ưu Đãi — MAISON DELUXE", metaDesc: "Ưu đãi đặc biệt cho thành viên MAISON DELUXE.", ogImage: "" },
 ];
 
 const DEFAULT_POSTS: Post[] = [
-  { id: "p1", title: "Khai trương Grand Palace Đà Nẵng — Chương mới của sự xa hoa", slug: "/news/khai-truong-grand-palace-da-nang", excerpt: "Grand Palace Hotels & Resorts tự hào công bố khai trương chi nhánh Đà Nẵng tại vị trí đắc địa bên bờ sông Hàn.", content: "Chi tiết bài viết...", category: "Tin tức", tags: "khai-truong,da-nang,grand-palace", coverImage: "", status: "published", publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), author: "Grand Palace PR" },
-  { id: "p2", title: "Top 5 trải nghiệm không thể bỏ lỡ khi ở tại Grand Palace Hà Nội", slug: "/blog/trai-nghiem-grand-palace-ha-noi", excerpt: "Từ bữa sáng buffet xa hoa đến spa hoàng gia — khám phá những khoảnh khắc đáng nhớ nhất.", content: "Chi tiết bài viết...", category: "Blog", tags: "ha-noi,trai-nghiem,top-5", coverImage: "", status: "published", publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), author: "Grand Palace Team" },
+  { id: "p1", title: "Khai trương MAISON DELUXE Đà Nẵng — Chương mới của sự xa hoa", slug: "/news/khai-truong-grand-palace-da-nang", excerpt: "MAISON DELUXE Hotels & Resorts tự hào công bố khai trương chi nhánh Đà Nẵng tại vị trí đắc địa bên bờ sông Hàn.", content: "Chi tiết bài viết...", category: "Tin tức", tags: "khai-truong,da-nang,grand-palace", coverImage: "", status: "published", publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), author: "MAISON DELUXE PR" },
+  { id: "p2", title: "Top 5 trải nghiệm không thể bỏ lỡ khi ở tại MAISON DELUXE Hà Nội", slug: "/blog/trai-nghiem-grand-palace-ha-noi", excerpt: "Từ bữa sáng buffet xa hoa đến spa hoàng gia — khám phá những khoảnh khắc đáng nhớ nhất.", content: "Chi tiết bài viết...", category: "Blog", tags: "ha-noi,trai-nghiem,top-5", coverImage: "", status: "published", publishedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), author: "MAISON DELUXE Team" },
   { id: "p3", title: "Ưu đãi Mùa Hè 2025 — Giảm đến 40% cho đặt phòng sớm", slug: "/offers/summer-2025", excerpt: "Đặt phòng trước để nhận ưu đãi tốt nhất mùa hè năm nay.", content: "Chi tiết bài viết...", category: "Ưu đãi", tags: "summer,offer,discount", coverImage: "", status: "draft", publishedAt: "", updatedAt: new Date().toISOString(), author: "Marketing" },
 ];
 
@@ -53,10 +53,10 @@ const DEFAULT_MENUS: MenuItem[] = [
 ];
 
 const DEFAULT_SOCIALS: SocialLink[] = [
-  { id: "facebook", label: "Facebook", href: "https://m.me/grandpalacehotels", enabled: true, color: "#1877F2" },
+  { id: "facebook", label: "Facebook", href: "https://m.me/maisondeluxehotels", enabled: true, color: "#1877F2" },
   { id: "zalo",     label: "Zalo",     href: "https://zalo.me/0900000000",      enabled: true, color: "#0068FF" },
   { id: "whatsapp", label: "WhatsApp", href: "https://wa.me/84900000000",       enabled: true, color: "#25D366" },
-  { id: "telegram", label: "Telegram", href: "https://t.me/grandpalace",        enabled: false, color: "#229ED9" },
+  { id: "telegram", label: "Telegram", href: "https://t.me/maisondeluxe",        enabled: false, color: "#229ED9" },
   { id: "phone",    label: "Hotline",  href: "tel:+84900000000",                enabled: true, color: "#b8973e" },
 ];
 
@@ -153,7 +153,7 @@ function PageModal({ page, onClose, onSaved }: { page?: Page; onClose: () => voi
               <div>
                 <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Meta Title</label>
                 <input className="w-full border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
-                  value={form.metaTitle} onChange={(e) => set("metaTitle", e.target.value)} placeholder="Grand Palace — Tiêu đề cho Google" />
+                  value={form.metaTitle} onChange={(e) => set("metaTitle", e.target.value)} placeholder="MAISON DELUXE — Tiêu đề cho Google" />
                 <p className="text-[10px] text-muted-foreground mt-1">{form.metaTitle.length}/60 ký tự {form.metaTitle.length > 60 && "— Nên rút ngắn"}</p>
               </div>
               <div>
@@ -166,7 +166,7 @@ function PageModal({ page, onClose, onSaved }: { page?: Page; onClose: () => voi
                 <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">OG Image URL (ảnh chia sẻ mạng xã hội)</label>
                 <div className="flex gap-2">
                   <input className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none font-mono"
-                    value={form.ogImage} onChange={(e) => set("ogImage", e.target.value)} placeholder="https://grandpalace.vn/images/og-home.jpg" />
+                    value={form.ogImage} onChange={(e) => set("ogImage", e.target.value)} placeholder="https://maisondeluxe.vn/images/og-home.jpg" />
                   <div className="w-10 h-10 border border-primary/20 flex items-center justify-center bg-muted/20 shrink-0">
                     {form.ogImage ? <img src={form.ogImage} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} /> : <Image size={14} className="text-muted-foreground" />}
                   </div>
@@ -178,7 +178,7 @@ function PageModal({ page, onClose, onSaved }: { page?: Page; onClose: () => voi
                 <div className="border border-primary/15 p-4 bg-muted/30">
                   <p className="text-[10px] tracking-widest uppercase text-muted-foreground mb-2 flex items-center gap-1"><Search size={10} /> Xem trước Google</p>
                   <div className="text-[13px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">{form.metaTitle || form.title}</div>
-                  <div className="text-[11px] text-green-700 dark:text-green-500 mt-0.5">grandpalace.vn{form.slug}</div>
+                  <div className="text-[11px] text-green-700 dark:text-green-500 mt-0.5">maisondeluxe.vn{form.slug}</div>
                   <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{form.metaDesc || form.content.slice(0, 160)}</div>
                 </div>
               )}

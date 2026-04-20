@@ -51,7 +51,7 @@ const DEFAULT_INVOICE: InvoiceIntegration = {
   useCustomUrl: false,
   showTaxId: false,
   taxId: "",
-  footerNote: "Cảm ơn quý khách đã lựa chọn Grand Palace Hotels & Resorts.",
+  footerNote: "Cảm ơn quý khách đã lựa chọn MAISON DELUXE Hotels & Resorts.",
   showQrCode: false,
 };
 

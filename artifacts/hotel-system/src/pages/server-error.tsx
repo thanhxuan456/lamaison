@@ -23,7 +23,7 @@ export default function ServerError({ code = 500, message }: ServerErrorProps) {
       <div className="relative z-10 max-w-lg">
         <div className="flex justify-center mb-8">
           <Link href="/">
-            <img src="/logo.svg" alt="Grand Palace" className="h-12 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
+            <img src="/logo.svg" alt="MAISON DELUXE" className="h-12 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
           </Link>
         </div>
 
@@ -45,7 +45,7 @@ export default function ServerError({ code = 500, message }: ServerErrorProps) {
         </p>
         <p className="text-muted-foreground/60 text-xs mb-8">
           Nếu vấn đề tiếp diễn, vui lòng liên hệ{" "}
-          <a href="mailto:support@grandpalace.vn" className="text-primary hover:underline">support@grandpalace.vn</a>
+          <a href="mailto:support@maisondeluxe.vn" className="text-primary hover:underline">support@maisondeluxe.vn</a>
         </p>
 
         <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -61,7 +61,7 @@ export default function ServerError({ code = 500, message }: ServerErrorProps) {
         </div>
 
         <div className="mt-10 text-[10px] text-muted-foreground/40 tracking-widest uppercase">
-          Mã lỗi: {code} · Grand Palace Hotels &amp; Resorts
+          Mã lỗi: {code} · MAISON DELUXE Hotels &amp; Resorts
         </div>
       </div>
     </div>

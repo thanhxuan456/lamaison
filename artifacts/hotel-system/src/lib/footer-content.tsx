@@ -48,18 +48,18 @@ const STORAGE_KEY = "grand-palace-footer-content";
 
 export const DEFAULT_FOOTER_CONTENT: FooterContent = {
   brand: {
-    name: "Grand Palace",
+    name: "MAISON DELUXE",
     tagline: "Hotels & Resorts",
     about: "Chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam, mang đến trải nghiệm hoàng gia với dịch vụ tinh tế và không gian đẳng cấp quốc tế.",
   },
   newsletter: {
     title: "Đăng ký nhận ưu đãi",
-    body: "Nhận tin tức và ưu đãi độc quyền dành cho thành viên Grand Palace.",
+    body: "Nhận tin tức và ưu đãi độc quyền dành cho thành viên MAISON DELUXE.",
     placeholder: "Email của quý khách...",
     submitText: "Đăng ký",
   },
   contact: {
-    email: "contact@grandpalace.vn",
+    email: "contact@maisondeluxe.vn",
     phone: "+84 1800 9999",
     address: "Hà Nội · Đà Nẵng · TP.HCM",
   },
@@ -85,15 +85,15 @@ export const DEFAULT_FOOTER_CONTENT: FooterContent = {
     },
   ],
   socials: [
-    { platform: "facebook", url: "https://facebook.com/grandpalace", enabled: true },
-    { platform: "instagram", url: "https://instagram.com/grandpalace", enabled: true },
-    { platform: "twitter", url: "https://twitter.com/grandpalace", enabled: true },
-    { platform: "youtube", url: "https://youtube.com/grandpalace", enabled: true },
+    { platform: "facebook", url: "https://facebook.com/maisondeluxe", enabled: true },
+    { platform: "instagram", url: "https://instagram.com/maisondeluxe", enabled: true },
+    { platform: "twitter", url: "https://twitter.com/maisondeluxe", enabled: true },
+    { platform: "youtube", url: "https://youtube.com/maisondeluxe", enabled: true },
     { platform: "tiktok", url: "", enabled: false },
     { platform: "linkedin", url: "", enabled: false },
   ],
   bottomBar: {
-    copyright: "© {year} Grand Palace Hotels & Resorts. Tất cả các quyền được bảo lưu.",
+    copyright: "© {year} MAISON DELUXE Hotels & Resorts. Tất cả các quyền được bảo lưu.",
     termsLabel: "Điều khoản",
     termsLink: "/",
     privacyLabel: "Bảo mật",

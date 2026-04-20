@@ -82,7 +82,7 @@ export function LiveChat() {
       setMessages([{
         id: "welcome",
         senderType: "system",
-        senderName: "Grand Palace",
+        senderName: "MAISON DELUXE",
         message: t("chat.welcome"),
         createdAt: new Date().toISOString(),
       }]);

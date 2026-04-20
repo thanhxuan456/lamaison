@@ -17,7 +17,7 @@ function HeroBlock({ s }: { s: Record<string, any> }) {
       <div className="absolute inset-0 z-0">
         <img
           src={s.imageUrl || "/images/hero.png"}
-          alt="Grand Palace Hotel"
+          alt="MAISON DELUXE Hotel"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-secondary/60" />

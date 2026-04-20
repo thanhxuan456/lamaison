@@ -70,7 +70,7 @@ export default function RoomDetail() {
   const [loadingMomo, setLoadingMomo] = useState(false);
   const [paySettings, setPaySettings] = useState<PaySettings>({
     momo: { enabled: false, configured: false },
-    bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "", defaultDescription: "Dat phong Grand Palace" },
+    bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "", defaultDescription: "Dat phong MAISON DELUXE" },
   });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

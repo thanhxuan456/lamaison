@@ -49,10 +49,10 @@ interface SocialLink {
 }
 
 const DEFAULT_SOCIALS: SocialLink[] = [
-  { id: "facebook", label: "Facebook", href: "https://m.me/grandpalacehotels", enabled: true, color: "#1877F2" },
+  { id: "facebook", label: "Facebook", href: "https://m.me/maisondeluxehotels", enabled: true, color: "#1877F2" },
   { id: "zalo", label: "Zalo", href: "https://zalo.me/0900000000", enabled: true, color: "#0068FF" },
   { id: "whatsapp", label: "WhatsApp", href: "https://wa.me/84900000000", enabled: true, color: "#25D366" },
-  { id: "telegram", label: "Telegram", href: "https://t.me/grandpalace", enabled: false, color: "#229ED9" },
+  { id: "telegram", label: "Telegram", href: "https://t.me/maisondeluxe", enabled: false, color: "#229ED9" },
   { id: "phone", label: "Hotline", href: "tel:+84900000000", enabled: true, color: "#b8973e" },
 ];
 

@@ -14,7 +14,7 @@ export default function NotFound() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/">
-            <img src="/logo.svg" alt="Grand Palace" className="h-14 opacity-80 hover:opacity-100 transition-opacity cursor-pointer" />
+            <img src="/logo.svg" alt="MAISON DELUXE" className="h-14 opacity-80 hover:opacity-100 transition-opacity cursor-pointer" />
           </Link>
         </div>
 
@@ -50,7 +50,7 @@ export default function NotFound() {
         </div>
 
         <p className="mt-12 text-[11px] text-muted-foreground/60 tracking-widest uppercase">
-          Grand Palace Hotels &amp; Resorts
+          MAISON DELUXE Hotels &amp; Resorts
         </p>
       </div>
     </div>

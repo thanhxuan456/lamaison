@@ -41,17 +41,17 @@ interface SeoSettings {
 }
 
 const DEFAULT_SEO: SeoSettings = {
-  titleTemplate: "%s | Grand Palace Hotels & Resorts",
-  defaultTitle: "Grand Palace Hotels & Resorts — Chuỗi khách sạn 5 sao sang trọng",
-  defaultDescription: "Tận hưởng không gian thanh lịch, dịch vụ tinh tế và sự riêng tư tuyệt đối tại chuỗi khách sạn 5 sao Grand Palace — Hà Nội, Đà Nẵng, Hồ Chí Minh.",
-  defaultKeywords: "grand palace, khách sạn 5 sao, luxury hotel, hà nội, đà nẵng, hồ chí minh, đặt phòng khách sạn",
+  titleTemplate: "%s | MAISON DELUXE Hotels & Resorts",
+  defaultTitle: "MAISON DELUXE Hotels & Resorts — Chuỗi khách sạn 5 sao sang trọng",
+  defaultDescription: "Tận hưởng không gian thanh lịch, dịch vụ tinh tế và sự riêng tư tuyệt đối tại chuỗi khách sạn 5 sao MAISON DELUXE — Hà Nội, Đà Nẵng, Hồ Chí Minh.",
+  defaultKeywords: "maison deluxe, khách sạn 5 sao, luxury hotel, hà nội, đà nẵng, hồ chí minh, đặt phòng khách sạn",
   faviconUrl: "/favicon.ico",
-  ogTitle: "Grand Palace Hotels & Resorts",
+  ogTitle: "MAISON DELUXE Hotels & Resorts",
   ogDescription: "Trải nghiệm hoàng gia tại 3 điểm đến sang trọng bậc nhất Việt Nam.",
-  ogImage: "https://grandpalace.vn/images/og-image.jpg",
+  ogImage: "https://maisondeluxe.vn/images/og-image.jpg",
   ogType: "website",
   twitterCard: "summary_large_image",
-  twitterSite: "@grandpalace_vn",
+  twitterSite: "@maisondeluxe_vn",
   robotsIndex: true,
   robotsFollow: true,
   sitemapEnabled: true,
@@ -60,12 +60,12 @@ const DEFAULT_SEO: SeoSettings = {
   gaId: "",
   gtmId: "",
   fbPixelId: "",
-  canonicalBase: "https://grandpalace.vn",
-  schemaOrgName: "Grand Palace Hotels & Resorts",
-  schemaOrgUrl: "https://grandpalace.vn",
-  schemaOrgLogo: "https://grandpalace.vn/logo.svg",
+  canonicalBase: "https://maisondeluxe.vn",
+  schemaOrgName: "MAISON DELUXE Hotels & Resorts",
+  schemaOrgUrl: "https://maisondeluxe.vn",
+  schemaOrgLogo: "https://maisondeluxe.vn/logo.svg",
   schemaOrgPhone: "+84 900 000 000",
-  schemaOrgEmail: "info@grandpalace.vn",
+  schemaOrgEmail: "info@maisondeluxe.vn",
   schemaOrgAddress: "15 Phố Tràng Tiền, Hoàn Kiếm, Hà Nội",
 };
 
@@ -192,8 +192,8 @@ export default function AdminSeo() {
           {/* META TAGS */}
           <Section icon={Tag} title="Meta Tags — Tiêu đề & Mô tả" open={open.meta} onToggle={() => toggle("meta")}>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Template tiêu đề trang" span2 hint='Dùng %s để chèn tiêu đề trang. VD: "%s | Grand Palace"'>
-                <Inp value={s.titleTemplate} onChange={(v) => set("titleTemplate", v)} placeholder="%s | Grand Palace Hotels & Resorts" />
+              <Field label="Template tiêu đề trang" span2 hint='Dùng %s để chèn tiêu đề trang. VD: "%s | MAISON DELUXE"'>
+                <Inp value={s.titleTemplate} onChange={(v) => set("titleTemplate", v)} placeholder="%s | MAISON DELUXE Hotels & Resorts" />
               </Field>
               <Field label="Tiêu đề mặc định (trang chủ)" span2 hint={`${s.defaultTitle.length}/60 ký tự ${s.defaultTitle.length > 60 ? "— nên rút ngắn" : "— tốt"}`}>
                 <Inp value={s.defaultTitle} onChange={(v) => set("defaultTitle", v)} />
@@ -202,10 +202,10 @@ export default function AdminSeo() {
                 <Textarea value={s.defaultDescription} onChange={(v) => set("defaultDescription", v)} rows={3} />
               </Field>
               <Field label="Keywords" span2 hint="Phân cách bằng dấu phẩy">
-                <Textarea value={s.defaultKeywords} onChange={(v) => set("defaultKeywords", v)} rows={2} placeholder="grand palace, khách sạn 5 sao, luxury hotel..." />
+                <Textarea value={s.defaultKeywords} onChange={(v) => set("defaultKeywords", v)} rows={2} placeholder="maison deluxe, khách sạn 5 sao, luxury hotel..." />
               </Field>
               <Field label="URL Canonical gốc">
-                <Inp value={s.canonicalBase} onChange={(v) => set("canonicalBase", v)} placeholder="https://grandpalace.vn" mono />
+                <Inp value={s.canonicalBase} onChange={(v) => set("canonicalBase", v)} placeholder="https://maisondeluxe.vn" mono />
               </Field>
               <Field label="Favicon URL">
                 <Inp value={s.faviconUrl} onChange={(v) => set("faviconUrl", v)} placeholder="/favicon.ico" mono />
@@ -221,9 +221,9 @@ export default function AdminSeo() {
                 <div className="w-5 h-5 rounded-full bg-primary/20 shrink-0 overflow-hidden flex items-center justify-center">
                   <span className="text-[8px] font-bold text-primary">G</span>
                 </div>
-                <span className="text-[11px] text-muted-foreground">{s.canonicalBase || "https://grandpalace.vn"}</span>
+                <span className="text-[11px] text-muted-foreground">{s.canonicalBase || "https://maisondeluxe.vn"}</span>
               </div>
-              <div className="text-[18px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug">{googlePreviewTitle || "Grand Palace Hotels & Resorts"}</div>
+              <div className="text-[18px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug">{googlePreviewTitle || "MAISON DELUXE Hotels & Resorts"}</div>
               <div className="text-[13px] text-muted-foreground mt-1 leading-relaxed">{googlePreviewDesc}</div>
             </div>
           </Section>
@@ -232,14 +232,14 @@ export default function AdminSeo() {
           <Section icon={Share2} title="Open Graph & Social Media" open={open.og} onToggle={() => toggle("og")}>
             <div className="grid grid-cols-2 gap-4">
               <Field label="OG Title" span2>
-                <Inp value={s.ogTitle} onChange={(v) => set("ogTitle", v)} placeholder="Grand Palace Hotels & Resorts" />
+                <Inp value={s.ogTitle} onChange={(v) => set("ogTitle", v)} placeholder="MAISON DELUXE Hotels & Resorts" />
               </Field>
               <Field label="OG Description" span2>
                 <Textarea value={s.ogDescription} onChange={(v) => set("ogDescription", v)} rows={2} />
               </Field>
               <Field label="OG Image URL" span2 hint="Kích thước khuyến nghị: 1200 × 630px">
                 <div className="flex gap-2">
-                  <Inp value={s.ogImage} onChange={(v) => set("ogImage", v)} placeholder="https://grandpalace.vn/images/og.jpg" mono />
+                  <Inp value={s.ogImage} onChange={(v) => set("ogImage", v)} placeholder="https://maisondeluxe.vn/images/og.jpg" mono />
                   {s.ogImage && (
                     <div className="w-16 h-10 border border-primary/20 shrink-0 overflow-hidden bg-muted/20">
                       <img src={s.ogImage} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} alt="" />
@@ -260,7 +260,7 @@ export default function AdminSeo() {
                 </select>
               </Field>
               <Field label="Twitter @username">
-                <Inp value={s.twitterSite} onChange={(v) => set("twitterSite", v)} placeholder="@grandpalace_vn" />
+                <Inp value={s.twitterSite} onChange={(v) => set("twitterSite", v)} placeholder="@maisondeluxe_vn" />
               </Field>
             </div>
 
@@ -275,7 +275,7 @@ export default function AdminSeo() {
                 </div>
               )}
               <div className="px-4 py-3 border-t border-primary/15">
-                <div className="text-[10px] uppercase text-muted-foreground">{(s.canonicalBase || "grandpalace.vn").replace("https://", "")}</div>
+                <div className="text-[10px] uppercase text-muted-foreground">{(s.canonicalBase || "maisondeluxe.vn").replace("https://", "")}</div>
                 <div className="font-medium text-sm text-foreground mt-0.5">{s.ogTitle}</div>
                 <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{s.ogDescription}</div>
               </div>
@@ -298,7 +298,7 @@ export default function AdminSeo() {
               </p>
               <pre className="text-xs font-mono text-foreground/70 whitespace-pre leading-relaxed">{`User-agent: *
 ${s.robotsIndex ? "Allow" : "Disallow"}: /
-${s.sitemapEnabled ? `Sitemap: ${s.canonicalBase || "https://grandpalace.vn"}/sitemap.xml` : ""}`}
+${s.sitemapEnabled ? `Sitemap: ${s.canonicalBase || "https://maisondeluxe.vn"}/sitemap.xml` : ""}`}
               </pre>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -329,13 +329,13 @@ ${s.sitemapEnabled ? `Sitemap: ${s.canonicalBase || "https://grandpalace.vn"}/si
             <p className="text-xs text-muted-foreground">Dữ liệu có cấu trúc giúp Google hiển thị rich snippets (đánh giá sao, giá phòng, địa chỉ) trực tiếp trên trang tìm kiếm.</p>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Tên tổ chức">
-                <Inp value={s.schemaOrgName} onChange={(v) => set("schemaOrgName", v)} placeholder="Grand Palace Hotels & Resorts" />
+                <Inp value={s.schemaOrgName} onChange={(v) => set("schemaOrgName", v)} placeholder="MAISON DELUXE Hotels & Resorts" />
               </Field>
               <Field label="URL website">
-                <Inp value={s.schemaOrgUrl} onChange={(v) => set("schemaOrgUrl", v)} placeholder="https://grandpalace.vn" mono />
+                <Inp value={s.schemaOrgUrl} onChange={(v) => set("schemaOrgUrl", v)} placeholder="https://maisondeluxe.vn" mono />
               </Field>
               <Field label="Logo URL">
-                <Inp value={s.schemaOrgLogo} onChange={(v) => set("schemaOrgLogo", v)} placeholder="https://grandpalace.vn/logo.svg" mono />
+                <Inp value={s.schemaOrgLogo} onChange={(v) => set("schemaOrgLogo", v)} placeholder="https://maisondeluxe.vn/logo.svg" mono />
               </Field>
               <Field label="Số điện thoại">
                 <Inp value={s.schemaOrgPhone} onChange={(v) => set("schemaOrgPhone", v)} placeholder="+84 900 000 000" />

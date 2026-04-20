@@ -1,4 +1,4 @@
-# Workspace — Grand Palace Hotels & Resorts
+# Workspace — MAISON DELUXE Hotels & Resorts
 
 ## Overview
 

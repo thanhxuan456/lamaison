@@ -55,8 +55,8 @@ interface BankQRSettings {
 }
 
 const DEFAULT_BANK_QR: BankQRSettings = {
-  bankCode: "VCB", accountNumber: "", accountName: "GRAND PALACE HOTELS",
-  defaultAmount: "", defaultDescription: "Dat phong Grand Palace",
+  bankCode: "VCB", accountNumber: "", accountName: "MAISON DELUXE HOTELS",
+  defaultAmount: "", defaultDescription: "Dat phong MAISON DELUXE",
 };
 
 function loadBankQR(): BankQRSettings {
@@ -100,8 +100,8 @@ const DEFAULT_PAYMENTS: PaymentMethod[] = [
   { id: "bank",   name: "Chuyển khoản ngân hàng", description: "Tạo mã QR VietQR để khách chuyển khoản trực tiếp", enabled: true, apiKey: "", secretKey: "", webhookUrl: "", testMode: false, logo: "https://vietqr.io/img/VIETQR.svg", color: "#2E7D32" },
 ];
 const DEFAULT_GENERAL: GeneralSettings = {
-  siteName: "Grand Palace Hotels & Resorts", siteUrl: "https://grandpalace.vn",
-  supportEmail: "support@grandpalace.vn", supportPhone: "+84 900 000 000",
+  siteName: "MAISON DELUXE Hotels & Resorts", siteUrl: "https://maisondeluxe.vn",
+  supportEmail: "support@maisondeluxe.vn", supportPhone: "+84 900 000 000",
   currency: "VND", timezone: "Asia/Ho_Chi_Minh", bookingCancellation: "24",
   checkInTime: "14:00", checkOutTime: "12:00", taxRate: "10", serviceCharge: "5",
   maintenanceMode: false, bookingEnabled: true, requirePhoneVerification: false,
@@ -205,7 +205,7 @@ function BankQRSection({ toast }: { toast: ReturnType<typeof import("@/hooks/use
         <div>
           <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Tên chủ tài khoản (IN HOA)</label>
           <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none uppercase"
-            value={qr.accountName} onChange={(e) => set("accountName", e.target.value.toUpperCase())} placeholder="GRAND PALACE HOTELS" />
+            value={qr.accountName} onChange={(e) => set("accountName", e.target.value.toUpperCase())} placeholder="MAISON DELUXE HOTELS" />
         </div>
         <div>
           <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Số tiền mặc định (VND, tuỳ chọn)</label>
@@ -215,7 +215,7 @@ function BankQRSection({ toast }: { toast: ReturnType<typeof import("@/hooks/use
         <div>
           <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5">Nội dung chuyển khoản mặc định</label>
           <input className="w-full border border-primary/20 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
-            value={qr.defaultDescription} onChange={(e) => set("defaultDescription", e.target.value)} placeholder="Dat phong Grand Palace" />
+            value={qr.defaultDescription} onChange={(e) => set("defaultDescription", e.target.value)} placeholder="Dat phong MAISON DELUXE" />
         </div>
       </div>
 
@@ -511,7 +511,7 @@ function GeneralTab() {
 
   const fields: { label: string; key: keyof GeneralSettings; type?: string; placeholder?: string; span?: boolean }[] = [
     { label: "Tên website", key: "siteName", span: true },
-    { label: "URL website", key: "siteUrl", placeholder: "https://grandpalace.vn" },
+    { label: "URL website", key: "siteUrl", placeholder: "https://maisondeluxe.vn" },
     { label: "Email hỗ trợ", key: "supportEmail", type: "email" },
     { label: "Số điện thoại hỗ trợ", key: "supportPhone" },
     { label: "Đơn vị tiền tệ", key: "currency" },

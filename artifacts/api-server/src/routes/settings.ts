@@ -42,14 +42,14 @@ const DEFAULT_FOOTER = {
   newsletter: {
     enabled: true,
     title: "Bản tin đặc quyền",
-    body: "Đăng ký để nhận ưu đãi riêng tư và những trải nghiệm thượng lưu mới nhất từ Grand Palace.",
+    body: "Đăng ký để nhận ưu đãi riêng tư và những trải nghiệm thượng lưu mới nhất từ MAISON DELUXE.",
     placeholder: "Email của bạn",
     submitText: "Đăng ký",
   },
   contact: {
     enabled: true,
     title: "Liên hệ",
-    email: "contact@grandpalace.vn",
+    email: "contact@maisondeluxe.vn",
     phone: "+84 1800 9999",
     address: "Hà Nội · Đà Nẵng · TP.HCM",
   },
@@ -79,10 +79,10 @@ const DEFAULT_FOOTER = {
     },
   ],
   socials: [
-    { platform: "facebook", url: "https://facebook.com/grandpalace", enabled: true },
-    { platform: "instagram", url: "https://instagram.com/grandpalace", enabled: true },
-    { platform: "twitter", url: "https://twitter.com/grandpalace", enabled: true },
-    { platform: "youtube", url: "https://youtube.com/grandpalace", enabled: true },
+    { platform: "facebook", url: "https://facebook.com/maisondeluxe", enabled: true },
+    { platform: "instagram", url: "https://instagram.com/maisondeluxe", enabled: true },
+    { platform: "twitter", url: "https://twitter.com/maisondeluxe", enabled: true },
+    { platform: "youtube", url: "https://youtube.com/maisondeluxe", enabled: true },
   ],
   bottom: {
     showCopyright: true,
@@ -109,7 +109,7 @@ const DEFAULT_CONTACT_MAP = {
 
 const DEFAULT_PAYMENT_SETTINGS = {
   momo: { enabled: false, partnerCode: "", accessKey: "", secretKey: "", testMode: true },
-  bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "GRAND PALACE HOTELS", defaultDescription: "Dat phong Grand Palace" },
+  bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "MAISON DELUXE HOTELS", defaultDescription: "Dat phong MAISON DELUXE" },
 };
 
 // Safelist of keys that may be read/written via the generic endpoint and their defaults.

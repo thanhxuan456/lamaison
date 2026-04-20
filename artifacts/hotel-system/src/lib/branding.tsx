@@ -23,7 +23,7 @@ export interface Branding {
 }
 
 export const DEFAULT_BRANDING: Branding = {
-  brandName: "Grand Palace",
+  brandName: "MAISON DELUXE",
   tagline: "5 Sao Đẳng Cấp",
   starRating: 5,
   useImageLogo: false,
@@ -31,7 +31,7 @@ export const DEFAULT_BRANDING: Branding = {
   logoHeight: 48,
   adminLogoUrl: "/logo.svg",
   faviconUrl: "/favicon.svg",
-  pageTitle: "Grand Palace Hotels & Resorts — Luxury Vietnam",
+  pageTitle: "MAISON DELUXE Hotels & Resorts — Luxury Vietnam",
   currency: "VND",
   navbarStyle: "auto",
   navbarBgColor: "#1a1f2e",

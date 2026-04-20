@@ -66,7 +66,7 @@ router.get("/payments/settings", async (_req, res) => {
         bankCode: bank.bankCode ?? "VCB",
         accountNumber: bank.accountNumber ?? "",
         accountName: bank.accountName ?? "",
-        defaultDescription: bank.defaultDescription ?? "Dat phong Grand Palace",
+        defaultDescription: bank.defaultDescription ?? "Dat phong MAISON DELUXE",
       },
     });
   } catch {
@@ -103,7 +103,7 @@ router.post("/payments/momo/create", async (req, res) => {
     const orderId = `GPHRS-${booking.id}-${Date.now()}`;
     const requestId = orderId;
     const amount = Math.round(parseFloat(booking.totalPrice));
-    const orderInfo = `Grand Palace – Đặt phòng #${booking.id.toString().padStart(6, "0")}`;
+    const orderInfo = `MAISON DELUXE – Đặt phòng #${booking.id.toString().padStart(6, "0")}`;
     const frontendBase = process.env["FRONTEND_URL"] ?? "http://localhost:3000";
     const apiBase = process.env["API_PUBLIC_URL"] ?? `http://localhost:${process.env["PORT"] ?? 8080}`;
     const redirectUrl = `${frontendBase}/bookings/${booking.id}`;

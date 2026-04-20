@@ -30,7 +30,7 @@ const catLabel = (c: string) => CATS.find(x => x.value === c)?.label ?? c;
 
 const empty: Partial<Post> = {
   title: "", slug: "", excerpt: "", content: "", coverImage: "",
-  category: "news", author: "Grand Palace", tags: "", published: false,
+  category: "news", author: "MAISON DELUXE", tags: "", published: false,
 };
 
 function AdminBlogsContent() {

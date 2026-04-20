@@ -88,7 +88,7 @@ function HotelModal({ hotel, onClose, onSaved }: {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/20 bg-primary/5 sticky top-0">
           <div>
-            <div className="text-[10px] tracking-[0.3em] uppercase text-primary font-serif mb-0.5">Grand Palace Admin</div>
+            <div className="text-[10px] tracking-[0.3em] uppercase text-primary font-serif mb-0.5">MAISON DELUXE Admin</div>
             <h2 className="font-serif text-xl text-foreground">{hotel ? "Edit Hotel" : "Add New Hotel"}</h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">

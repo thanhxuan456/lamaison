@@ -209,7 +209,7 @@ export default function AdminDashboard() {
   const { t } = useT();
   return (
     <AdminGuard>
-      <AdminLayout title={t("admin.dashboard")} subtitle="Welcome back, Grand Palace administrator">
+      <AdminLayout title={t("admin.dashboard")} subtitle="Welcome back, MAISON DELUXE administrator">
         <AdminDashboardContent />
       </AdminLayout>
     </AdminGuard>

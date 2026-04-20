@@ -512,7 +512,7 @@ function PreviewCard({
           <span className="w-2 h-2" style={{ background: hsl(preset.primaryHsl, 0.5) }} />
         </div>
         <div className="text-[9px] tracking-[0.4em] uppercase mb-1" style={{ color: hsl(preset.primaryHsl) }}>
-          GRAND PALACE
+          MAISON DELUXE
         </div>
         <div className="text-xl font-serif" style={{ color: hsl(preset.primaryHsl) }}>
           {preset.name}

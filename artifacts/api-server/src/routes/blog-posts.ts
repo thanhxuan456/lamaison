@@ -27,7 +27,7 @@ function parseBody(b: any, partial = false) {
   if (b.content !== undefined)    out.content    = String(b.content ?? "");
   if (b.coverImage !== undefined) out.coverImage = str(b.coverImage, 2000);
   if (b.category !== undefined)   out.category   = str(b.category, 80) || "news";
-  if (b.author !== undefined)     out.author     = str(b.author, 120) || "Grand Palace";
+  if (b.author !== undefined)     out.author     = str(b.author, 120) || "MAISON DELUXE";
   if (b.tags !== undefined)       out.tags       = str(b.tags, 500);
   if (b.published !== undefined)  out.published  = !!b.published;
   return out;

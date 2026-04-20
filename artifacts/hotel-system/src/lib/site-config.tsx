@@ -52,7 +52,7 @@ export const DEFAULT_MAIN_MENU: MainMenu = {
 export const DEFAULT_FOOTER: FooterConfig = {
   brand: { about: "Trải nghiệm sự xa hoa bậc nhất tại Việt Nam." },
   newsletter: { enabled: true, title: "Bản tin đặc quyền", body: "Đăng ký để nhận ưu đãi riêng tư.", placeholder: "Email của bạn", submitText: "Đăng ký" },
-  contact: { enabled: true, title: "Liên hệ", email: "contact@grandpalace.vn", phone: "+84 1800 9999", address: "Hà Nội · Đà Nẵng · TP.HCM" },
+  contact: { enabled: true, title: "Liên hệ", email: "contact@maisondeluxe.vn", phone: "+84 1800 9999", address: "Hà Nội · Đà Nẵng · TP.HCM" },
   columns: [
     { id: "explore", title: "Khám phá", enabled: true, links: [
       { id: "1", label: "Về chúng tôi", href: "/about" },
@@ -66,10 +66,10 @@ export const DEFAULT_FOOTER: FooterConfig = {
     ]},
   ],
   socials: [
-    { platform: "facebook", url: "https://facebook.com/grandpalace", enabled: true },
-    { platform: "instagram", url: "https://instagram.com/grandpalace", enabled: true },
-    { platform: "twitter", url: "https://twitter.com/grandpalace", enabled: true },
-    { platform: "youtube", url: "https://youtube.com/grandpalace", enabled: true },
+    { platform: "facebook", url: "https://facebook.com/maisondeluxe", enabled: true },
+    { platform: "instagram", url: "https://instagram.com/maisondeluxe", enabled: true },
+    { platform: "twitter", url: "https://twitter.com/maisondeluxe", enabled: true },
+    { platform: "youtube", url: "https://youtube.com/maisondeluxe", enabled: true },
   ],
   bottom: { showCopyright: true, termsLabel: "Điều khoản sử dụng", termsHref: "/", privacyLabel: "Chính sách bảo mật", privacyHref: "/" },
 };

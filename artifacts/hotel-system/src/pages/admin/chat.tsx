@@ -92,7 +92,7 @@ export default function AdminChat() {
       await fetch(`${API}/api/chat/sessions/${selectedSession.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderType: "admin", senderName: "Grand Palace Support", message: reply }),
+        body: JSON.stringify({ senderType: "admin", senderName: "MAISON DELUXE Support", message: reply }),
       });
       setReply("");
     } catch { toast({ title: "Gửi thất bại", variant: "destructive" }); }
@@ -155,7 +155,7 @@ export default function AdminChat() {
       downloadFile(`chat-${safeName}-${stamp}.json`, "application/json", JSON.stringify(payload, null, 2));
     } else {
       const lines: string[] = [];
-      lines.push(`Grand Palace Hotels — Chat Transcript`);
+      lines.push(`MAISON DELUXE Hotels — Chat Transcript`);
       lines.push(`Khách: ${selectedSession.guestName || "(không tên)"}${selectedSession.guestEmail ? ` <${selectedSession.guestEmail}>` : ""}`);
       lines.push(`Phiên ID: ${selectedSession.id}`);
       lines.push(`Xuất lúc: ${new Date().toLocaleString("vi-VN")}`);
@@ -328,7 +328,7 @@ export default function AdminChat() {
                     className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
                     value={reply} onChange={(e) => setReply(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendReply())}
-                    placeholder="Trả lời với tư cách Grand Palace Support..."
+                    placeholder="Trả lời với tư cách MAISON DELUXE Support..."
                   />
                   <Button onClick={sendReply} disabled={sending || !reply.trim()} className="rounded-none bg-primary text-primary-foreground h-9 px-4">
                     {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
