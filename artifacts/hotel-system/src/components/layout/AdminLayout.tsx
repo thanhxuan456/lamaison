@@ -55,15 +55,22 @@ const NAV: NavEntry[] = [
   },
   {
     kind: "group",
+    icon: FileText,
+    label: "Nội Dung",
+    children: [
+      { kind: "item", icon: Newspaper, label: "Bài Viết",          path: "/admin/blogs"   },
+      { kind: "item", icon: FileText,  label: "Trang & Nội Dung",  path: "/admin/pages"   },
+      { kind: "item", icon: Layers,    label: "Trình Tạo Trang",   path: "/admin/builder" },
+    ],
+  },
+  {
+    kind: "group",
     icon: Palette,
     label: "Quản Lý Giao Diện",
     children: [
-      { kind: "item", icon: Newspaper,       label: "Blogs",                        path: "/admin/blogs"   },
       { kind: "item", icon: ListTree,        label: "Menu & Footer",                path: "/admin/menus"   },
       { kind: "item", icon: Ruler,           label: "Kích Thước Main Menu Nav",     path: "/admin/theme"   },
       { kind: "item", icon: UtensilsCrossed, label: "Thực Đơn Nhà Hàng",           path: "/admin/menu"    },
-      { kind: "item", icon: FileText,        label: "Trang & Nội Dung",             path: "/admin/pages"   },
-      { kind: "item", icon: Layers,          label: "Trình Tạo Trang",              path: "/admin/builder" },
       { kind: "item", icon: Search,          label: "SEO",                          path: "/admin/seo"     },
       { kind: "item", icon: Palette,         label: "Giao Diện & Màu Sắc",         path: "/admin/theme"   },
     ],
