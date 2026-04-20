@@ -1,5 +1,5 @@
 #Requires -RunAsAdministrator
-# Grand Palace Hotels & Resorts - Windows Server Installer
+# MAISON DELUXE Hotels & Resorts - Windows Server Installer
 # Compatible with Windows Server 2019 / 2022 / 2025
 #
 # HOW TO RUN (as Administrator):
@@ -156,8 +156,8 @@ if ($Uninstall) {
             Write-OK "Removed: $svc"
         }
     }
-    netsh advfirewall firewall delete rule name="Grand Palace API"      | Out-Null
-    netsh advfirewall firewall delete rule name="Grand Palace Frontend" | Out-Null
+    netsh advfirewall firewall delete rule name="MAISON DELUXE API"      | Out-Null
+    netsh advfirewall firewall delete rule name="MAISON DELUXE Frontend" | Out-Null
     Write-OK "Firewall rules removed"
     $confirm = Read-Host "Delete install directory '$($Config.InstallDir)'? (y/N)"
     if ($confirm -eq "y") {
@@ -399,7 +399,7 @@ Write-Step "9/12" "Install dependencies, migrate database, and build"
 
 Push-Location $Config.InstallDir
 
-# Stop any running Grand Palace services so their binaries are not locked
+# Stop any running MAISON DELUXE services so their binaries are not locked
 foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
     $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
     if ($s -and $s.Status -ne "Stopped") {
@@ -574,7 +574,7 @@ function Install-NssmService {
 
     & $nssmPath install  $svcName "cmd.exe" "/c `"$launcher`""
     & $nssmPath set      $svcName DisplayName  $displayName
-    & $nssmPath set      $svcName Description  "Grand Palace Hotels & Resorts - $displayName"
+    & $nssmPath set      $svcName Description  "MAISON DELUXE Hotels & Resorts - $displayName"
     & $nssmPath set      $svcName AppDirectory $Config.InstallDir
     & $nssmPath set      $svcName Start        SERVICE_AUTO_START
     & $nssmPath set      $svcName AppStdout    (Join-Path $LogDir "$svcName-out.log")
@@ -587,8 +587,8 @@ function Install-NssmService {
     Write-OK "Service registered: $svcName"
 }
 
-Install-NssmService -svcName "GrandPalaceAPI"      -displayName "Grand Palace - API Server" -launcher $apiLauncher
-Install-NssmService -svcName "GrandPalaceFrontend" -displayName "Grand Palace - Frontend"   -launcher $frontendLauncher
+Install-NssmService -svcName "GrandPalaceAPI"      -displayName "MAISON DELUXE - API Server" -launcher $apiLauncher
+Install-NssmService -svcName "GrandPalaceFrontend" -displayName "MAISON DELUXE - Frontend"   -launcher $frontendLauncher
 
 # ===========================================================
 # STEP 11 - START SERVICES
@@ -617,10 +617,10 @@ foreach ($svc in @("GrandPalaceAPI", "GrandPalaceFrontend")) {
 Write-Step "12/12" "Firewall rules and health check"
 
 # Idempotent firewall rules (delete then re-add)
-netsh advfirewall firewall delete rule name="Grand Palace API"      | Out-Null
-netsh advfirewall firewall delete rule name="Grand Palace Frontend" | Out-Null
-netsh advfirewall firewall add rule name="Grand Palace API"      dir=in action=allow protocol=TCP localport=$($Config.ApiPort) | Out-Null
-netsh advfirewall firewall add rule name="Grand Palace Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
+netsh advfirewall firewall delete rule name="MAISON DELUXE API"      | Out-Null
+netsh advfirewall firewall delete rule name="MAISON DELUXE Frontend" | Out-Null
+netsh advfirewall firewall add rule name="MAISON DELUXE API"      dir=in action=allow protocol=TCP localport=$($Config.ApiPort) | Out-Null
+netsh advfirewall firewall add rule name="MAISON DELUXE Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
 Write-OK "Firewall rules set for ports $($Config.ApiPort) (API) and $($Config.FrontendPort) (Frontend)"
 
 # Health check - ping the API health endpoint
@@ -662,7 +662,7 @@ if (-not $serverIp) { $serverIp = "YOUR_SERVER_IP" }
 
 Write-Host ""
 Write-Host "+===========================================================+" -ForegroundColor Green
-Write-Host "|         Grand Palace Hotels & Resorts - INSTALLED         |" -ForegroundColor Green
+Write-Host "|         MAISON DELUXE Hotels & Resorts - INSTALLED         |" -ForegroundColor Green
 Write-Host "+===========================================================+" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Frontend  : http://$($serverIp):$($Config.FrontendPort)/"    -ForegroundColor White

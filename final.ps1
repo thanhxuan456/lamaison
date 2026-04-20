@@ -1,5 +1,5 @@
 #Requires -RunAsAdministrator
-# Grand Palace Hotels & Resorts - Windows Server Installer
+# MAISON DELUXE Hotels & Resorts - Windows Server Installer
 # Compatible with Windows Server 2019 / 2022 / 2025
 #
 # HOW TO RUN (as Administrator):
@@ -159,8 +159,8 @@ if ($Uninstall) {
             Write-Info "Not found: $svc"
         }
     }
-    netsh advfirewall firewall delete rule name="Grand Palace API"      2>&1 | Out-Null
-    netsh advfirewall firewall delete rule name="Grand Palace Frontend" 2>&1 | Out-Null
+    netsh advfirewall firewall delete rule name="MAISON DELUXE API"      2>&1 | Out-Null
+    netsh advfirewall firewall delete rule name="MAISON DELUXE Frontend" 2>&1 | Out-Null
     Write-OK "Firewall rules removed"
     $confirm = Read-Host "Delete install directory '$($Config.InstallDir)'? (y/N)"
     if ($confirm -ieq "y") {
@@ -675,7 +675,7 @@ function Install-NssmService {
     }
     & $nssmPath install $SvcName $Application $AppParameters
     & $nssmPath set $SvcName DisplayName    $DisplayName
-    & $nssmPath set $SvcName Description    "Grand Palace Hotels and Resorts - $DisplayName"
+    & $nssmPath set $SvcName Description    "MAISON DELUXE Hotels and Resorts - $DisplayName"
     & $nssmPath set $SvcName AppDirectory   $Config.InstallDir
     & $nssmPath set $SvcName Start          SERVICE_AUTO_START
     & $nssmPath set $SvcName AppStdout      (Join-Path $LogDir "$SvcName-out.log")
@@ -717,7 +717,7 @@ $apiEnvVars = @(
 )
 Install-NssmService `
     -SvcName      "GrandPalaceAPI" `
-    -DisplayName  "Grand Palace - API Server" `
+    -DisplayName  "MAISON DELUXE - API Server" `
     -Application  $nodePath `
     -AppParameters "--enable-source-maps `"$apiDistPath`"" `
     -EnvVars      $apiEnvVars
@@ -729,7 +729,7 @@ $frontendEnvVars = @(
 )
 Install-NssmService `
     -SvcName      "GrandPalaceFrontend" `
-    -DisplayName  "Grand Palace - Frontend" `
+    -DisplayName  "MAISON DELUXE - Frontend" `
     -Application  $nodePath `
     -AppParameters "`"$serveScript`"" `
     -EnvVars      $frontendEnvVars
@@ -895,13 +895,13 @@ Write-OK "GrandPalaceFrontend: $frontendStatus"
 # ===========================================================
 Write-Step "12/12" "Firewall rules"
 
-netsh advfirewall firewall delete rule name="Grand Palace API"      2>&1 | Out-Null
-netsh advfirewall firewall add    rule name="Grand Palace API"      dir=in action=allow protocol=TCP localport=$($Config.ApiPort) | Out-Null
-Write-OK "Firewall: 'Grand Palace API' -> port $($Config.ApiPort)"
+netsh advfirewall firewall delete rule name="MAISON DELUXE API"      2>&1 | Out-Null
+netsh advfirewall firewall add    rule name="MAISON DELUXE API"      dir=in action=allow protocol=TCP localport=$($Config.ApiPort) | Out-Null
+Write-OK "Firewall: 'MAISON DELUXE API' -> port $($Config.ApiPort)"
 
-netsh advfirewall firewall delete rule name="Grand Palace Frontend" 2>&1 | Out-Null
-netsh advfirewall firewall add    rule name="Grand Palace Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
-Write-OK "Firewall: 'Grand Palace Frontend' -> port $($Config.FrontendPort)"
+netsh advfirewall firewall delete rule name="MAISON DELUXE Frontend" 2>&1 | Out-Null
+netsh advfirewall firewall add    rule name="MAISON DELUXE Frontend" dir=in action=allow protocol=TCP localport=$($Config.FrontendPort) | Out-Null
+Write-OK "Firewall: 'MAISON DELUXE Frontend' -> port $($Config.FrontendPort)"
 
 # ===========================================================
 # DONE
@@ -920,7 +920,7 @@ if (-not $serverIp) { $serverIp = "YOUR_SERVER_IP" }
 
 Write-Host ""
 Write-Host "=====================================================" -ForegroundColor Green
-Write-Host "  Grand Palace Hotels and Resorts -- INSTALLED" -ForegroundColor Green
+Write-Host "  MAISON DELUXE Hotels and Resorts -- INSTALLED" -ForegroundColor Green
 Write-Host "=====================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Frontend : http://$serverIp`:$($Config.FrontendPort)/"    -ForegroundColor White
