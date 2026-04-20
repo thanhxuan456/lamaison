@@ -157,8 +157,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <img
                 src={branding.logoUrl}
                 alt={branding.brandName}
-                style={{ height: `${branding.logoHeight ?? 48}px` }}
-                className="w-auto object-contain group-hover:opacity-90 transition-opacity"
+                style={{ height: `${branding.logoHeight ?? 48}px`, maxWidth: `${(branding.logoHeight ?? 48) * 3}px` }}
+                className="w-auto object-contain group-hover:opacity-90 transition-opacity rounded"
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
             ) : (

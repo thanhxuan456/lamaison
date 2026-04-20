@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-const STORAGE_KEY = "grand-palace-branding";
+const STORAGE_KEY = "maison-deluxe-branding";
 
 export type Currency = "VND" | "USD";
 
@@ -26,10 +26,10 @@ export const DEFAULT_BRANDING: Branding = {
   brandName: "MAISON DELUXE",
   tagline: "5 Sao Đẳng Cấp",
   starRating: 5,
-  useImageLogo: false,
-  logoUrl: "/logo.svg",
-  logoHeight: 48,
-  adminLogoUrl: "/logo.svg",
+  useImageLogo: true,
+  logoUrl: "/logo-upload.jpg",
+  logoHeight: 80,
+  adminLogoUrl: "/logo-upload.jpg",
   faviconUrl: "/favicon.svg",
   pageTitle: "MAISON DELUXE Hotels & Resorts — Luxury Vietnam",
   currency: "VND",
