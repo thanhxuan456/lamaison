@@ -368,7 +368,7 @@ $envLines = @(
     "CLERK_SECRET_KEY=" + $Config.ClerkSecretKey,
     "VITE_CLERK_PUBLISHABLE_KEY=" + $Config.ClerkPublishableKey,
     "VITE_CLERK_PROXY_URL=" + $clerkProxyUrl,
-    "VITE_API_URL=" + $Config.ApiPublicUrl,
+    "VITE_API_URL=" + $ViteApiUrl,
     "SESSION_SECRET=" + $sessionSecret,
     "CONTACT_ENCRYPTION_KEY=" + $contactEncKey,
     "PORT=" + $Config.ApiPort,
@@ -422,10 +422,13 @@ Write-Step "8/12" "Patching pnpm-workspace.yaml for Windows"
 
 $wsYaml = Join-Path $Config.InstallDir "pnpm-workspace.yaml"
 if (Test-Path $wsYaml) {
-    $wsLines    = Get-Content $wsYaml -Encoding UTF8
-    $wsFiltered = $wsLines | Where-Object { $_ -notmatch 'os\s*:\s*\[.*linux' -and $_ -notmatch '^\s+os:\s*linux' }
+    $wsLines = Get-Content $wsYaml -Encoding UTF8
+    # Remove platform-exclusion override lines (value = "-") that block Windows-native binary packages.
+    # Lines like:   "esbuild>@esbuild/darwin-arm64": "-"  prevent pnpm from resolving the Windows builds.
+    $wsFiltered = $wsLines | Where-Object { $_ -notmatch '": "-"' }
     [System.IO.File]::WriteAllText($wsYaml, ($wsFiltered -join "`n") + "`n", $utf8NoBom)
-    Write-OK "Removed Linux-only platform restrictions"
+    $removedCount = ($wsLines.Count - $wsFiltered.Count)
+    Write-OK "Removed $removedCount platform-binary exclusion override(s)"
 } else {
     Write-Warn "pnpm-workspace.yaml not found -- skipping"
 }
@@ -457,11 +460,22 @@ try {
 
     $nmDir = Join-Path $Config.InstallDir "node_modules"
     if (Test-Path $nmDir) {
-        Write-Info "Removing node_modules for a clean reinstall..."
+        Write-Info "Removing root node_modules for a clean reinstall..."
         & cmd /c "rmdir /s /q `"$nmDir`"" 2>&1 | Out-Null
         if (Test-Path $nmDir) { Start-Sleep -Seconds 4; & cmd /c "rmdir /s /q `"$nmDir`"" 2>&1 | Out-Null }
         if (Test-Path $nmDir) { Fail "Could not remove node_modules. Reboot the server and run again." }
-        Write-OK "node_modules removed"
+        Write-OK "Root node_modules removed"
+    }
+    # Also clean per-package node_modules in workspace sub-directories
+    foreach ($pkgBase in @("artifacts", "lib")) {
+        $pkgBaseDir = Join-Path $Config.InstallDir $pkgBase
+        if (Test-Path $pkgBaseDir) {
+            Get-ChildItem -Path $pkgBaseDir -Recurse -Filter "node_modules" -Directory -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                    Write-Info "Removing $($_.FullName)..."
+                    & cmd /c "rmdir /s /q `"$($_.FullName)`"" 2>&1 | Out-Null
+                }
+        }
     }
 
     $lockFile = Join-Path $Config.InstallDir "pnpm-lock.yaml"
@@ -510,12 +524,12 @@ try {
     Write-Info "Applying database schema..."
     # Use cmd /c with inline SET so drizzle-kit inherits the vars even in
     # restricted PowerShell execution environments on Windows Server.
-    & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && pnpm --filter `"@workspace/db`" run push"
+    & pnpm --filter "@workspace/db" run push
     if ($LASTEXITCODE -ne 0) { Fail "Database schema push failed. Check NeonDatabaseUrl and network connectivity to Neon." }
     Write-OK "Database schema applied"
 
     Write-Info "Seeding initial data (auto-skipped if data already exists)..."
-    & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && pnpm --filter `"@workspace/scripts`" run seed"
+    & pnpm --filter "@workspace/scripts" run seed
     if ($LASTEXITCODE -ne 0) { Fail "Database seed script failed. See output above." }
     Write-OK "Database seed complete"
 
@@ -526,7 +540,7 @@ try {
             Remove-Item $apiDistDir -Recurse -Force
         }
         Write-Info "Building API server..."
-        & cmd /c "set DATABASE_URL=$DatabaseUrl && set NEON_DATABASE_URL=$NeonDatabaseUrl && set NODE_ENV=production && pnpm --filter `"@workspace/api-server`" run build"
+        & pnpm --filter "@workspace/api-server" run build
         if ($LASTEXITCODE -ne 0) { Fail "API server build failed." }
         Write-OK "API server built"
 
@@ -536,7 +550,13 @@ try {
             Remove-Item $frontendDistDir -Recurse -Force
         }
         Write-Info "Building frontend..."
-        & cmd /c "set PORT=$($Config.FrontendPort) && set BASE_PATH=/ && set NODE_ENV=production && set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey) && set VITE_CLERK_PROXY_URL=$clerkProxyUrl && set VITE_API_URL=$ViteApiUrl && pnpm --filter `"@workspace/hotel-system`" run build"
+        $env:PORT      = [string]$Config.FrontendPort
+        $env:BASE_PATH = "/"
+        $env:NODE_ENV  = "production"
+        $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
+        $env:VITE_CLERK_PROXY_URL       = $clerkProxyUrl
+        $env:VITE_API_URL               = $ViteApiUrl
+        & pnpm --filter "@workspace/hotel-system" run build
         if ($LASTEXITCODE -ne 0) { Fail "Frontend build failed." }
         Write-OK "Frontend built"
     } else {
@@ -556,7 +576,12 @@ New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $nssmPath = Join-Path $TempDir "nssm.exe"
 if (-not (Test-Path $nssmPath)) {
     $nssmZip = Join-Path $TempDir "nssm.zip"
-    Invoke-Download "https://nssm.cc/release/nssm-2.24.zip" $nssmZip
+    $nssmDownloaded = $false
+    foreach ($nssmUrl in @("https://nssm.cc/release/nssm-2.24.zip", "https://github.com/nicholasgasior/nssm/releases/download/v2.24/nssm-2.24.zip")) {
+        try { Invoke-Download $nssmUrl $nssmZip; $nssmDownloaded = $true; break }
+        catch { Write-Warn "NSSM download from $nssmUrl failed -- trying next mirror..." }
+    }
+    if (-not $nssmDownloaded) { Fail "Could not download NSSM from any mirror. Check internet connectivity." }
     try {
         Expand-Archive -Path $nssmZip -DestinationPath $TempDir -Force
     } catch {
@@ -613,6 +638,7 @@ $serveScript = Join-Path $Config.InstallDir "serve-frontend.mjs"
 $serveLines = @(
     "import http from 'http';",
     "import https from 'https';",
+    "import net from 'net';",
     "import fs from 'fs';",
     "import path from 'path';",
     "import { fileURLToPath } from 'url';",
@@ -623,9 +649,9 @@ $serveLines = @(
     "const MIME = { '.html':'text/html', '.js':'application/javascript', '.mjs':'application/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff':'font/woff', '.woff2':'font/woff2', '.ttf':'font/ttf', '.webp':'image/webp', '.txt':'text/plain' };",
     "const parsed = new URL(API_URL);",
     "const apiHost = parsed.hostname;",
-    "const apiPort = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');",
+    "const apiPort = parseInt(parsed.port || (parsed.protocol === 'https:' ? '443' : '80'), 10);",
     "const apiMod = parsed.protocol === 'https:' ? https : http;",
-    "http.createServer((req, res) => {",
+    "const server = http.createServer((req, res) => {",
     "  if (req.url.startsWith('/api/')) {",
     "    const opts = { hostname: apiHost, port: apiPort, path: req.url, method: req.method, headers: { ...req.headers, host: apiHost + ':' + apiPort } };",
     "    const pr = apiMod.request(opts, ps => { res.writeHead(ps.statusCode, ps.headers); ps.pipe(res); });",
@@ -638,7 +664,20 @@ $serveLines = @(
     "  const ext = path.extname(fp).toLowerCase();",
     "  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });",
     "  fs.createReadStream(fp).pipe(res);",
-    "}).listen(PORT, '0.0.0.0', () => console.log('Frontend serving on port ' + PORT));"
+    "});",
+    "// Proxy WebSocket upgrades to the API (live chat at /api/chat/ws/*)",
+    "server.on('upgrade', (req, socket, head) => {",
+    "  if (!req.url.startsWith('/api/')) { socket.destroy(); return; }",
+    "  const up = net.createConnection(apiPort, apiHost, () => {",
+    "    const hdrs = Object.entries(req.headers).map(([k,v]) => k+': '+v).join('\\r\\n');",
+    "    up.write('GET '+req.url+' HTTP/1.1\\r\\nHost: '+apiHost+':'+apiPort+'\\r\\n'+hdrs+'\\r\\n\\r\\n');",
+    "    if (head && head.length) up.write(head);",
+    "    up.pipe(socket); socket.pipe(up);",
+    "  });",
+    "  up.on('error', () => socket.destroy());",
+    "  socket.on('error', () => up.destroy());",
+    "});",
+    "server.listen(PORT, '0.0.0.0', () => console.log('Frontend serving on port ' + PORT));"
 )
 [System.IO.File]::WriteAllText($serveScript, ($serveLines -join "`r`n") + "`r`n", $utf8NoBom)
 Write-OK "Created serve-frontend.mjs"
