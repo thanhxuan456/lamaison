@@ -408,10 +408,8 @@ if ([string]::IsNullOrEmpty($sessionSecret)) { $sessionSecret = New-RandomSecret
 if ([string]::IsNullOrEmpty($contactEncKey)) { $contactEncKey = New-RandomSecret 32 }
 
 $clerkProxyUrl = "$($Config.ApiPublicUrl)/api/__clerk"
-$ViteApiUrl    = if ($Config.ApiPublicUrl -match "YOUR_SERVER_IP") { "" } else { $Config.ApiPublicUrl }
-if ($ViteApiUrl -eq "") {
-    Write-Warn "ApiPublicUrl not configured -- frontend will use relative API URLs (proxied via port $($Config.FrontendPort))"
-}
+$ViteApiUrl    = ""  # Always empty: browser uses relative /api/ paths (no CORS issues)
+Write-Info "VITE_API_URL left empty -- browser uses relative /api/ paths (proxied by serve-frontend.mjs)"
 
 $envLines = @(
     "NODE_ENV=production",
@@ -421,7 +419,7 @@ $envLines = @(
     "CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
     "VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "VITE_CLERK_PROXY_URL=$clerkProxyUrl",
-    "VITE_API_URL=$ViteApiUrl",
+    "API_BACKEND_URL=http://localhost:$($Config.ApiPort)",
     "SESSION_SECRET=$sessionSecret",
     "CONTACT_ENCRYPTION_KEY=$contactEncKey",
     "PORT=$($Config.ApiPort)",
@@ -588,7 +586,7 @@ try {
         [System.Environment]::SetEnvironmentVariable("NODE_ENV",                    "production",                      "Process")
         [System.Environment]::SetEnvironmentVariable("VITE_CLERK_PUBLISHABLE_KEY",  $Config.ClerkPublishableKey,       "Process")
         [System.Environment]::SetEnvironmentVariable("VITE_CLERK_PROXY_URL",        $clerkProxyUrl,                    "Process")
-        [System.Environment]::SetEnvironmentVariable("VITE_API_URL",                $ViteApiUrl,                       "Process")
+        [System.Environment]::SetEnvironmentVariable("VITE_API_URL",                "",                               "Process")
         & pnpm --filter "@workspace/hotel-system" run build
         if ($LASTEXITCODE -ne 0) { Fail "Frontend build failed." }
         Write-OK "Frontend built"
@@ -654,7 +652,7 @@ $serveLines = @(
     "import path from 'path';",
     "import { fileURLToPath } from 'url';",
     "const PORT = parseInt(process.env.PORT || '3000', 10);",
-    "const API_URL = process.env.VITE_API_URL || 'http://localhost:8080';",
+    "const API_URL = process.env.API_BACKEND_URL || 'http://localhost:8080';",
     "const __dirname = path.dirname(fileURLToPath(import.meta.url));",
     "const ROOT = path.join(__dirname, 'artifacts', 'hotel-system', 'dist', 'public');",
     "const MIME = { '.html':'text/html', '.js':'application/javascript', '.mjs':'application/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff':'font/woff', '.woff2':'font/woff2', '.ttf':'font/ttf', '.webp':'image/webp', '.txt':'text/plain' };",
@@ -756,7 +754,7 @@ Install-NssmService `
     -AppParameters "`"$serveScript`"" `
     -EnvVars      ($commonEnv + @(
         "PORT=$($Config.FrontendPort)",
-        "VITE_API_URL=$ViteApiUrl"
+        "API_BACKEND_URL=http://localhost:$($Config.ApiPort)"
     ))
 
 # ===========================================================

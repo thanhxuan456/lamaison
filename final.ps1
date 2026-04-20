@@ -355,10 +355,8 @@ $clerkProxyUrl = $Config.ApiPublicUrl + "/api/__clerk"
 # When ApiPublicUrl is still the placeholder, use relative URLs so the
 # Node.js frontend proxy (serve-frontend.mjs) forwards /api/* to port 8080.
 # This avoids baking an unresolvable hostname into the JS bundle.
-$ViteApiUrl = if ($Config.ApiPublicUrl -match "YOUR_SERVER_IP") { "" } else { $Config.ApiPublicUrl }
-if ($ViteApiUrl -eq "") {
-    Write-Warn "ApiPublicUrl not configured -- frontend will use relative API URLs (proxied via port $($Config.FrontendPort))"
-}
+$ViteApiUrl = ""  # Always empty: browser uses relative /api/ paths (no CORS issues)
+Write-Info "VITE_API_URL left empty -- browser uses relative /api/ paths (proxied by serve-frontend.mjs)"
 
 $envLines = @(
     "NODE_ENV=production",
@@ -643,7 +641,7 @@ $serveLines = @(
     "import path from 'path';",
     "import { fileURLToPath } from 'url';",
     "const PORT = parseInt(process.env.PORT || '3000', 10);",
-    "const API_URL = process.env.VITE_API_URL || 'http://localhost:8080';",
+    "const API_URL = process.env.API_BACKEND_URL || 'http://localhost:8080';",
     "const __dirname = path.dirname(fileURLToPath(import.meta.url));",
     "const ROOT = path.join(__dirname, 'artifacts', 'hotel-system', 'dist', 'public');",
     "const MIME = { '.html':'text/html', '.js':'application/javascript', '.mjs':'application/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.gif':'image/gif', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff':'font/woff', '.woff2':'font/woff2', '.ttf':'font/ttf', '.webp':'image/webp', '.txt':'text/plain' };",
@@ -687,7 +685,7 @@ $frontendLines = @(
     "@echo off",
     'set "PORT=' + $Config.FrontendPort + '"',
     'set "NODE_ENV=production"',
-    'set "VITE_API_URL=' + $Config.ApiPublicUrl + '"',
+    'set "API_BACKEND_URL=http://localhost:' + $Config.ApiPort + '"',
     "`"" + $nodePath + "`" `"" + $serveScript + "`""
 )
 [System.IO.File]::WriteAllText($frontendLauncher, ($frontendLines -join "`r`n"), $utf8NoBom)
@@ -764,7 +762,7 @@ Install-NssmService `
 $frontendEnvVars = @(
     "PORT=$($Config.FrontendPort)",
     "NODE_ENV=production",
-    "VITE_API_URL=$($Config.ApiPublicUrl)"
+    "API_BACKEND_URL=http://localhost:$($Config.ApiPort)"
 )
 Install-NssmService `
     -SvcName      "GrandPalaceFrontend" `

@@ -341,7 +341,7 @@ $envContent = @(
     "CLERK_SECRET_KEY=$($Config.ClerkSecretKey)",
     "VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "VITE_CLERK_PROXY_URL=$clerkProxyUrl",
-    "VITE_API_URL=$($Config.ApiPublicUrl)",
+    "VITE_API_URL=",
     "SESSION_SECRET=$sessionSecret",
     "CONTACT_ENCRYPTION_KEY=$contactEncKey",
     "PORT=$($Config.ApiPort)",
@@ -480,7 +480,7 @@ if (-not $SkipBuild) {
     $env:NODE_ENV  = "production"
     $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
     $env:VITE_CLERK_PROXY_URL       = $clerkProxyUrl
-    $env:VITE_API_URL               = $Config.ApiPublicUrl
+    $env:VITE_API_URL               = ""  # empty: browser uses relative /api/ paths
     & pnpm --filter "@workspace/hotel-system" run build
     if ($LASTEXITCODE -ne 0) { throw "Frontend build failed." }
     Write-OK "Frontend built"
@@ -552,7 +552,7 @@ $frontendCmd = @(
     "set BASE_PATH=/",
     "set VITE_CLERK_PUBLISHABLE_KEY=$($Config.ClerkPublishableKey)",
     "set VITE_CLERK_PROXY_URL=$clerkProxyUrl",
-    "set VITE_API_URL=$($Config.ApiPublicUrl)",
+    "set API_BACKEND_URL=http://localhost:$($Config.ApiPort)",
     "set NODE_ENV=production",
     "`"$nodePath`" `"$viteJs`" preview --config `"$viteConfig`" --host 0.0.0.0 --port $($Config.FrontendPort)"
 ) -join "`r`n"
