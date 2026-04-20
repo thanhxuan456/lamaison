@@ -34,6 +34,7 @@ export function Footer() {
 
   const enabledColumns = footer.columns.filter((c) => c.enabled);
   const enabledSocials = footer.socials.filter((s) => s.enabled && s.url);
+  const contactSpan = Math.max(2, 8 - enabledColumns.length * 3);
 
   return (
     <footer className="relative bg-secondary text-secondary-foreground border-t-2 border-primary/30 overflow-hidden">
@@ -90,7 +91,7 @@ export function Footer() {
           <div className="md:col-span-4">
             <Link href="/" className="flex flex-col items-start group mb-6">
               {branding.useImageLogo && branding.logoUrl ? (
-                <img src={branding.logoUrl} alt={branding.brandName} className="h-12 w-auto object-contain" />
+                <img src={branding.logoUrl} alt={branding.brandName} className="h-14 w-auto object-contain" />
               ) : (
                 <>
                   <span className="text-3xl font-serif text-primary tracking-[0.1em] uppercase">
@@ -124,42 +125,36 @@ export function Footer() {
           </div>
 
           {/* Dynamic link columns */}
-          {enabledColumns.map((col) => {
-            // Distribute remaining 8 cols evenly across columns + contact (max ~3 each)
-            return (
-              <div key={col.id} className="md:col-span-3">
-                <h4 className="text-primary font-serif tracking-widest uppercase mb-6 text-sm relative pb-3 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[1px] after:bg-primary">
-                  {col.title}
-                </h4>
-                <ul className="flex flex-col gap-3">
-                  {col.links.map((l) => (
-                    <li key={l.id}>
-                      {l.href.startsWith("http") ? (
-                        <a href={l.href} target="_blank" rel="noreferrer"
-                          className="text-sm text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-2 group">
-                          <span className="w-0 group-hover:w-3 h-[1px] bg-primary transition-all duration-300" />
-                          {l.label}
-                        </a>
-                      ) : (
-                        <Link href={l.href}
-                          className="text-sm text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-2 group">
-                          <span className="w-0 group-hover:w-3 h-[1px] bg-primary transition-all duration-300" />
-                          {l.label}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+          {enabledColumns.map((col) => (
+            <div key={col.id} className="md:col-span-3">
+              <h4 className="text-primary font-serif tracking-widest uppercase mb-6 text-sm relative pb-3 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[1px] after:bg-primary">
+                {col.title}
+              </h4>
+              <ul className="flex flex-col gap-3">
+                {col.links.map((l) => (
+                  <li key={l.id}>
+                    {l.href.startsWith("http") ? (
+                      <a href={l.href} target="_blank" rel="noreferrer"
+                        className="text-sm text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-2 group">
+                        <span className="w-0 group-hover:w-3 h-[1px] bg-primary transition-all duration-300" />
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link href={l.href}
+                        className="text-sm text-primary/70 hover:text-primary transition-colors inline-flex items-center gap-2 group">
+                        <span className="w-0 group-hover:w-3 h-[1px] bg-primary transition-all duration-300" />
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           {/* Contact widget */}
           {footer.contact.enabled && (
-            <div
-              className="md:[grid-column:span_var(--contact-span)]"
-              style={{ ["--contact-span" as any]: Math.max(2, 8 - enabledColumns.length * 3) }}
-            >
+            <div style={{ gridColumn: `span ${contactSpan}` }}>
               <h4 className="text-primary font-serif tracking-widest uppercase mb-6 text-sm relative pb-3 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[1px] after:bg-primary">
                 {footer.contact.title}
               </h4>
