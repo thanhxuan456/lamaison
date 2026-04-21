@@ -117,7 +117,9 @@ export function LiveChat() {
   // Guests must fill the pre-chat form first (handled by submitPreForm).
   const restoreOrAutoStart = useCallback(async () => {
     if (sessionInitialized.current) return;
-    const stored = sessionStorage.getItem("chat_session_id");
+    // Chi restore session cu cho user da login. Khach an danh luon thay form moi
+    // de dam bao thong tin lien he duoc xac nhan lai moi lan mo chat.
+    const stored = user ? sessionStorage.getItem("chat_session_id") : null;
     if (stored) {
       sessionInitialized.current = true;
       setSessionId(stored);
@@ -209,7 +211,8 @@ export function LiveChat() {
 
   // True when we should show the pre-chat form: chat opened, no session yet,
   // user is a guest (not signed in via Clerk), and no stored session restoring.
-  const needsPreForm = open && !sessionId && !user && !sessionStorage.getItem("chat_session_id");
+  // Khach an danh chua co sessionId -> luon show form. Da login -> session duoc tu tao.
+  const needsPreForm = open && !sessionId && !user;
 
   useEffect(() => {
     return () => {
