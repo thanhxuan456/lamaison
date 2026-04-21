@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { branchPagesTable, hotelsTable, PAGE_SLUGS } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();

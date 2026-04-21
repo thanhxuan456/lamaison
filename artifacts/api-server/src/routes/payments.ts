@@ -56,6 +56,7 @@ router.get("/payments/settings", async (_req, res) => {
     const cfg = (row?.value as any) ?? {};
     const momo = cfg.momo ?? {};
     const bank = cfg.bank ?? {};
+    const payAtHotel = cfg.payAtHotel ?? {};
     res.json({
       momo: {
         enabled: !!(momo.enabled ?? false),
@@ -68,6 +69,8 @@ router.get("/payments/settings", async (_req, res) => {
         accountName: bank.accountName ?? "",
         defaultDescription: bank.defaultDescription ?? "Dat phong MAISON DELUXE",
       },
+      payAtHotel: { enabled: !!payAtHotel.enabled },
+      // KHONG tra ve secret cua cac webhook — chi tra ve enabled flag
     });
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -261,75 +264,242 @@ router.post("/payments/momo/ipn", async (req, res) => {
   }
 });
 
-/* ── POST /payments/internal/confirm ──
- * Phuong thuc xac nhan TU DONG noi bo (khong qua API ben thu 3).
- * Dung cho luong demo / cua hang chap nhan thanh toan tai quay / khach VIP.
- * Bao mat: chi cho phep khi booking dang o trang thai cho thanh toan VA duoc tao trong 24h gan day.
- * Khong yeu cau auth vi guest co the dat phong, nhung han che bang status + thoi gian tao.
+// ============================================================================
+//  AUTO-CONFIRM WEBHOOKS — SMS forwarder, Casso/SePay, Email parser
+//  Cac endpoint nay nhan thong bao tu cac nguon ngoai (app forward SMS,
+//  Casso/SePay, email parser) va tu dong xac nhan booking khi match.
+// ============================================================================
+
+async function getAutoConfirmCfg() {
+  const [row] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.key, "payment-settings"));
+  return ((row?.value as any)?.autoConfirm ?? {}) as {
+    sms?:   { enabled?: boolean; secret?: string };
+    casso?: { enabled?: boolean; secret?: string };
+    email?: { enabled?: boolean; secret?: string };
+  };
+}
+
+function checkSecret(provided: string | undefined, expected: string | undefined): boolean {
+  if (!expected) return false;
+  if (!provided) return false;
+  if (provided.length !== expected.length) return false;
+  try { return crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected)); }
+  catch { return false; }
+}
+
+function extractBearerOrHeader(req: any): string | undefined {
+  const auth = req.header("authorization") ?? req.header("Authorization");
+  if (auth && /^Bearer\s+/i.test(auth)) return auth.replace(/^Bearer\s+/i, "").trim();
+  return req.header("x-webhook-secret") ?? req.header("X-Webhook-Secret") ?? undefined;
+}
+
+/* ── POST /payments/sms-webhook ──
+ * Universal SMS forwarder endpoint.
+ * Body chap nhan: { message: string, from?: string } HOAC raw text body.
+ * Auth: Authorization: Bearer <secret>  HOAC  X-Webhook-Secret: <secret>
+ *
+ * Cach dung: cai app SMS Forwarder (Android) tro toi URL nay, copy secret tu admin UI.
+ * Khi co SMS bien dong so du tu ngan hang, app POST den day. Server parse "MDH<id>" + so tien,
+ * match booking va tu confirm.
  */
-router.post("/payments/internal/confirm", async (req, res) => {
+router.post("/payments/sms-webhook", async (req, res) => {
   try {
-    const { bookingId } = req.body as { bookingId?: number };
+    const cfg = await getAutoConfirmCfg();
+    if (!cfg.sms?.enabled) { res.status(403).json({ error: "SMS webhook disabled" }); return; }
+    if (!checkSecret(extractBearerOrHeader(req), cfg.sms.secret)) {
+      res.status(401).json({ error: "Invalid secret" });
+      return;
+    }
+
+    const body = req.body ?? {};
+    const message: string = typeof body === "string" ? body : (body.message ?? body.text ?? body.body ?? "");
+    if (!message) { res.status(400).json({ error: "message field required" }); return; }
+
+    const { parseBankSms, confirmBookingPayment } = await import("../lib/confirm-payment");
+    const parsed = parseBankSms(message);
+    const externalRef = `SMS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const result = await confirmBookingPayment({
+      bookingId: parsed.bookingId,
+      source: "sms",
+      externalRef,
+      amount: parsed.amount,
+      rawPayload: { message, from: body.from, parsed },
+    });
+
+    req.log.info({ result, parsed }, "SMS webhook processed");
+    res.status(result.ok ? 200 : 422).json(result);
+  } catch (err: any) {
+    req.log.error({ err }, "SMS webhook error");
+    res.status(500).json({ error: err.message ?? "Internal server error" });
+  }
+});
+
+/* ── POST /payments/casso-webhook ──
+ * Nhan webhook tu Casso (https://docs.casso.vn) HOAC SePay (https://docs.sepay.vn).
+ * Tu dong nhan dien format theo body shape.
+ * Auth: Authorization: Apikey <secret> (Casso) HOAC X-Webhook-Secret (SePay)
+ */
+router.post("/payments/casso-webhook", async (req, res) => {
+  try {
+    const cfg = await getAutoConfirmCfg();
+    if (!cfg.casso?.enabled) { res.status(403).json({ error: "Casso webhook disabled" }); return; }
+
+    // Casso dung "Authorization: Apikey <token>", SePay dung header tuy bien
+    const authHeader = req.header("authorization") ?? req.header("Authorization") ?? "";
+    const apikeyMatch = authHeader.match(/^Apikey\s+(.+)$/i);
+    const provided = apikeyMatch ? apikeyMatch[1].trim() : extractBearerOrHeader(req);
+    if (!checkSecret(provided, cfg.casso.secret)) {
+      res.status(401).json({ error: "Invalid secret" });
+      return;
+    }
+
+    const body = req.body ?? {};
+    const { parseBankSms, confirmBookingPayment } = await import("../lib/confirm-payment");
+    const results: any[] = [];
+
+    // Casso format: { error, data: [{ tid, description, amount, ... }] }
+    if (Array.isArray(body.data)) {
+      for (const tx of body.data) {
+        const description = tx.description ?? tx.content ?? "";
+        const amount = Number(tx.amount ?? tx.transferAmount ?? 0);
+        const externalRef = `CASSO-${tx.tid ?? tx.id ?? Date.now()}`;
+        const parsed = parseBankSms(description);
+        const r = await confirmBookingPayment({
+          bookingId: parsed.bookingId,
+          source: "casso",
+          externalRef,
+          amount,
+          rawPayload: tx,
+        });
+        results.push(r);
+      }
+    }
+    // SePay flat format: { id, content, transferAmount, transferType, referenceCode, ... }
+    else if (body.content || body.transferAmount != null) {
+      if (body.transferType && body.transferType !== "in") {
+        res.json({ ok: true, ignored: "Not an incoming transfer" });
+        return;
+      }
+      const description = String(body.content ?? body.description ?? body.code ?? "");
+      const amount = Number(body.transferAmount ?? body.amount ?? 0);
+      const externalRef = `SEPAY-${body.referenceCode ?? body.id ?? Date.now()}`;
+      const parsed = parseBankSms(description);
+      const r = await confirmBookingPayment({
+        bookingId: parsed.bookingId ?? Number(body.code) ?? null,
+        source: "sepay",
+        externalRef,
+        amount,
+        rawPayload: body,
+      });
+      results.push(r);
+    } else {
+      res.status(400).json({ error: "Unknown payload format (need Casso 'data' array or SePay flat object)" });
+      return;
+    }
+
+    req.log.info({ count: results.length }, "Casso/SePay webhook processed");
+    res.json({ ok: true, results });
+  } catch (err: any) {
+    req.log.error({ err }, "Casso webhook error");
+    res.status(500).json({ error: err.message ?? "Internal server error" });
+  }
+});
+
+/* ── POST /payments/email-webhook ──
+ * Nhan email forward (vd: tu Gmail filter -> Cloudflare Email Worker -> POST den day).
+ * Body: { subject?, body, from? }  hoac raw text.
+ * Auth: Authorization: Bearer <secret>  HOAC  X-Webhook-Secret: <secret>
+ */
+router.post("/payments/email-webhook", async (req, res) => {
+  try {
+    const cfg = await getAutoConfirmCfg();
+    if (!cfg.email?.enabled) { res.status(403).json({ error: "Email webhook disabled" }); return; }
+    if (!checkSecret(extractBearerOrHeader(req), cfg.email.secret)) {
+      res.status(401).json({ error: "Invalid secret" });
+      return;
+    }
+
+    const body = req.body ?? {};
+    const text: string = typeof body === "string" ? body :
+      [body.subject, body.body, body.text, body.html].filter(Boolean).join("\n");
+    if (!text) { res.status(400).json({ error: "body field required" }); return; }
+
+    const { parseBankSms, confirmBookingPayment } = await import("../lib/confirm-payment");
+    const parsed = parseBankSms(text.replace(/<[^>]+>/g, " ")); // strip HTML
+    const externalRef = `EMAIL-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const result = await confirmBookingPayment({
+      bookingId: parsed.bookingId,
+      source: "email",
+      externalRef,
+      amount: parsed.amount,
+      rawPayload: { from: body.from, subject: body.subject, parsed, snippet: text.slice(0, 500) },
+    });
+
+    req.log.info({ result, parsed }, "Email webhook processed");
+    res.status(result.ok ? 200 : 422).json(result);
+  } catch (err: any) {
+    req.log.error({ err }, "Email webhook error");
+    res.status(500).json({ error: err.message ?? "Internal server error" });
+  }
+});
+
+/* ── POST /payments/pay-at-hotel  (alias: /payments/internal/confirm) ──
+ * "Dat giu cho — Tra tien khi den khach san". Khong yeu cau thanh toan online.
+ * Phai duoc admin bat trong setting payAtHotel.enabled — neu khong se 403.
+ */
+async function payAtHotelHandler(req: any, res: any) {
+  try {
+    const { bookingId, confirmToken } = req.body as { bookingId?: number; confirmToken?: string };
     if (!bookingId || !Number.isFinite(Number(bookingId))) {
       res.status(400).json({ error: "bookingId is required" });
       return;
     }
-
-    const [booking] = await db
-      .select()
-      .from(bookingsTable)
-      .where(eq(bookingsTable.id, Number(bookingId)));
-
-    if (!booking) {
-      res.status(404).json({ error: "Booking not found" });
+    if (!confirmToken || typeof confirmToken !== "string") {
+      res.status(400).json({ error: "confirmToken is required" });
       return;
     }
 
-    // Idempotent — neu da confirm roi thi tra ve thanh cong, FE cu redirect
-    if (booking.status === "confirmed" || booking.status === "checked_in" || booking.status === "checked_out") {
-      res.json({ message: "Booking already confirmed", bookingId: booking.id, alreadyConfirmed: true });
+    const [row] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.key, "payment-settings"));
+    const enabled = !!((row?.value as any)?.payAtHotel?.enabled);
+    if (!enabled) {
+      res.status(403).json({ error: "Pay-at-hotel is disabled by admin" });
       return;
     }
 
-    if (booking.status !== "pending_payment" && booking.status !== "pending") {
-      res.status(409).json({ error: "Booking is not awaiting payment" });
+    // Verify confirmToken against the booking (constant-time compare).
+    const [bk] = await db.select({ token: bookingsTable.confirmToken }).from(bookingsTable).where(eq(bookingsTable.id, Number(bookingId)));
+    const stored = bk?.token ?? "";
+    const a = Buffer.from(stored);
+    const b = Buffer.from(confirmToken);
+    if (!stored || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      res.status(403).json({ error: "Invalid confirm token" });
       return;
     }
 
-    // Chong abuse: chi cho confirm trong 24h sau khi tao booking
-    const createdAt = booking.createdAt ? new Date(booking.createdAt).getTime() : 0;
-    if (createdAt && Date.now() - createdAt > 24 * 60 * 60 * 1000) {
-      res.status(409).json({ error: "Booking expired, please create a new one" });
-      return;
-    }
+    const { confirmBookingPayment } = await import("../lib/confirm-payment");
+    const result = await confirmBookingPayment({
+      bookingId: Number(bookingId),
+      source: "pay_at_hotel",
+      externalRef: `PAH-${Date.now()}`,
+      skipAmountCheck: true,
+      rawPayload: { ip: req.ip, ua: req.header("user-agent") },
+    });
 
-    await db
-      .update(bookingsTable)
-      .set({
-        status: "confirmed",
-        externalRef: `INTERNAL-AUTO-${Date.now()}`,
-      })
-      .where(eq(bookingsTable.id, booking.id));
-
-    await db
-      .update(roomsTable)
-      .set({ isAvailable: false, status: "reserved" })
-      .where(eq(roomsTable.id, booking.roomId));
-
-    try {
-      const { upsertInvoiceForBooking } = await import("./invoices");
-      await upsertInvoiceForBooking(booking.id);
-    } catch (invErr) {
-      req.log.warn({ err: invErr }, "Auto-invoice generation failed (non-fatal)");
-    }
-
-    req.log.info({ bookingId: booking.id }, "Internal payment auto-confirmed");
-    res.json({ message: "Payment confirmed", bookingId: booking.id });
+    req.log.info({ result }, "Pay-at-hotel attempt");
+    res.status(result.ok ? 200 : 422).json({
+      message: result.message,
+      bookingId: result.bookingId,
+      alreadyConfirmed: result.status === "duplicate",
+    });
   } catch (err) {
-    req.log.error({ err }, "Failed to internally confirm payment");
+    req.log.error({ err }, "Pay-at-hotel failed");
     res.status(500).json({ error: "Internal server error" });
   }
-});
+}
+router.post("/payments/pay-at-hotel", payAtHotelHandler);
+router.post("/payments/internal/confirm", payAtHotelHandler); // backward compat
 
 /* ── POST /payments/bank/confirm — admin manually confirms a bank transfer ── */
 router.post("/payments/bank/confirm", async (req, res) => {

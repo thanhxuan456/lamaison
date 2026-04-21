@@ -25,6 +25,7 @@ interface MomoPayment {
 interface PaySettings {
   momo: { enabled: boolean; configured: boolean };
   bank: { enabled: boolean; bankCode: string; accountNumber: string; accountName: string; defaultDescription: string };
+  payAtHotel?: { enabled: boolean };
 }
 
 const fmtVND = (n: number) =>
@@ -60,6 +61,7 @@ export default function RoomDetail() {
   const [activeImage, setActiveImage] = useState(0);
   const [momoPayment, setMomoPayment] = useState<MomoPayment | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
+  const [confirmToken, setConfirmToken] = useState<string | null>(null);
   const [bookingAmount, setBookingAmount] = useState<number>(0);
   const [paymentChecking, setPaymentChecking] = useState(false);
   const [payMethod, setPayMethod] = useState<PayMethod>(null);
@@ -67,6 +69,7 @@ export default function RoomDetail() {
   const [paySettings, setPaySettings] = useState<PaySettings>({
     momo: { enabled: false, configured: false },
     bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "", defaultDescription: "Dat phong MAISON DELUXE" },
+    payAtHotel: { enabled: false },
   });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -158,6 +161,7 @@ export default function RoomDetail() {
       {
         onSuccess: async (data) => {
           setBookingId(data.id);
+          setConfirmToken((data as any).confirmToken ?? null);
           setBookingAmount(data.totalPrice ?? 0);
           const momoOk = paySettings.momo.enabled && paySettings.momo.configured;
           const bankOk = paySettings.bank.enabled && !!paySettings.bank.accountNumber;
@@ -557,23 +561,25 @@ export default function RoomDetail() {
                                   </button>
                                 )}
 
-                                {/* Xac nhan tu dong noi bo — luon co, khong can ben thu 3 */}
-                                <button type="button"
-                                  onClick={() => bookingId && setLocation(`/checkout/${bookingId}`)}
-                                  className="w-full flex items-center gap-4 border border-primary/40 bg-primary/10 hover:bg-primary/20 px-5 py-4 transition-colors">
-                                  <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-                                    <ShieldCheck size={18} className="text-secondary" />
-                                  </span>
-                                  <div className="flex-1 text-left">
-                                    <div className="font-medium text-foreground text-sm">Xác nhận tự động</div>
-                                    <div className="text-xs text-white/50 mt-0.5">Hệ thống tự xử lý — không cần thanh toán bên thứ 3</div>
-                                  </div>
-                                  <ChevronRight size={16} className="text-primary/40" />
-                                </button>
+                                {/* Dat giu cho — Tra tien khi den khach san (admin gate) */}
+                                {paySettings.payAtHotel?.enabled && (
+                                  <button type="button"
+                                    onClick={() => bookingId && setLocation(`/checkout/${bookingId}${confirmToken ? `?t=${confirmToken}` : ""}`)}
+                                    className="w-full flex items-center gap-4 border border-primary/40 bg-primary/10 hover:bg-primary/20 px-5 py-4 transition-colors">
+                                    <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                                      <ShieldCheck size={18} className="text-secondary" />
+                                    </span>
+                                    <div className="flex-1 text-left">
+                                      <div className="font-medium text-foreground text-sm">Đặt giữ chỗ — Trả tại khách sạn</div>
+                                      <div className="text-xs text-white/50 mt-0.5">Không cần thanh toán online — bạn trả tiền khi đến nhận phòng</div>
+                                    </div>
+                                    <ChevronRight size={16} className="text-primary/40" />
+                                  </button>
+                                )}
 
-                                {!paySettings.momo.enabled && (!paySettings.bank.enabled || !paySettings.bank.accountNumber) && (
+                                {!paySettings.momo.enabled && (!paySettings.bank.enabled || !paySettings.bank.accountNumber) && !paySettings.payAtHotel?.enabled && (
                                   <div className="text-center text-white/40 text-[10px] tracking-widest uppercase py-2">
-                                    Phương thức MoMo / chuyển khoản chưa được cấu hình
+                                    Chưa có phương thức thanh toán nào được kích hoạt
                                   </div>
                                 )}
                               </div>
@@ -642,7 +648,7 @@ export default function RoomDetail() {
                               <div className="flex flex-col items-center gap-3">
                                 {(() => {
                                   const b = paySettings.bank;
-                                  const desc = encodeURIComponent(`${b.defaultDescription} ${bookingId ?? ""}`);
+                                  const desc = encodeURIComponent(`${b.defaultDescription} MDH${bookingId ?? ""}`);
                                   const qrUrl = `https://img.vietqr.io/image/${b.bankCode}-${b.accountNumber}-compact2.png?accountName=${encodeURIComponent(b.accountName)}&amount=${Math.round(bookingAmount)}&addInfo=${desc}`;
                                   return (
                                     <>
@@ -670,7 +676,7 @@ export default function RoomDetail() {
                                         </div>
                                         <div className="flex justify-between">
                                           <span className="text-white/50 uppercase tracking-widest text-[10px]">Nội dung</span>
-                                          <span className="text-foreground font-medium">{b.defaultDescription} {bookingId}</span>
+                                          <span className="text-foreground font-medium">{b.defaultDescription} MDH{bookingId}</span>
                                         </div>
                                       </div>
                                     </>

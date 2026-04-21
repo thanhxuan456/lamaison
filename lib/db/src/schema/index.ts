@@ -13,3 +13,4 @@ export * from "./blog-posts";
 export * from "./affiliate-referrals";
 export * from "./social-publish";
 export * from "./branch-pages";
+export * from "./payment-attempts";

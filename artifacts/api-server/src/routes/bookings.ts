@@ -102,6 +102,9 @@ router.post("/bookings", async (req, res) => {
 
     const guest = await upsertGuest({ fullName: guestName, email: guestEmail, phone: guestPhone });
 
+    const { randomBytes } = await import("crypto");
+    const confirmToken = randomBytes(24).toString("hex");
+
     const [booking] = await db
       .insert(bookingsTable)
       .values({
@@ -118,6 +121,7 @@ router.post("/bookings", async (req, res) => {
         status: "pending_payment",
         source: "web",
         totalPrice: totalPrice.toString(),
+        confirmToken,
       })
       .returning();
 

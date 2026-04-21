@@ -37,6 +37,10 @@ export default function CheckoutPage() {
   const bookingId = Number(params.bookingId);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const confirmToken = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("t") ?? "";
+  }, []);
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
@@ -98,11 +102,11 @@ export default function CheckoutPage() {
     if (confirmCalled.current) return;
     confirmCalled.current = true;
     try {
-      const r = await fetch(`${API}/api/payments/internal/confirm`, {
+      const r = await fetch(`${API}/api/payments/pay-at-hotel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ bookingId }),
+        body: JSON.stringify({ bookingId, confirmToken }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error ?? "Xác nhận thất bại");

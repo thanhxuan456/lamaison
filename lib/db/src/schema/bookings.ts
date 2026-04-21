@@ -22,6 +22,7 @@ export const bookingsTable = pgTable(
     status: text("status").notNull().default("confirmed"),
     source: text("source").notNull().default("web"),
     externalRef: text("external_ref"),
+    confirmToken: text("confirm_token"),
     checkedInAt: timestamp("checked_in_at"),
     checkedOutAt: timestamp("checked_out_at"),
     totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),

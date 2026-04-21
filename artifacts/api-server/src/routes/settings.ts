@@ -111,6 +111,14 @@ const DEFAULT_CONTACT_MAP = {
 const DEFAULT_PAYMENT_SETTINGS = {
   momo: { enabled: false, partnerCode: "", accessKey: "", secretKey: "", testMode: true },
   bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "MAISON DELUXE HOTELS", defaultDescription: "Dat phong MAISON DELUXE" },
+  // "Dat giu cho — tra tai khach san" — khong yeu cau xac nhan online
+  payAtHotel: { enabled: false },
+  // Cac webhook xac nhan tu dong (SMS forwarder app, Casso/SePay, email parser)
+  autoConfirm: {
+    sms:   { enabled: false, secret: "" },
+    casso: { enabled: false, secret: "" },
+    email: { enabled: false, secret: "" },
+  },
 };
 
 const DEFAULT_POST_CATEGORIES = {
@@ -170,11 +178,27 @@ router.put("/settings/theme", requireAdmin(), async (req, res) => {
   catch (err) { req.log.error({ err }, "Failed to save theme"); res.status(500).json({ error: "Internal server error" }); }
 });
 
+/** Redact sensitive fields before returning settings to the public. */
+function redactPublic(key: string, value: any): any {
+  if (key !== "payment-settings" || !value || typeof value !== "object") return value;
+  const v: any = JSON.parse(JSON.stringify(value));
+  if (v.momo) {
+    if (v.momo.accessKey) v.momo.accessKey = "";
+    if (v.momo.secretKey) v.momo.secretKey = "";
+  }
+  if (v.autoConfirm) {
+    for (const ch of ["sms", "casso", "email"]) {
+      if (v.autoConfirm[ch]?.secret) v.autoConfirm[ch].secret = "";
+    }
+  }
+  return v;
+}
+
 // Generic key endpoints (safelisted)
 router.get("/settings/:key", async (req, res) => {
   const key = req.params.key;
   if (!(key in KEY_DEFAULTS)) { res.status(404).json({ error: "Unknown setting key" }); return; }
-  try { res.json(await readKey(key)); }
+  try { res.json(redactPublic(key, await readKey(key))); }
   catch { res.status(500).json({ error: "Internal server error" }); }
 });
 
