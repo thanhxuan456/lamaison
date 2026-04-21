@@ -405,145 +405,146 @@ $sslKeyPosix   = To-NginxPath $sslKey
 
 function Write-NginxConf([bool]$includeSsl) {
     $serverName = "$($Config.Domain) www.$($Config.Domain)"
+    $apiPort    = $Config.ApiPort
+
+    $sb = New-Object System.Text.StringBuilder
 
     if ($includeSsl) {
-        $serverBlocks = @"
-    # HTTP -> HTTPS redirect (van phuc vu ACME challenge truoc)
-    server {
-        listen      80;
-        server_name $serverName;
-
-        location /.well-known/acme-challenge/ {
-            root $nginxAcmeRoot;
-            default_type "text/plain";
-        }
-
-        location / { return 301 https://`$host`$request_uri; }
-    }
-
-    # HTTPS
-    server {
-        listen              443 ssl;
-        http2               on;
-        server_name         $serverName;
-
-        ssl_certificate     $sslChainPosix;
-        ssl_certificate_key $sslKeyPosix;
-        ssl_protocols       TLSv1.2 TLSv1.3;
-        ssl_ciphers         HIGH:!aNULL:!MD5;
-        ssl_prefer_server_ciphers on;
-        ssl_session_cache   shared:SSL:10m;
-        ssl_session_timeout 1d;
-
-        # WebSocket cho live chat
-        location /api/chat/ws/ {
-            proxy_pass             http://127.0.0.1:$($Config.ApiPort)/api/chat/ws/;
-            proxy_http_version     1.1;
-            proxy_set_header       Upgrade    `$http_upgrade;
-            proxy_set_header       Connection "upgrade";
-            proxy_set_header       Host       `$host;
-            proxy_read_timeout     86400s;
-            proxy_socket_keepalive on;
-            proxy_buffering        off;
-        }
-
-        # API
-        location /api/ {
-            proxy_pass             http://127.0.0.1:$($Config.ApiPort)/api/;
-            proxy_http_version     1.1;
-            proxy_set_header       Host              `$host;
-            proxy_set_header       X-Real-IP         `$remote_addr;
-            proxy_set_header       X-Forwarded-For   `$proxy_add_x_forwarded_for;
-            proxy_set_header       X-Forwarded-Proto https;
-            proxy_read_timeout     60s;
-            proxy_buffering        off;
-        }
-
-        # Static frontend
-        location / {
-            root       $nginxFrontendRoot;
-            try_files  `$uri `$uri/ /index.html;
-            expires    1h;
-            add_header Cache-Control "public, no-transform";
-        }
-
-        location = /index.html {
-            root       $nginxFrontendRoot;
-            expires    -1;
-            add_header Cache-Control "no-store, no-cache, must-revalidate";
-        }
-    }
-"@
+        [void]$sb.AppendLine("    # HTTP -> HTTPS redirect (van phuc vu ACME challenge truoc)")
+        [void]$sb.AppendLine("    server {")
+        [void]$sb.AppendLine("        listen      80;")
+        [void]$sb.AppendLine("        server_name $serverName;")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location /.well-known/acme-challenge/ {")
+        [void]$sb.AppendLine("            root $nginxAcmeRoot;")
+        [void]$sb.AppendLine('            default_type "text/plain";')
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine('        location / { return 301 https://$host$request_uri; }')
+        [void]$sb.AppendLine("    }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("    # HTTPS")
+        [void]$sb.AppendLine("    server {")
+        [void]$sb.AppendLine("        listen              443 ssl;")
+        [void]$sb.AppendLine("        http2               on;")
+        [void]$sb.AppendLine("        server_name         $serverName;")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        ssl_certificate     $sslChainPosix;")
+        [void]$sb.AppendLine("        ssl_certificate_key $sslKeyPosix;")
+        [void]$sb.AppendLine("        ssl_protocols       TLSv1.2 TLSv1.3;")
+        [void]$sb.AppendLine("        ssl_ciphers         HIGH:!aNULL:!MD5;")
+        [void]$sb.AppendLine("        ssl_prefer_server_ciphers on;")
+        [void]$sb.AppendLine("        ssl_session_cache   shared:SSL:10m;")
+        [void]$sb.AppendLine("        ssl_session_timeout 1d;")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        # WebSocket cho live chat")
+        [void]$sb.AppendLine("        location /api/chat/ws/ {")
+        [void]$sb.AppendLine("            proxy_pass             http://127.0.0.1:$apiPort/api/chat/ws/;")
+        [void]$sb.AppendLine("            proxy_http_version     1.1;")
+        [void]$sb.AppendLine('            proxy_set_header       Upgrade    $http_upgrade;')
+        [void]$sb.AppendLine('            proxy_set_header       Connection "upgrade";')
+        [void]$sb.AppendLine('            proxy_set_header       Host       $host;')
+        [void]$sb.AppendLine("            proxy_read_timeout     86400s;")
+        [void]$sb.AppendLine("            proxy_socket_keepalive on;")
+        [void]$sb.AppendLine("            proxy_buffering        off;")
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        # API")
+        [void]$sb.AppendLine("        location /api/ {")
+        [void]$sb.AppendLine("            proxy_pass             http://127.0.0.1:$apiPort/api/;")
+        [void]$sb.AppendLine("            proxy_http_version     1.1;")
+        [void]$sb.AppendLine('            proxy_set_header       Host              $host;')
+        [void]$sb.AppendLine('            proxy_set_header       X-Real-IP         $remote_addr;')
+        [void]$sb.AppendLine('            proxy_set_header       X-Forwarded-For   $proxy_add_x_forwarded_for;')
+        [void]$sb.AppendLine("            proxy_set_header       X-Forwarded-Proto https;")
+        [void]$sb.AppendLine("            proxy_read_timeout     60s;")
+        [void]$sb.AppendLine("            proxy_buffering        off;")
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        # Static frontend")
+        [void]$sb.AppendLine("        location / {")
+        [void]$sb.AppendLine("            root       $nginxFrontendRoot;")
+        [void]$sb.AppendLine('            try_files  $uri $uri/ /index.html;')
+        [void]$sb.AppendLine("            expires    1h;")
+        [void]$sb.AppendLine('            add_header Cache-Control "public, no-transform";')
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location = /index.html {")
+        [void]$sb.AppendLine("            root       $nginxFrontendRoot;")
+        [void]$sb.AppendLine("            expires    -1;")
+        [void]$sb.AppendLine('            add_header Cache-Control "no-store, no-cache, must-revalidate";')
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("    }")
     } else {
-        $serverBlocks = @"
-    # HTTP-only (phuc vu ACME challenge va cac request thuong)
-    server {
-        listen      80;
-        server_name $serverName;
-
-        location /.well-known/acme-challenge/ {
-            root $nginxAcmeRoot;
-            default_type "text/plain";
-        }
-
-        location /api/chat/ws/ {
-            proxy_pass             http://127.0.0.1:$($Config.ApiPort)/api/chat/ws/;
-            proxy_http_version     1.1;
-            proxy_set_header       Upgrade    `$http_upgrade;
-            proxy_set_header       Connection "upgrade";
-            proxy_set_header       Host       `$host;
-            proxy_read_timeout     86400s;
-        }
-
-        location /api/ {
-            proxy_pass             http://127.0.0.1:$($Config.ApiPort)/api/;
-            proxy_http_version     1.1;
-            proxy_set_header       Host              `$host;
-            proxy_set_header       X-Real-IP         `$remote_addr;
-            proxy_set_header       X-Forwarded-For   `$proxy_add_x_forwarded_for;
-            proxy_set_header       X-Forwarded-Proto http;
-        }
-
-        location / {
-            root       $nginxFrontendRoot;
-            try_files  `$uri `$uri/ /index.html;
-        }
+        [void]$sb.AppendLine("    # HTTP-only (phuc vu ACME challenge va cac request thuong)")
+        [void]$sb.AppendLine("    server {")
+        [void]$sb.AppendLine("        listen      80;")
+        [void]$sb.AppendLine("        server_name $serverName;")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location /.well-known/acme-challenge/ {")
+        [void]$sb.AppendLine("            root $nginxAcmeRoot;")
+        [void]$sb.AppendLine('            default_type "text/plain";')
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location /api/chat/ws/ {")
+        [void]$sb.AppendLine("            proxy_pass             http://127.0.0.1:$apiPort/api/chat/ws/;")
+        [void]$sb.AppendLine("            proxy_http_version     1.1;")
+        [void]$sb.AppendLine('            proxy_set_header       Upgrade    $http_upgrade;')
+        [void]$sb.AppendLine('            proxy_set_header       Connection "upgrade";')
+        [void]$sb.AppendLine('            proxy_set_header       Host       $host;')
+        [void]$sb.AppendLine("            proxy_read_timeout     86400s;")
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location /api/ {")
+        [void]$sb.AppendLine("            proxy_pass             http://127.0.0.1:$apiPort/api/;")
+        [void]$sb.AppendLine("            proxy_http_version     1.1;")
+        [void]$sb.AppendLine('            proxy_set_header       Host              $host;')
+        [void]$sb.AppendLine('            proxy_set_header       X-Real-IP         $remote_addr;')
+        [void]$sb.AppendLine('            proxy_set_header       X-Forwarded-For   $proxy_add_x_forwarded_for;')
+        [void]$sb.AppendLine("            proxy_set_header       X-Forwarded-Proto http;")
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("")
+        [void]$sb.AppendLine("        location / {")
+        [void]$sb.AppendLine("            root       $nginxFrontendRoot;")
+        [void]$sb.AppendLine('            try_files  $uri $uri/ /index.html;')
+        [void]$sb.AppendLine("        }")
+        [void]$sb.AppendLine("    }")
     }
-"@
-    }
+    $serverBlocks = $sb.ToString()
 
-    $conf = @"
-# Bat buoc voi NSSM: chay foreground
-daemon off;
+    $cb = New-Object System.Text.StringBuilder
+    [void]$cb.AppendLine("# Bat buoc voi NSSM: chay foreground")
+    [void]$cb.AppendLine("daemon off;")
+    [void]$cb.AppendLine("")
+    [void]$cb.AppendLine("worker_processes  auto;")
+    [void]$cb.AppendLine("error_log  $nginxLogDirPosix/error.log warn;")
+    [void]$cb.AppendLine("pid        $nginxLogDirPosix/nginx.pid;")
+    [void]$cb.AppendLine("")
+    [void]$cb.AppendLine("events {")
+    [void]$cb.AppendLine("    worker_connections 1024;")
+    [void]$cb.AppendLine("    use                select;")
+    [void]$cb.AppendLine("}")
+    [void]$cb.AppendLine("")
+    [void]$cb.AppendLine("http {")
+    [void]$cb.AppendLine("    include       mime.types;")
+    [void]$cb.AppendLine("    default_type  application/octet-stream;")
+    [void]$cb.AppendLine("")
+    [void]$cb.AppendLine('    log_format  main  ''$remote_addr - $remote_user [$time_local] "$request" ''')
+    [void]$cb.AppendLine('                      ''$status $body_bytes_sent "$http_referer" ''')
+    [void]$cb.AppendLine('                      ''"$http_user_agent" "$http_x_forwarded_for"'';')
+    [void]$cb.AppendLine("    access_log  $nginxLogDirPosix/access.log  main;")
+    [void]$cb.AppendLine("")
+    [void]$cb.AppendLine("    sendfile             on;")
+    [void]$cb.AppendLine("    tcp_nopush           on;")
+    [void]$cb.AppendLine("    tcp_nodelay          on;")
+    [void]$cb.AppendLine("    keepalive_timeout    65;")
+    [void]$cb.AppendLine("    client_max_body_size 50m;")
+    [void]$cb.AppendLine("    server_tokens        off;")
+    [void]$cb.AppendLine("")
+    [void]$cb.Append($serverBlocks)
+    [void]$cb.AppendLine("}")
 
-worker_processes  auto;
-error_log  $nginxLogDirPosix/error.log warn;
-pid        $nginxLogDirPosix/nginx.pid;
-
-events {
-    worker_connections 1024;
-    use                select;
-}
-
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '`$remote_addr - `$remote_user [`$time_local] "`$request" '
-                      '`$status `$body_bytes_sent "`$http_referer" '
-                      '"`$http_user_agent" "`$http_x_forwarded_for"';
-    access_log  $nginxLogDirPosix/access.log  main;
-
-    sendfile             on;
-    tcp_nopush           on;
-    tcp_nodelay          on;
-    keepalive_timeout    65;
-    client_max_body_size 50m;
-    server_tokens        off;
-
-$serverBlocks
-}
-"@
+    $conf = $cb.ToString()
     [System.IO.File]::WriteAllText($nginxConfPath, $conf, $utf8NoBom)
 }
 
