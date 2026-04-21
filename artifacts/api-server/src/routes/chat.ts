@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { chatSessionsTable, chatMessagesTable, chatReplyTemplatesTable } from "@workspace/db";
 import { eq, inArray, asc, desc } from "drizzle-orm";
 import { WebSocketServer, WebSocket } from "ws";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 // Auto-generate a human-friendly ticket number: MD-YYYYMMDD-<6 chars>
 function generateTicketNumber(): string {
@@ -175,8 +176,8 @@ router.post("/chat/sessions", async (req, res) => {
 });
 
 // PATCH /api/chat/sessions/:id — update status / priority / assignee fields.
-// Used by admin UI to assign sessions and update ticket status.
-router.patch("/chat/sessions/:id", async (req, res) => {
+// Used by admin UI to assign sessions and update ticket status. ADMIN ONLY.
+router.patch("/chat/sessions/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -220,8 +221,8 @@ router.patch("/chat/sessions/:id", async (req, res) => {
 
 /* ─────────────────── Reply Templates (canned responses) ─────────────────── */
 
-// GET /api/chat/templates
-router.get("/chat/templates", async (_req, res) => {
+// GET /api/chat/templates (ADMIN ONLY — used to power admin reply panel & manager)
+router.get("/chat/templates", requireAdmin(), async (_req, res) => {
   try {
     const rows = await db
       .select()
@@ -233,8 +234,8 @@ router.get("/chat/templates", async (_req, res) => {
   }
 });
 
-// POST /api/chat/templates
-router.post("/chat/templates", async (req, res) => {
+// POST /api/chat/templates (ADMIN ONLY)
+router.post("/chat/templates", requireAdmin(), async (req, res) => {
   try {
     const { label, body, category, shortcut, sortOrder, isActive } = req.body ?? {};
     if (!label || !body) { res.status(400).json({ error: "label & body required" }); return; }
@@ -254,8 +255,8 @@ router.post("/chat/templates", async (req, res) => {
   }
 });
 
-// PUT /api/chat/templates/:id
-router.put("/chat/templates/:id", async (req, res) => {
+// PUT /api/chat/templates/:id (ADMIN ONLY)
+router.put("/chat/templates/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -278,8 +279,8 @@ router.put("/chat/templates/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/chat/templates/:id
-router.delete("/chat/templates/:id", async (req, res) => {
+// DELETE /api/chat/templates/:id (ADMIN ONLY)
+router.delete("/chat/templates/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -349,8 +350,8 @@ router.post("/chat/sessions/:id/messages", async (req, res) => {
   }
 });
 
-// GET /api/chat/sessions — list all sessions (admin only)
-router.get("/chat/sessions", async (req, res) => {
+// GET /api/chat/sessions — list all sessions (ADMIN ONLY).
+router.get("/chat/sessions", requireAdmin(), async (req, res) => {
   try {
     const allSessions = await db
       .select()
@@ -363,8 +364,8 @@ router.get("/chat/sessions", async (req, res) => {
   }
 });
 
-// DELETE /api/chat/sessions/:id — remove a single chat session and its messages
-router.delete("/chat/sessions/:id", async (req, res) => {
+// DELETE /api/chat/sessions/:id — remove a single chat session and its messages (ADMIN ONLY)
+router.delete("/chat/sessions/:id", requireAdmin(), async (req, res) => {
   try {
     const sessionId = parseInt(req.params.id);
     if (Number.isNaN(sessionId)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -378,8 +379,8 @@ router.delete("/chat/sessions/:id", async (req, res) => {
   }
 });
 
-// POST /api/chat/sessions/bulk-delete — delete many sessions at once
-router.post("/chat/sessions/bulk-delete", async (req, res) => {
+// POST /api/chat/sessions/bulk-delete — delete many sessions at once (ADMIN ONLY)
+router.post("/chat/sessions/bulk-delete", requireAdmin(), async (req, res) => {
   try {
     const ids: unknown = req.body?.ids;
     if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids[] required" }); return; }
