@@ -22,6 +22,7 @@ param(
     [switch]$Reinstall,
     [switch]$SkipBuild,
     [switch]$SkipSsl,
+    [switch]$NoWww,
     [switch]$Uninstall
 )
 
@@ -638,9 +639,11 @@ if ($SkipSsl) {
     Write-Info "Yeu cau cert cho $($Config.Domain) (va www.$($Config.Domain))..."
     New-Item -ItemType Directory -Force -Path $SslDir | Out-Null
 
+    $hostList = if ($NoWww) { $Config.Domain } else { "$($Config.Domain),www.$($Config.Domain)" }
+    Write-Info "Domains for cert: $hostList"
     $wacsArgs = @(
         "--source", "manual",
-        "--host", "$($Config.Domain),www.$($Config.Domain)",
+        "--host", $hostList,
         "--validation", "filesystem",
         "--webroot", $AcmeRoot,
         "--store", "pemfiles",
