@@ -48,7 +48,7 @@ $Config = @{
     PgDbPassword    = "ZeroCode123#!!"
 
     # Clerk (production keys)
-    ClerkPublishableKey = "pk_live_Y2xlcmsudm50aGVtZXMuc3RvcmUk"
+    ClerkPublishableKey = "pk_live_Y2xlcmsubWFpc29uZGVsdXhlaG90ZWwuY29tJA"
     ClerkSecretKey      = "sk_live_EyvwhwIk0n04frReYRDEi5rGb55vqwbzEuKbh1dqdn"
 
     # Momo
