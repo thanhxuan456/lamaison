@@ -4,6 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import {
   publishToFacebook, publishToInstagram, publishToThreads,
   publishToGoogle, publishToZalo, publishToTikTok,
+  ensureFreshTikTokToken, refreshTikTokToken,
   type FacebookConfig, type InstagramConfig, type ThreadsConfig,
   type GoogleConfig, type ZaloConfig, type TikTokConfig,
   type PostPayload, type PublishResult,
@@ -29,7 +30,11 @@ const DEFAULT_CONFIG: SocialConfig = {
   facebook: { enabled: false, accessToken: "", pageId: "", groupId: "" },
   instagram: { enabled: false, accessToken: "", igUserId: "" },
   threads: { enabled: false, accessToken: "", threadsUserId: "" },
-  tiktok: { enabled: false, accessToken: "", openId: "", privacyLevel: "PUBLIC_TO_EVERYONE" },
+  tiktok: {
+    enabled: false, accessToken: "", openId: "", privacyLevel: "PUBLIC_TO_EVERYONE",
+    clientKey: "", clientSecret: "", refreshToken: "",
+    accessTokenExpiresAt: "", refreshTokenExpiresAt: "",
+  },
   google: { enabled: false, accessToken: "", accountId: "", locationId: "" },
   zalo: { enabled: false, accessToken: "", oaId: "" },
 };
@@ -41,7 +46,12 @@ function maskTokens(c: SocialConfig): SocialConfig {
     facebook: { ...c.facebook, accessToken: c.facebook.accessToken ? MASK : "" },
     instagram: { ...c.instagram, accessToken: c.instagram.accessToken ? MASK : "" },
     threads: { ...c.threads, accessToken: c.threads.accessToken ? MASK : "" },
-    tiktok: { ...c.tiktok, accessToken: c.tiktok.accessToken ? MASK : "" },
+    tiktok: {
+      ...c.tiktok,
+      accessToken:  c.tiktok.accessToken  ? MASK : "",
+      clientSecret: c.tiktok.clientSecret ? MASK : "",
+      refreshToken: c.tiktok.refreshToken ? MASK : "",
+    },
     google: { ...c.google, accessToken: c.google.accessToken ? MASK : "" },
     zalo: { ...c.zalo, accessToken: c.zalo.accessToken ? MASK : "" },
   };
@@ -102,7 +112,9 @@ router.put("/integrations/social", async (req, res) => {
       tiktok: {
         ...existing.tiktok,
         ...(body.tiktok ?? {}),
-        accessToken: mergeToken(body.tiktok?.accessToken, existing.tiktok.accessToken),
+        accessToken:  mergeToken(body.tiktok?.accessToken,  existing.tiktok.accessToken),
+        clientSecret: mergeToken(body.tiktok?.clientSecret, existing.tiktok.clientSecret ?? ""),
+        refreshToken: mergeToken(body.tiktok?.refreshToken, existing.tiktok.refreshToken ?? ""),
       },
       google: {
         ...existing.google,
@@ -143,7 +155,21 @@ export async function publishPostToSocial(postId: number, hostHint?: string) {
   if (cfg.facebook.enabled)  tasks.push({ platform: "facebook",  run: () => publishToFacebook(payload, cfg.facebook) });
   if (cfg.instagram.enabled) tasks.push({ platform: "instagram", run: () => publishToInstagram(payload, cfg.instagram) });
   if (cfg.threads.enabled)   tasks.push({ platform: "threads",   run: () => publishToThreads(payload, cfg.threads) });
-  if (cfg.tiktok.enabled)    tasks.push({ platform: "tiktok",    run: () => publishToTikTok(payload, cfg.tiktok) });
+  if (cfg.tiktok.enabled) {
+    tasks.push({
+      platform: "tiktok",
+      run: async () => {
+        // Tự refresh access token nếu sắp hết hạn rồi mới đăng
+        const fresh = await ensureFreshTikTokToken(cfg.tiktok, async (newTk) => {
+          const latest = await readSocialConfig();
+          await writeSocialConfig({ ...latest, tiktok: newTk });
+          cfg.tiktok = newTk;
+        });
+        if (!fresh.ok) return { ok: false, message: fresh.message };
+        return publishToTikTok(payload, fresh.cfg);
+      },
+    });
+  }
   if (cfg.google.enabled)    tasks.push({ platform: "google",    run: () => publishToGoogle(payload, cfg.google) });
   if (cfg.zalo.enabled)      tasks.push({ platform: "zalo",      run: () => publishToZalo(payload, cfg.zalo) });
 
@@ -175,6 +201,24 @@ router.post("/blog-posts/:id/publish-social", async (req, res) => {
     res.json(out);
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? "internal" });
+  }
+});
+
+/** Manually refresh TikTok token (called from admin UI). */
+router.post("/integrations/social/tiktok/refresh", async (_req, res) => {
+  try {
+    const cfg = await readSocialConfig();
+    const r = await refreshTikTokToken(cfg.tiktok);
+    if (!r.ok) { res.status(400).json({ ok: false, message: r.message }); return; }
+    await writeSocialConfig({ ...cfg, tiktok: r.cfg });
+    res.json({
+      ok: true,
+      accessTokenExpiresAt: r.cfg.accessTokenExpiresAt,
+      refreshTokenExpiresAt: r.cfg.refreshTokenExpiresAt,
+      openId: r.cfg.openId,
+    });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, message: err?.message ?? "internal" });
   }
 });
 

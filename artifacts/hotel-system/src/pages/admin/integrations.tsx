@@ -649,7 +649,11 @@ interface SocialAutoConfig {
   facebook: { enabled: boolean; accessToken: string; pageId: string; groupId?: string };
   instagram: { enabled: boolean; accessToken: string; igUserId: string };
   threads: { enabled: boolean; accessToken: string; threadsUserId: string };
-  tiktok: { enabled: boolean; accessToken: string; openId?: string; privacyLevel?: string };
+  tiktok: {
+    enabled: boolean; accessToken: string; openId?: string; privacyLevel?: string;
+    clientKey?: string; clientSecret?: string; refreshToken?: string;
+    accessTokenExpiresAt?: string; refreshTokenExpiresAt?: string;
+  };
   google: { enabled: boolean; accessToken: string; accountId: string; locationId: string };
   zalo: { enabled: boolean; accessToken: string; oaId?: string };
 }
@@ -660,7 +664,11 @@ const EMPTY_AUTO: SocialAutoConfig = {
   facebook: { enabled: false, accessToken: "", pageId: "", groupId: "" },
   instagram: { enabled: false, accessToken: "", igUserId: "" },
   threads: { enabled: false, accessToken: "", threadsUserId: "" },
-  tiktok: { enabled: false, accessToken: "", openId: "", privacyLevel: "PUBLIC_TO_EVERYONE" },
+  tiktok: {
+    enabled: false, accessToken: "", openId: "", privacyLevel: "PUBLIC_TO_EVERYONE",
+    clientKey: "", clientSecret: "", refreshToken: "",
+    accessTokenExpiresAt: "", refreshTokenExpiresAt: "",
+  },
   google: { enabled: false, accessToken: "", accountId: "", locationId: "" },
   zalo: { enabled: false, accessToken: "", oaId: "" },
 };
@@ -690,6 +698,86 @@ function PlatformCard({ icon: Icon, title, hint, docUrl, enabled, onToggle, chil
       </CardHeader>
       {enabled && <CardContent className="pt-0 space-y-3">{children}</CardContent>}
     </Card>
+  );
+}
+
+/** Hiển thị trạng thái hết hạn TikTok token + nút "Refresh ngay". */
+function TikTokRefreshStatus({
+  accessExpiresAt, refreshExpiresAt, onRefreshed,
+}: {
+  accessExpiresAt?: string;
+  refreshExpiresAt?: string;
+  onRefreshed: (next: { accessTokenExpiresAt?: string; refreshTokenExpiresAt?: string; openId?: string }) => void;
+}) {
+  const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const fmtRemain = (iso?: string) => {
+    if (!iso) return "chưa refresh";
+    const ms = Date.parse(iso) - Date.now();
+    if (isNaN(ms)) return "không xác định";
+    if (ms <= 0) return "đã hết hạn";
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    if (h >= 24) return `còn ${Math.floor(h / 24)} ngày`;
+    return `còn ${h}h ${m}m`;
+  };
+
+  const accessRemainMs = accessExpiresAt ? Date.parse(accessExpiresAt) - Date.now() : -1;
+  const accessFresh = accessRemainMs > 5 * 60_000;
+  const refreshRemainMs = refreshExpiresAt ? Date.parse(refreshExpiresAt) - Date.now() : -1;
+
+  const refreshNow = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/api/integrations/social/tiktok/refresh`, { method: "POST" });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data?.ok) throw new Error(data?.message ?? "Không refresh được");
+      toast({
+        title: "Đã refresh TikTok token",
+        description: `Access token mới hiệu lực ~24h. Open ID: ${data.openId ?? "?"}`,
+      });
+      onRefreshed({
+        accessTokenExpiresAt: data.accessTokenExpiresAt,
+        refreshTokenExpiresAt: data.refreshTokenExpiresAt,
+        openId: data.openId,
+      });
+    } catch (e: any) {
+      toast({ title: "Refresh thất bại", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="rounded border border-border bg-muted/30 p-2.5 space-y-2">
+      <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <div>
+          <div className="text-muted-foreground uppercase tracking-widest text-[10px]">Access token</div>
+          <div className={accessFresh ? "text-green-600 dark:text-green-400 font-medium" :
+                          accessRemainMs > 0 ? "text-amber-600 dark:text-amber-400 font-medium" :
+                          "text-red-600 dark:text-red-400 font-medium"}>
+            {accessFresh ? "✓ " : accessRemainMs > 0 ? "⚠ " : "✕ "}
+            {fmtRemain(accessExpiresAt)}
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground uppercase tracking-widest text-[10px]">Refresh token</div>
+          <div className={refreshRemainMs > 7 * 24 * 3600_000 ? "text-green-600 dark:text-green-400 font-medium" :
+                          refreshRemainMs > 0 ? "text-amber-600 dark:text-amber-400 font-medium" :
+                          "text-muted-foreground"}>
+            {fmtRemain(refreshExpiresAt)}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" onClick={refreshNow} disabled={busy} className="text-xs h-7 gap-1.5">
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+          {busy ? "Đang refresh…" : "Refresh ngay"}
+        </Button>
+        <span className="text-[10px] text-muted-foreground">
+          Bấm để test ngay, hoặc bỏ qua — hệ thống sẽ tự refresh khi đăng bài.
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -880,9 +968,61 @@ function AutoPostPanel() {
           <Label>Access Token (user-granted, có scope video.publish)</Label>
           <div className="mt-1">{tokenInput("tt", cfg.tiktok.accessToken, (v) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, accessToken: v } }))}</div>
         </div>
+
+        {/* ─── Auto-refresh credentials (TikTok rotate refresh_token mỗi lần) ─── */}
+        <div className="border-t border-border pt-3 mt-2 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-primary">
+              Tự động gia hạn (Refresh Token)
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Khi đủ 3 trường dưới, hệ thống sẽ TỰ refresh access token mỗi lần đăng bài
+            (token hết hạn sau ~24h, refresh token sống ~365 ngày).
+          </p>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <Label>Client Key</Label>
+              <Input
+                value={cfg.tiktok.clientKey ?? ""}
+                onChange={(e) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, clientKey: e.target.value } })}
+                placeholder="awxxxxxxxxxxxxxx"
+                className="mt-1 font-mono text-xs"
+              />
+            </div>
+            <div>
+              <Label>Client Secret</Label>
+              <div className="mt-1">
+                {tokenInput("tt-cs", cfg.tiktok.clientSecret ?? "",
+                  (v) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, clientSecret: v } }))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label>Refresh Token</Label>
+            <div className="mt-1">
+              {tokenInput("tt-rt", cfg.tiktok.refreshToken ?? "",
+                (v) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, refreshToken: v } }))}
+            </div>
+          </div>
+
+          <TikTokRefreshStatus
+            accessExpiresAt={cfg.tiktok.accessTokenExpiresAt}
+            refreshExpiresAt={cfg.tiktok.refreshTokenExpiresAt}
+            onRefreshed={(next) => setCfg({
+              ...cfg,
+              tiktok: {
+                ...cfg.tiktok,
+                accessTokenExpiresAt: next.accessTokenExpiresAt,
+                refreshTokenExpiresAt: next.refreshTokenExpiresAt,
+                openId: next.openId ?? cfg.tiktok.openId,
+              },
+            })}
+          />
+        </div>
+
         <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
           ⚠ Bài viết phải có ảnh cover https công khai. Tiêu đề ≤ 90 ký tự, mô tả ≤ 4000.
-          Token TikTok hết hạn sau 24h — dùng refresh_token để gia hạn (cần code thêm khi cần).
         </p>
       </PlatformCard>
 

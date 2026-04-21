@@ -218,12 +218,99 @@ export async function publishToGoogle(p: PostPayload, c: GoogleConfig): Promise<
 
 export interface TikTokConfig {
   enabled: boolean;
-  /** OAuth user access token with scope: video.publish + video.upload */
+  /** OAuth user access token with scope: video.publish + video.upload (TTL ~24h) */
   accessToken: string;
   /** Optional: TikTok Open ID for logging only */
   openId?: string;
   /** Privacy level: PUBLIC_TO_EVERYONE | MUTUAL_FOLLOW_FRIENDS | SELF_ONLY */
   privacyLevel?: string;
+
+  /* ---- Auto-refresh fields (TikTok rotates refresh_token mỗi lần dùng) ---- */
+  /** TikTok app Client Key (lấy ở TikTok Developer Portal) */
+  clientKey?: string;
+  /** TikTok app Client Secret */
+  clientSecret?: string;
+  /** Refresh token (TTL ~365 ngày, rotate mỗi lần refresh) */
+  refreshToken?: string;
+  /** ISO timestamp khi access token hết hạn */
+  accessTokenExpiresAt?: string;
+  /** ISO timestamp khi refresh token hết hạn (~365 ngày) */
+  refreshTokenExpiresAt?: string;
+}
+
+/**
+ * Refresh TikTok access token qua OAuth refresh_token grant.
+ * TikTok luôn ROTATE refresh_token — phải lưu cái mới về.
+ * Trả về config mới (đã có token mới) hoặc null nếu không refresh được.
+ */
+export async function refreshTikTokToken(
+  c: TikTokConfig,
+): Promise<{ ok: true; cfg: TikTokConfig } | { ok: false; message: string }> {
+  if (!c.clientKey || !c.clientSecret) {
+    return { ok: false, message: "Thiếu TikTok Client Key/Secret để refresh" };
+  }
+  if (!c.refreshToken) {
+    return { ok: false, message: "Thiếu TikTok Refresh Token" };
+  }
+  try {
+    const r = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_key: c.clientKey,
+        client_secret: c.clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: c.refreshToken,
+      }).toString(),
+    });
+    const data: any = await r.json().catch(() => ({}));
+    if (!r.ok || !data?.access_token) {
+      const msg = data?.error_description || data?.error || `HTTP ${r.status}`;
+      return { ok: false, message: `TikTok refresh thất bại: ${msg}` };
+    }
+    const now = Date.now();
+    const accessTtlSec   = Number(data.expires_in)         || 24 * 3600;
+    const refreshTtlSec  = Number(data.refresh_expires_in) || 365 * 24 * 3600;
+    const cfg: TikTokConfig = {
+      ...c,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || c.refreshToken,
+      openId: data.open_id || c.openId,
+      accessTokenExpiresAt:  new Date(now + accessTtlSec  * 1000).toISOString(),
+      refreshTokenExpiresAt: new Date(now + refreshTtlSec * 1000).toISOString(),
+    };
+    return { ok: true, cfg };
+  } catch (err: any) {
+    return { ok: false, message: `Lỗi mạng khi refresh TikTok: ${err?.message ?? err}` };
+  }
+}
+
+/**
+ * Đảm bảo access token còn hiệu lực (>5 phút). Nếu sắp hết → refresh và
+ * gọi `persist` để cập nhật config trong DB.
+ */
+export async function ensureFreshTikTokToken(
+  c: TikTokConfig,
+  persist: (cfg: TikTokConfig) => Promise<void>,
+): Promise<{ ok: true; cfg: TikTokConfig } | { ok: false; message: string }> {
+  const SAFE_MARGIN_MS = 5 * 60 * 1000;
+  const expiresAt = c.accessTokenExpiresAt ? Date.parse(c.accessTokenExpiresAt) : 0;
+  const stillFresh = c.accessToken && expiresAt && expiresAt - Date.now() > SAFE_MARGIN_MS;
+  if (stillFresh) return { ok: true, cfg: c };
+
+  // Cần refresh — phải có refresh token + client credentials
+  if (!c.refreshToken || !c.clientKey || !c.clientSecret) {
+    // Nếu access token vẫn còn (do user vừa nhập tay) thì cứ thử dùng
+    if (c.accessToken && (!expiresAt || expiresAt > Date.now())) return { ok: true, cfg: c };
+    return { ok: false, message: "Access token hết hạn và chưa cấu hình refresh token để gia hạn tự động" };
+  }
+
+  const r = await refreshTikTokToken(c);
+  if (!r.ok) return r;
+  try { await persist(r.cfg); } catch (err: any) {
+    return { ok: false, message: `Refresh OK nhưng không lưu được token: ${err?.message ?? err}` };
+  }
+  return r;
 }
 
 export async function publishToTikTok(p: PostPayload, c: TikTokConfig): Promise<PublishResult> {
