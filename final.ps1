@@ -724,6 +724,9 @@ if (-not $SkipNginx) {
         }
 
         $conf = @"
+# Chay foreground de NSSM giam sat duoc process (khong duoc dat qua -g vi NSSM mat dau nhay)
+daemon off;
+
 worker_processes  auto;
 error_log  $nginxLogDir/error.log warn;
 pid        $nginxLogDir/nginx.pid;
@@ -850,7 +853,7 @@ if (-not $SkipNginx) {
         -SvcName      "GrandPalaceNginx" `
         -DisplayName  "MAISON DELUXE - nginx" `
         -Application  $nginxExe `
-        -AppParameters "-g `"daemon off;`" -c `"$nginxConfPath`" -p `"$NginxDir`"" `
+        -AppParameters "-c `"$nginxConfPath`" -p `"$NginxDir`"" `
         -WorkDir      $NginxDir `
         -EnvVars      @()
 } else {
