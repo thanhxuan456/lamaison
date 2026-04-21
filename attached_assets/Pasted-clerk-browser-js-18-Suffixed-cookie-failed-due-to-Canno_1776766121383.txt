@@ -1,0 +1,68 @@
+clerk.browser.js:18 Suffixed cookie failed due to Cannot read properties of undefined (reading 'digest') (secure-context: false, url: http://maisondeluxehotel.com/)
+clerk.browser.js:18  GET https://clerk.maisondeluxehotel.com/v1/client?__clerk_api_version=2025-11-10&_clerk_js_version=6.7.4 400 (Bad Request)
+tr.retryImmediately @ clerk.browser.js:18
+tr @ clerk.browser.js:16
+o @ clerk.browser.js:18
+await in o
+_baseFetch @ clerk.browser.js:17
+(anonymous) @ clerk.browser.js:17
+execute @ clerk.browser.js:17
+_fetch @ clerk.browser.js:17
+_baseGet @ clerk.browser.js:18
+fetch @ clerk.browser.js:18
+r @ clerk.browser.js:18
+#eg @ clerk.browser.js:18
+await in #eg
+load @ clerk.browser.js:18
+getEntryChunks @ index-MJofwqUT.js:142
+await in getEntryChunks
+JD @ index-MJofwqUT.js:142
+getOrCreateInstance @ index-MJofwqUT.js:142
+XY @ index-MJofwqUT.js:142
+GY @ index-MJofwqUT.js:142
+gb @ index-MJofwqUT.js:8
+Pb @ index-MJofwqUT.js:8
+xC @ index-MJofwqUT.js:8
+FC @ index-MJofwqUT.js:8
+nH @ index-MJofwqUT.js:8
+s0 @ index-MJofwqUT.js:8
+BC @ index-MJofwqUT.js:8
+rT @ index-MJofwqUT.js:8
+ee @ index-MJofwqUT.js:1
+postMessage
+de @ index-MJofwqUT.js:1
+JH.e.unstable_scheduleCallback @ index-MJofwqUT.js:1
+nT @ index-MJofwqUT.js:8
+tT @ index-MJofwqUT.js:8
+(anonymous) @ index-MJofwqUT.js:8
+index-MJofwqUT.js:142 e: Clerk: Production Keys are only allowed for domain "maisondeluxehotel.com". 
+API Error: The Request HTTP Origin header must be equal to or a subdomain of the requesting URL.
+    at clerk.browser.js:17:8808
+    at t$._baseFetch (clerk.browser.js:18:38)
+    at async tL.execute (clerk.browser.js:17:6639)
+    at async iZ._baseGet (clerk.browser.js:18:497)
+    at async Promise.all (/index 1)
+    at async #eg (clerk.browser.js:18:204876)
+    at async n$.load (clerk.browser.js:18:163767)
+    at async JD.getEntryChunks (index-MJofwqUT.js:142:40048)
+getEntryChunks @ index-MJofwqUT.js:142
+await in getEntryChunks
+JD @ index-MJofwqUT.js:142
+getOrCreateInstance @ index-MJofwqUT.js:142
+XY @ index-MJofwqUT.js:142
+GY @ index-MJofwqUT.js:142
+gb @ index-MJofwqUT.js:8
+Pb @ index-MJofwqUT.js:8
+xC @ index-MJofwqUT.js:8
+FC @ index-MJofwqUT.js:8
+nH @ index-MJofwqUT.js:8
+s0 @ index-MJofwqUT.js:8
+BC @ index-MJofwqUT.js:8
+rT @ index-MJofwqUT.js:8
+ee @ index-MJofwqUT.js:1
+postMessage
+de @ index-MJofwqUT.js:1
+JH.e.unstable_scheduleCallback @ index-MJofwqUT.js:1
+nT @ index-MJofwqUT.js:8
+tT @ index-MJofwqUT.js:8
+(anonymous) @ index-MJofwqUT.js:8
