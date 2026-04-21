@@ -682,10 +682,27 @@ $httpsBlock
 Write-NginxConf -includeSsl $false
 
 # Validate the config
+# NOTE: nginx ghi cả thông báo "syntax is ok" ra stderr.
+# Với $ErrorActionPreference='Stop', PowerShell sẽ ném NativeCommandError
+# ngay cả khi nginx thành công. Bọc Continue + dựa vào $LASTEXITCODE.
 Write-Info "Testing nginx configuration..."
-$testResult = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1
-if ($LASTEXITCODE -ne 0) { Fail "nginx config test failed:`n$testResult" }
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+$LASTEXITCODE = 0
+try {
+    $testResult = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1 |
+                  ForEach-Object { "$_" }
+} catch {
+    $testResult = $_.Exception.Message
+}
+$nginxExit = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
+
+if ($nginxExit -ne 0) {
+    Fail "nginx config test failed (exit $nginxExit):`n$($testResult -join "`n")"
+}
 Write-OK "nginx configuration OK"
+$testResult | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
 # ===========================================================
 # STEP 12 -- INSTALL API WINDOWS SERVICE
@@ -861,9 +878,23 @@ if (-not $SkipSsl) {
             Write-Info "Updating nginx.conf with SSL and reloading..."
             Write-NginxConf -includeSsl $true
 
-            $testResult2 = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1
-            if ($LASTEXITCODE -ne 0) { Fail "nginx SSL config test failed:`n$testResult2" }
+            $prevEAP2 = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $LASTEXITCODE = 0
+            try {
+                $testResult2 = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1 |
+                               ForEach-Object { "$_" }
+            } catch {
+                $testResult2 = $_.Exception.Message
+            }
+            $nginxExit2 = $LASTEXITCODE
+            $ErrorActionPreference = $prevEAP2
+
+            if ($nginxExit2 -ne 0) {
+                Fail "nginx SSL config test failed (exit $nginxExit2):`n$($testResult2 -join "`n")"
+            }
             Write-OK "nginx SSL config valid"
+            $testResult2 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
             # Send nginx a reload signal (graceful config reload, no downtime)
             & $nginxExe -s reload -c $nginxConfPath -p $NginxDir 2>&1 | Out-Null
