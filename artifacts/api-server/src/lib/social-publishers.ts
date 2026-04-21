@@ -214,6 +214,71 @@ export async function publishToGoogle(p: PostPayload, c: GoogleConfig): Promise<
   }
 }
 
+/* ---------- TikTok (Content Posting API — PHOTO_MODE direct post) -------- */
+
+export interface TikTokConfig {
+  enabled: boolean;
+  /** OAuth user access token with scope: video.publish + video.upload */
+  accessToken: string;
+  /** Optional: TikTok Open ID for logging only */
+  openId?: string;
+  /** Privacy level: PUBLIC_TO_EVERYONE | MUTUAL_FOLLOW_FRIENDS | SELF_ONLY */
+  privacyLevel?: string;
+}
+
+export async function publishToTikTok(p: PostPayload, c: TikTokConfig): Promise<PublishResult> {
+  if (!c.enabled) return { ok: false, message: "TikTok chưa được bật" };
+  if (!c.accessToken) return { ok: false, message: "Thiếu TikTok Access Token" };
+  if (!p.coverImage) {
+    return { ok: false, message: "TikTok cần ảnh bìa https công khai (PHOTO mode). Bài text-only không đăng được." };
+  }
+
+  const title = `${p.title}`.slice(0, 90);
+  const description = `${p.excerpt}\n\n${p.url}\n${p.tags ?? ""}`.slice(0, 4000);
+  const privacy = c.privacyLevel || "PUBLIC_TO_EVERYONE";
+
+  const body = {
+    post_info: {
+      title,
+      description,
+      privacy_level: privacy,
+      disable_comment: false,
+      auto_add_music: true,
+    },
+    source_info: {
+      source: "PULL_FROM_URL",
+      photo_cover_index: 0,
+      photo_images: [p.coverImage],
+    },
+    post_mode: "DIRECT_POST",
+    media_type: "PHOTO",
+  };
+
+  try {
+    const r = await fetch("https://open.tiktokapis.com/v2/post/publish/content/init/", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${c.accessToken}`,
+        "Content-Type": "application/json; charset=UTF-8",
+      },
+      body: JSON.stringify(body),
+    });
+    const data: any = await r.json().catch(() => ({}));
+    const errCode = data?.error?.code;
+    if (!r.ok || (errCode && errCode !== "ok")) {
+      return { ok: false, message: `TikTok từ chối: ${data?.error?.message ?? `HTTP ${r.status}`}` };
+    }
+    const publishId = data?.data?.publish_id ?? "";
+    return {
+      ok: true,
+      externalId: String(publishId),
+      message: "Đã gửi bài lên TikTok (đang xử lý phía TikTok ~1-2 phút)",
+    };
+  } catch (err: any) {
+    return { ok: false, message: `Lỗi mạng: ${err?.message ?? err}` };
+  }
+}
+
 /* ---------- Zalo Official Account (broadcast text + link) ----------------- */
 
 export interface ZaloConfig {

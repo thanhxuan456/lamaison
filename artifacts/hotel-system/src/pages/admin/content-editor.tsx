@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Save, Globe, EyeOff, Search, Image as ImageIcon,
   Eye, Trash2, ExternalLink, Upload, X, Link2,
+  Send, Facebook, Instagram, MessageCircle, Music2, MapPin, CheckCircle2, AlertCircle, Loader2, RefreshCw,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -437,6 +438,9 @@ function PostEditorContent() {
           </CardContent>
         </Card>
 
+        {/* Đăng tự động lên mạng xã hội — chỉ hiện khi đã có ID (đã save lần đầu) */}
+        {id && <SocialPublishCard postId={id} published={!!form.published} />}
+
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Phân loại</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -661,4 +665,239 @@ function PageEditorContent() {
 
 export function AdminPageEditor() {
   return <AdminGuard><PageEditorContent /></AdminGuard>;
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * SocialPublishCard
+ *  - Hiển thị danh sách các nền tảng đang bật (Facebook, Instagram,
+ *    Threads, TikTok, Google Business, Zalo OA)
+ *  - Cho phép admin nhấn "Đẩy ngay" để gọi POST /api/blog-posts/:id/publish-social
+ *  - Hiển thị lịch sử 5 lần đẩy gần nhất (success/failed + link)
+ *  - Tự refresh log sau mỗi lần đẩy
+ * ──────────────────────────────────────────────────────────────── */
+
+interface SocialCfgPublic {
+  autoPublish: boolean;
+  publicBaseUrl: string;
+  facebook: { enabled: boolean };
+  instagram: { enabled: boolean };
+  threads: { enabled: boolean };
+  tiktok: { enabled: boolean };
+  google: { enabled: boolean };
+  zalo: { enabled: boolean };
+}
+interface PublishLogRow {
+  id: number; postId: number; platform: string;
+  status: "success" | "failed"; externalId?: string | null;
+  externalUrl?: string | null; message?: string | null; createdAt?: string | null;
+}
+
+const PLATFORM_META: Record<string, { label: string; icon: any; color: string }> = {
+  facebook:  { label: "Facebook",  icon: Facebook,        color: "text-[#1877F2]" },
+  instagram: { label: "Instagram", icon: Instagram,       color: "text-pink-500"  },
+  threads:   { label: "Threads",   icon: MessageCircle,   color: "text-foreground" },
+  tiktok:    { label: "TikTok",    icon: Music2,          color: "text-foreground" },
+  google:    { label: "Google",    icon: MapPin,          color: "text-[#4285F4]" },
+  zalo:      { label: "Zalo OA",   icon: MessageCircle,   color: "text-[#0068FF]" },
+};
+
+function SocialPublishCard({ postId, published }: { postId: number; published: boolean }) {
+  const { toast } = useToast();
+  const [cfg, setCfg] = useState<SocialCfgPublic | null>(null);
+  const [logs, setLogs] = useState<PublishLogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pushing, setPushing] = useState(false);
+
+  const reload = async () => {
+    try {
+      const [cR, lR] = await Promise.all([
+        fetch(`${API}/api/integrations/social`),
+        fetch(`${API}/api/blog-posts/${postId}/social-log`),
+      ]);
+      if (cR.ok) setCfg(await cR.json());
+      if (lR.ok) setLogs(await lR.json());
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [postId]);
+
+  const enabledPlatforms = cfg
+    ? (Object.keys(PLATFORM_META) as (keyof typeof PLATFORM_META)[]).filter(
+        (k) => (cfg as any)[k]?.enabled
+      )
+    : [];
+
+  const pushNow = async () => {
+    if (!published) {
+      toast({
+        title: "Cần xuất bản trước",
+        description: "Bật trạng thái 'Đã xuất bản' rồi mới có thể đẩy lên mạng xã hội.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPushing(true);
+    try {
+      const r = await fetch(`${API}/api/blog-posts/${postId}/publish-social`, { method: "POST" });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.error ?? "Không đẩy được");
+      const ok  = (data?.results ?? []).filter((x: any) => x.result?.ok).length;
+      const all = (data?.results ?? []).length;
+      toast({
+        title: all === 0 ? "Chưa bật nền tảng nào" : `Đã đẩy ${ok}/${all} nền tảng`,
+        description: all === 0
+          ? "Vào Tích hợp → Tự động đăng để bật Facebook / Threads / TikTok…"
+          : "Xem chi tiết bên dưới.",
+        variant: ok === 0 && all > 0 ? "destructive" : "default",
+      });
+      await reload();
+    } catch (e: any) {
+      toast({ title: "Lỗi", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setPushing(false);
+    }
+  };
+
+  return (
+    <Card className="border-primary/30">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Send size={14} className="text-primary" /> Đăng lên mạng xã hội
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {loading ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+            <Loader2 size={13} className="animate-spin" /> Đang tải cấu hình…
+          </div>
+        ) : !cfg || enabledPlatforms.length === 0 ? (
+          <div className="text-[12px] text-muted-foreground p-2 border border-dashed border-muted-foreground/30 rounded">
+            Chưa bật nền tảng nào.{" "}
+            <Link href="/admin/integrations?tab=auto-post" className="text-primary underline">
+              Mở Tích hợp → Tự động đăng
+            </Link>{" "}
+            để cấu hình Facebook, Threads, TikTok…
+          </div>
+        ) : (
+          <>
+            {/* Auto-publish indicator */}
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] border ${
+              cfg.autoPublish
+                ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            }`}>
+              {cfg.autoPublish ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+              <span>
+                {cfg.autoPublish
+                  ? "Auto-publish BẬT — bài tự đẩy ngay khi xuất bản lần đầu."
+                  : "Auto-publish TẮT — đẩy thủ công bằng nút bên dưới."}
+              </span>
+            </div>
+
+            {/* Enabled platforms badges */}
+            <div className="flex flex-wrap gap-1.5">
+              {enabledPlatforms.map((k) => {
+                const m = PLATFORM_META[k];
+                const Icon = m.icon;
+                return (
+                  <span
+                    key={k}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px]
+                               border border-primary/30 bg-primary/5 rounded"
+                  >
+                    <Icon size={11} className={m.color} />
+                    {m.label}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* Push now button */}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={pushNow}
+                disabled={pushing || !published}
+                className="flex-1 gap-1.5 text-xs"
+              >
+                {pushing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                {pushing ? "Đang đẩy…" : "Đẩy ngay lên các kênh"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={reload}
+                disabled={loading}
+                className="px-2"
+                title="Tải lại lịch sử"
+              >
+                <RefreshCw size={13} />
+              </Button>
+            </div>
+            {!published && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                Chỉ đẩy được khi bài đã ở trạng thái "Đã xuất bản".
+              </p>
+            )}
+
+            {/* Recent log */}
+            {logs.length > 0 && (
+              <div className="border-t border-border pt-2">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
+                  Lịch sử gần nhất
+                </div>
+                <ul className="space-y-1 max-h-40 overflow-y-auto">
+                  {logs.slice(0, 8).map((row) => {
+                    const m = PLATFORM_META[row.platform] ?? { label: row.platform, icon: Send, color: "" };
+                    const Icon = m.icon;
+                    const ok = row.status === "success";
+                    return (
+                      <li
+                        key={row.id}
+                        className="flex items-start gap-2 text-[11px] p-1.5 rounded
+                                   bg-muted/40 border border-border"
+                      >
+                        <Icon size={12} className={`mt-0.5 shrink-0 ${m.color}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{m.label}</span>
+                            <span className={ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
+                              {ok ? "✓" : "✕"}
+                            </span>
+                            {row.createdAt && (
+                              <span className="text-muted-foreground/70 ml-auto text-[10px]">
+                                {new Date(row.createdAt).toLocaleString("vi-VN", {
+                                  day: "2-digit", month: "2-digit",
+                                  hour: "2-digit", minute: "2-digit",
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          {row.message && (
+                            <p className={`text-[10px] leading-snug ${ok ? "text-muted-foreground" : "text-red-600/90 dark:text-red-400/90"}`}>
+                              {row.message}
+                            </p>
+                          )}
+                          {row.externalUrl && (
+                            <a
+                              href={row.externalUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-primary underline inline-flex items-center gap-0.5"
+                            >
+                              Xem bài <ExternalLink size={9} />
+                            </a>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

@@ -14,7 +14,7 @@ import {
   Receipt, FileText, Shield, Save, Upload, CheckCircle2, XCircle,
   AlertCircle, Loader2, RefreshCw, Eye, EyeOff, Zap, Lock, Globe, Building,
   Sparkles, LayoutTemplate, Image as ImageIcon, Link2, FileCheck, Database,
-  Wifi, WifiOff, Share2, Send, MapPin, MessageCircle,
+  Wifi, WifiOff, Share2, Send, MapPin, MessageCircle, Music2,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -649,6 +649,7 @@ interface SocialAutoConfig {
   facebook: { enabled: boolean; accessToken: string; pageId: string; groupId?: string };
   instagram: { enabled: boolean; accessToken: string; igUserId: string };
   threads: { enabled: boolean; accessToken: string; threadsUserId: string };
+  tiktok: { enabled: boolean; accessToken: string; openId?: string; privacyLevel?: string };
   google: { enabled: boolean; accessToken: string; accountId: string; locationId: string };
   zalo: { enabled: boolean; accessToken: string; oaId?: string };
 }
@@ -659,6 +660,7 @@ const EMPTY_AUTO: SocialAutoConfig = {
   facebook: { enabled: false, accessToken: "", pageId: "", groupId: "" },
   instagram: { enabled: false, accessToken: "", igUserId: "" },
   threads: { enabled: false, accessToken: "", threadsUserId: "" },
+  tiktok: { enabled: false, accessToken: "", openId: "", privacyLevel: "PUBLIC_TO_EVERYONE" },
   google: { enabled: false, accessToken: "", accountId: "", locationId: "" },
   zalo: { enabled: false, accessToken: "", oaId: "" },
 };
@@ -840,6 +842,48 @@ function AutoPostPanel() {
           <Label>Access Token</Label>
           <div className="mt-1">{tokenInput("th", cfg.threads.accessToken, (v) => setCfg({ ...cfg, threads: { ...cfg.threads, accessToken: v } }))}</div>
         </div>
+      </PlatformCard>
+
+      {/* TikTok */}
+      <PlatformCard
+        icon={Music2}
+        title="TikTok (Content Posting API)"
+        hint="Cần TikTok For Developers app + user access token với scope video.publish + video.upload. Đăng ở chế độ PHOTO (cần ảnh bìa)."
+        docUrl="https://developers.tiktok.com/doc/content-posting-api-get-started"
+        enabled={cfg.tiktok.enabled}
+        onToggle={(v) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, enabled: v } })}
+      >
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <Label>TikTok Open ID (tùy chọn)</Label>
+            <Input
+              value={cfg.tiktok.openId ?? ""}
+              onChange={(e) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, openId: e.target.value } })}
+              placeholder="abc123..."
+              className="mt-1 font-mono text-xs"
+            />
+          </div>
+          <div>
+            <Label>Privacy Level</Label>
+            <select
+              value={cfg.tiktok.privacyLevel ?? "PUBLIC_TO_EVERYONE"}
+              onChange={(e) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, privacyLevel: e.target.value } })}
+              className="mt-1 w-full h-9 px-3 text-xs border border-input bg-background rounded"
+            >
+              <option value="PUBLIC_TO_EVERYONE">Public — mọi người xem</option>
+              <option value="MUTUAL_FOLLOW_FRIENDS">Bạn bè follow lẫn nhau</option>
+              <option value="SELF_ONLY">Chỉ mình tôi (test)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <Label>Access Token (user-granted, có scope video.publish)</Label>
+          <div className="mt-1">{tokenInput("tt", cfg.tiktok.accessToken, (v) => setCfg({ ...cfg, tiktok: { ...cfg.tiktok, accessToken: v } }))}</div>
+        </div>
+        <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
+          ⚠ Bài viết phải có ảnh cover https công khai. Tiêu đề ≤ 90 ký tự, mô tả ≤ 4000.
+          Token TikTok hết hạn sau 24h — dùng refresh_token để gia hạn (cần code thêm khi cần).
+        </p>
       </PlatformCard>
 
       {/* Google Business Profile */}

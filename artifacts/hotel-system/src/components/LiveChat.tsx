@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@clerk/clerk-react";
 import { Link } from "wouter";
 import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn, Sparkles } from "lucide-react";
 import { useT } from "@/lib/i18n";
