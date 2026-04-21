@@ -6,6 +6,7 @@ import {
   Palette, ChevronRight, ChevronDown, Menu, FileText, ArrowLeft,
   Settings, Search, Layers, UtensilsCrossed, Receipt, CalendarCheck,
   UserCircle2, ListTree, Newspaper, Building2, Ruler, Puzzle, Shield,
+  Share2,
 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { useBranding } from "@/lib/branding";
@@ -58,8 +59,7 @@ const NAV: NavEntry[] = [
     icon: FileText,
     label: "Nội Dung",
     children: [
-      { kind: "item", icon: Newspaper, label: "Bài Viết",          path: "/admin/blogs"   },
-      { kind: "item", icon: FileText,  label: "Trang & Nội Dung",  path: "/admin/pages"   },
+      { kind: "item", icon: FileText,  label: "Trang & Bài Viết",  path: "/admin/pages"   },
       { kind: "item", icon: Layers,    label: "Trình Tạo Trang",   path: "/admin/builder" },
     ],
   },
@@ -88,6 +88,7 @@ const NAV: NavEntry[] = [
     children: [
       { kind: "item", icon: Receipt,  label: "Hóa Đơn & Mẫu",       path: "/admin/integrations" },
       { kind: "item", icon: FileText, label: "Hóa Đơn Điện Tử",     path: "/admin/integrations?tab=einvoice" },
+      { kind: "item", icon: Share2,   label: "Mạng Xã Hội",         path: "/admin/integrations?tab=social" },
       { kind: "item", icon: Shield,   label: "Bảo Mật Hệ Thống",    path: "/admin/integrations?tab=security" },
     ],
   },

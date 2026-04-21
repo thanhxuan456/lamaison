@@ -104,3 +104,13 @@ Only `tthanhxuan456@gmail.com` can access `/admin`. Guard is client-side via Cle
 - Supports 4 Vietnamese providers: **Viettel sinvoice**, **MISA meInvoice**, **VNPT Invoice**, **FAST Invoice**
 - Each provider has a dedicated test function with real `fetch()` calls and proper response parsing
 - Frontend (`integrations.tsx`) loads from API on mount, shows DB badge, has "Test kết nối thực tế" button
+
+## Content Management Consolidation (Apr 2026)
+
+- `/admin/pages` is now the **unified content management** screen with two tabs:
+  - **Trang** (CMS Pages) — localStorage-backed (`grand-palace-cms-pages`), with SEO/meta editor.
+  - **Bài viết / Tin tức** — real backend via `/api/blog-posts` (was `/admin/blogs`).
+- `/admin/blogs` route is preserved but redirects (`useLocation` replace) to `/admin/pages?tab=posts`.
+- Sidebar **Nội Dung** group now contains only "Trang & Bài Viết" + "Trình Tạo Trang" (the duplicate "Bài Viết" entry was removed).
+- The in-content **Menu navigation** tab was removed (already managed at `/admin/menus`).
+- **Mạng Xã Hội** (social links) was moved out of the content page into `/admin/integrations?tab=social`. Storage key unchanged (`grand-palace-social-links`) so existing data carries over.

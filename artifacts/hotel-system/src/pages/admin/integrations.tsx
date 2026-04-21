@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation, useSearch } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   Receipt, FileText, Shield, Save, Upload, CheckCircle2, XCircle,
   AlertCircle, Loader2, RefreshCw, Eye, EyeOff, Zap, Lock, Globe, Building,
   Sparkles, LayoutTemplate, Image as ImageIcon, Link2, FileCheck, Database,
-  Wifi, WifiOff,
+  Wifi, WifiOff, Share2,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -561,15 +562,101 @@ function EInvoicePanel() {
   );
 }
 
+// ─── Social Media Panel ────────────────────────────────────────────────────
+
+const SOCIAL_KEY = "grand-palace-social-links";
+
+interface SocialLink { id: string; label: string; href: string; enabled: boolean; color: string; }
+
+const DEFAULT_SOCIALS: SocialLink[] = [
+  { id: "facebook", label: "Facebook", href: "https://m.me/maisondeluxehotels", enabled: true,  color: "#1877F2" },
+  { id: "zalo",     label: "Zalo",     href: "https://zalo.me/0900000000",      enabled: true,  color: "#0068FF" },
+  { id: "whatsapp", label: "WhatsApp", href: "https://wa.me/84900000000",       enabled: true,  color: "#25D366" },
+  { id: "telegram", label: "Telegram", href: "https://t.me/maisondeluxe",       enabled: false, color: "#229ED9" },
+  { id: "phone",    label: "Hotline",  href: "tel:+84900000000",                enabled: true,  color: "#b8973e" },
+];
+
+function SocialMediaPanel() {
+  const { toast } = useToast();
+  const [socials, setSocials] = useState<SocialLink[]>(() => {
+    try { const s = localStorage.getItem(SOCIAL_KEY); return s ? JSON.parse(s) : DEFAULT_SOCIALS; }
+    catch { return DEFAULT_SOCIALS; }
+  });
+
+  const update = (id: string, k: keyof SocialLink, v: any) =>
+    setSocials(s => {
+      const next = s.map(x => x.id === id ? { ...x, [k]: v } : x);
+      try { localStorage.setItem(SOCIAL_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+
+  const saveAll = () => {
+    try { localStorage.setItem(SOCIAL_KEY, JSON.stringify(socials)); } catch {}
+    toast({ title: "Đã lưu", description: `${socials.filter(s => s.enabled).length} kênh đang hoạt động` });
+  };
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Share2 size={16} className="text-primary" /> Mạng Xã Hội & Liên Hệ</CardTitle>
+            <CardDescription>Cấu hình các kênh hiển thị trong nút chat nổi của website</CardDescription>
+          </div>
+          <Button onClick={saveAll} size="sm" className="rounded-none bg-primary text-primary-foreground text-xs uppercase tracking-widest h-8 px-4 gap-1.5">
+            <Save size={11} /> Lưu cài đặt
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-primary/10">
+            {socials.map(s => (
+              <div key={s.id} className={`px-5 py-4 transition-colors ${!s.enabled ? "opacity-50" : ""}`}>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-8 h-8 flex items-center justify-center border border-primary/20" style={{ backgroundColor: s.color + "22" }}>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                    </div>
+                    <Switch checked={s.enabled} onCheckedChange={c => update(s.id, "enabled", c)} />
+                  </div>
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px] tracking-[0.2em] uppercase">Tên hiển thị</Label>
+                      <Input value={s.label} onChange={e => update(s.id, "label", e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] tracking-[0.2em] uppercase">Đường dẫn / Số điện thoại</Label>
+                      <Input value={s.href} onChange={e => update(s.id, "href", e.target.value)} className="mt-1 font-mono text-xs" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <div className="bg-primary/5 border border-primary/20 px-5 py-4 text-sm text-muted-foreground">
+        💡 Các kênh được bật sẽ hiển thị trong nút chat nổi ở góc dưới bên phải website.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 function IntegrationsContent() {
   const { toast } = useToast();
   const [inv, setInv] = useLocalConfig<InvoiceIntegration>(INVOICE_CFG_KEY, DEFAULT_INVOICE);
   const fileRef = useRef<HTMLInputElement>(null);
-  const initialTab = (() => {
-    try { return new URLSearchParams(window.location.search).get("tab") ?? "invoice"; } catch { return "invoice"; }
-  })();
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const tabParam = new URLSearchParams(search).get("tab") ?? "invoice";
+  const allowed = new Set(["invoice", "einvoice", "social", "security"]);
+  const currentTab = allowed.has(tabParam) ? tabParam : "invoice";
+  const setTab = (next: string) => {
+    const sp = new URLSearchParams(search);
+    sp.set("tab", next);
+    navigate(`/admin/integrations?${sp.toString()}`, { replace: true });
+  };
 
   const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -587,10 +674,11 @@ function IntegrationsContent() {
 
   return (
     <AdminLayout title="Tích Hợp" subtitle="Quản lý các tích hợp ngoài, hóa đơn điện tử và bảo mật hệ thống">
-      <Tabs defaultValue={initialTab}>
+      <Tabs value={currentTab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="invoice" className="gap-2"><Receipt size={14} /> Hóa Đơn</TabsTrigger>
           <TabsTrigger value="einvoice" className="gap-2"><FileText size={14} /> Hóa Đơn Điện Tử</TabsTrigger>
+          <TabsTrigger value="social" className="gap-2"><Share2 size={14} /> Mạng Xã Hội</TabsTrigger>
           <TabsTrigger value="security" className="gap-2"><Shield size={14} /> Bảo Mật</TabsTrigger>
         </TabsList>
 
@@ -734,6 +822,11 @@ function IntegrationsContent() {
         {/* ════ E-INVOICE (REAL BACKEND) ════ */}
         <TabsContent value="einvoice" className="mt-6">
           <EInvoicePanel />
+        </TabsContent>
+
+        {/* ════ SOCIAL MEDIA ════ */}
+        <TabsContent value="social" className="mt-6">
+          <SocialMediaPanel />
         </TabsContent>
 
         {/* ════ SECURITY ════ */}
