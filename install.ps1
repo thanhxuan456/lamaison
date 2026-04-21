@@ -636,18 +636,45 @@ if ($SkipSsl) {
     New-Item -ItemType Directory -Force -Path $SslDir | Out-Null
 
     $wacsArgs = @(
-        "--target", "manual",
+        "--source", "manual",
         "--host", "$($Config.Domain),www.$($Config.Domain)",
         "--validation", "filesystem",
         "--webroot", $AcmeRoot,
         "--store", "pemfiles",
         "--pemfilespath", $SslDir,
+        "--installation", "none",
         "--accepttos",
-        "--emailaddress", $Config.Email
+        "--emailaddress", $Config.Email,
+        "--force"
     )
-    $wacs = Invoke-NativeSafe $wacsExe $wacsArgs
-    Write-Host "  --- win-acme output ---" -ForegroundColor DarkGray
-    $wacs.Output | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+
+    # Run win-acme via Start-Process with stdin redirected from NUL to prevent any
+    # interactive prompt from hanging the installer. Also enforce a hard timeout.
+    $wacsStdout = Join-Path $TempDir "wacs.stdout.log"
+    $wacsStderr = Join-Path $TempDir "wacs.stderr.log"
+    Remove-Item $wacsStdout, $wacsStderr -Force -EA SilentlyContinue
+
+    Write-Info "Chay win-acme (toi da 5 phut, output: $wacsStdout)..."
+    $wacsProc = Start-Process -FilePath $wacsExe -ArgumentList $wacsArgs `
+        -RedirectStandardInput "NUL" `
+        -RedirectStandardOutput $wacsStdout `
+        -RedirectStandardError  $wacsStderr `
+        -NoNewWindow -PassThru
+
+    if (-not $wacsProc.WaitForExit(300000)) {
+        Write-Warn "win-acme bi treo > 5 phut, kill process..."
+        try { $wacsProc.Kill() } catch {}
+        Start-Sleep -Seconds 2
+    }
+
+    $wacsExitCode = if ($wacsProc.HasExited) { $wacsProc.ExitCode } else { -1 }
+    $wacsOutLines = @()
+    if (Test-Path $wacsStdout) { $wacsOutLines += Get-Content $wacsStdout }
+    if (Test-Path $wacsStderr) { $wacsOutLines += Get-Content $wacsStderr }
+    $wacs = [pscustomobject]@{ Output = $wacsOutLines; ExitCode = $wacsExitCode }
+
+    Write-Host "  --- win-acme output (exit=$wacsExitCode) ---" -ForegroundColor DarkGray
+    $wacs.Output | Select-Object -Last 60 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
     if ($wacs.ExitCode -eq 0 -and (Test-Path $sslChain) -and (Test-Path $sslKey)) {
         Write-OK "SSL cert da lay duoc!"
