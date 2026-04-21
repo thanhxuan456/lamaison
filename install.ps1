@@ -652,11 +652,14 @@ if ($SkipSsl) {
     # interactive prompt from hanging the installer. Also enforce a hard timeout.
     $wacsStdout = Join-Path $TempDir "wacs.stdout.log"
     $wacsStderr = Join-Path $TempDir "wacs.stderr.log"
+    $wacsStdin  = Join-Path $TempDir "wacs.stdin.empty"
     Remove-Item $wacsStdout, $wacsStderr -Force -EA SilentlyContinue
+    # Tao file stdin rong de Start-Process redirect (PowerShell khong ho tro "NUL")
+    Set-Content -Path $wacsStdin -Value "" -NoNewline -Encoding ASCII
 
     Write-Info "Chay win-acme (toi da 5 phut, output: $wacsStdout)..."
     $wacsProc = Start-Process -FilePath $wacsExe -ArgumentList $wacsArgs `
-        -RedirectStandardInput "NUL" `
+        -RedirectStandardInput $wacsStdin `
         -RedirectStandardOutput $wacsStdout `
         -RedirectStandardError  $wacsStderr `
         -NoNewWindow -PassThru
