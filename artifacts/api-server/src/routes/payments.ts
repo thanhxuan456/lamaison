@@ -261,6 +261,76 @@ router.post("/payments/momo/ipn", async (req, res) => {
   }
 });
 
+/* ── POST /payments/internal/confirm ──
+ * Phuong thuc xac nhan TU DONG noi bo (khong qua API ben thu 3).
+ * Dung cho luong demo / cua hang chap nhan thanh toan tai quay / khach VIP.
+ * Bao mat: chi cho phep khi booking dang o trang thai cho thanh toan VA duoc tao trong 24h gan day.
+ * Khong yeu cau auth vi guest co the dat phong, nhung han che bang status + thoi gian tao.
+ */
+router.post("/payments/internal/confirm", async (req, res) => {
+  try {
+    const { bookingId } = req.body as { bookingId?: number };
+    if (!bookingId || !Number.isFinite(Number(bookingId))) {
+      res.status(400).json({ error: "bookingId is required" });
+      return;
+    }
+
+    const [booking] = await db
+      .select()
+      .from(bookingsTable)
+      .where(eq(bookingsTable.id, Number(bookingId)));
+
+    if (!booking) {
+      res.status(404).json({ error: "Booking not found" });
+      return;
+    }
+
+    // Idempotent — neu da confirm roi thi tra ve thanh cong, FE cu redirect
+    if (booking.status === "confirmed" || booking.status === "checked_in" || booking.status === "checked_out") {
+      res.json({ message: "Booking already confirmed", bookingId: booking.id, alreadyConfirmed: true });
+      return;
+    }
+
+    if (booking.status !== "pending_payment" && booking.status !== "pending") {
+      res.status(409).json({ error: "Booking is not awaiting payment" });
+      return;
+    }
+
+    // Chong abuse: chi cho confirm trong 24h sau khi tao booking
+    const createdAt = booking.createdAt ? new Date(booking.createdAt).getTime() : 0;
+    if (createdAt && Date.now() - createdAt > 24 * 60 * 60 * 1000) {
+      res.status(409).json({ error: "Booking expired, please create a new one" });
+      return;
+    }
+
+    await db
+      .update(bookingsTable)
+      .set({
+        status: "confirmed",
+        externalRef: `INTERNAL-AUTO-${Date.now()}`,
+      })
+      .where(eq(bookingsTable.id, booking.id));
+
+    await db
+      .update(roomsTable)
+      .set({ isAvailable: false, status: "reserved" })
+      .where(eq(roomsTable.id, booking.roomId));
+
+    try {
+      const { upsertInvoiceForBooking } = await import("./invoices");
+      await upsertInvoiceForBooking(booking.id);
+    } catch (invErr) {
+      req.log.warn({ err: invErr }, "Auto-invoice generation failed (non-fatal)");
+    }
+
+    req.log.info({ bookingId: booking.id }, "Internal payment auto-confirmed");
+    res.json({ message: "Payment confirmed", bookingId: booking.id });
+  } catch (err) {
+    req.log.error({ err }, "Failed to internally confirm payment");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /* ── POST /payments/bank/confirm — admin manually confirms a bank transfer ── */
 router.post("/payments/bank/confirm", async (req, res) => {
   try {

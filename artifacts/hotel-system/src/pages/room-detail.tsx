@@ -557,10 +557,23 @@ export default function RoomDetail() {
                                   </button>
                                 )}
 
+                                {/* Xac nhan tu dong noi bo — luon co, khong can ben thu 3 */}
+                                <button type="button"
+                                  onClick={() => bookingId && setLocation(`/checkout/${bookingId}`)}
+                                  className="w-full flex items-center gap-4 border border-primary/40 bg-primary/10 hover:bg-primary/20 px-5 py-4 transition-colors">
+                                  <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                                    <ShieldCheck size={18} className="text-secondary" />
+                                  </span>
+                                  <div className="flex-1 text-left">
+                                    <div className="font-medium text-foreground text-sm">Xác nhận tự động</div>
+                                    <div className="text-xs text-white/50 mt-0.5">Hệ thống tự xử lý — không cần thanh toán bên thứ 3</div>
+                                  </div>
+                                  <ChevronRight size={16} className="text-primary/40" />
+                                </button>
+
                                 {!paySettings.momo.enabled && (!paySettings.bank.enabled || !paySettings.bank.accountNumber) && (
-                                  <div className="text-center text-white/50 text-sm py-6">
-                                    Chưa có phương thức thanh toán nào được cấu hình.<br />
-                                    <span className="text-xs">Liên hệ quản trị viên để thiết lập.</span>
+                                  <div className="text-center text-white/40 text-[10px] tracking-widest uppercase py-2">
+                                    Phương thức MoMo / chuyển khoản chưa được cấu hình
                                   </div>
                                 )}
                               </div>
