@@ -3,6 +3,7 @@ import { useLocation, useRoute, Link } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { DEFAULT_PAGES } from "./pages";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -397,10 +398,11 @@ function PostEditorContent() {
             </div>
             <div>
               <Label>Nội dung</Label>
-              <Textarea rows={22} value={form.content ?? ""} className="font-mono text-xs"
-                onChange={e => set("content", e.target.value)}
-                placeholder="Nội dung HTML hoặc văn bản. Hỗ trợ # Tiêu đề, ## Phụ đề, dòng trống tách đoạn..." />
-              <p className="text-[10px] text-muted-foreground mt-1">{(form.content ?? "").length.toLocaleString("vi-VN")} ký tự</p>
+              <RichTextEditor
+                value={form.content ?? ""}
+                onChange={html => set("content", html)}
+                placeholder="Bắt đầu viết bài..." />
+              <p className="text-[10px] text-muted-foreground mt-1">{(form.content ?? "").replace(/<[^>]+>/g, "").length.toLocaleString("vi-VN")} ký tự</p>
             </div>
           </CardContent>
         </Card>
@@ -576,7 +578,10 @@ function PageEditorContent() {
             </div>
             <div>
               <Label>Nội dung trang</Label>
-              <Textarea rows={22} value={form.content} onChange={e => set("content", e.target.value)} placeholder="Nội dung trang... (hỗ trợ Markdown)" />
+              <RichTextEditor
+                value={form.content}
+                onChange={html => set("content", html)}
+                placeholder="Nội dung trang..." />
             </div>
           </CardContent>
         </Card>
