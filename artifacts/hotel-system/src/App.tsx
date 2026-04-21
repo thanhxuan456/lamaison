@@ -40,6 +40,7 @@ import AdminBookings from "@/pages/admin/bookings";
 import AdminGuests from "@/pages/admin/guests";
 import AdminMenus from "@/pages/admin/menus";
 import AdminBlogs from "@/pages/admin/blogs";
+import { AdminPostEditor, AdminPageEditor } from "@/pages/admin/content-editor";
 import AdminIntegrations from "@/pages/admin/integrations";
 import RoomsLandingPage from "@/pages/rooms";
 import SpaPage from "@/pages/spa";
@@ -212,6 +213,10 @@ function Router() {
       <Route path="/admin/chat" component={AdminChat} />
       <Route path="/admin/theme" component={AdminTheme} />
       <Route path="/admin/pages" component={AdminPages} />
+      <Route path="/admin/content/posts/new" component={AdminPostEditor} />
+      <Route path="/admin/content/posts/:id" component={AdminPostEditor} />
+      <Route path="/admin/content/pages/new" component={AdminPageEditor} />
+      <Route path="/admin/content/pages/:id" component={AdminPageEditor} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/seo" component={AdminSeo} />
       <Route path="/admin/builder" component={AdminBuilder} />

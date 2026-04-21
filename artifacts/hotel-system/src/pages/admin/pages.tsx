@@ -3,15 +3,11 @@ import { Link, useLocation, useSearch } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
-  FileText, Plus, Edit, Trash2, X, Globe, EyeOff, Eye, Save, Newspaper,
-  Tag, Calendar, Search, Image as ImageIcon, ExternalLink,
+  FileText, Plus, Edit, Trash2, Globe, EyeOff, Eye, Newspaper,
+  Tag, Calendar, ExternalLink,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -31,10 +27,7 @@ interface Post {
   published: boolean; views: number; publishedAt: string | null; createdAt: string;
 }
 
-/* ────────────────────────────────────────────────────────────────
- * DEFAULT DATA (Pages — localStorage)
- * ──────────────────────────────────────────────────────────────── */
-const DEFAULT_PAGES: Page[] = [
+export const DEFAULT_PAGES: Page[] = [
   { id: "home",   title: "Trang Chủ",       slug: "/",       content: "Nội dung trang chủ MAISON DELUXE Hotels & Resorts.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "MAISON DELUXE Hotels & Resorts", metaDesc: "Chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", ogImage: "" },
   { id: "about",  title: "Về Chúng Tôi",    slug: "/about",  content: "MAISON DELUXE — chuỗi khách sạn 5 sao sang trọng bậc nhất Việt Nam.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Về Chúng Tôi — MAISON DELUXE", metaDesc: "Tìm hiểu về lịch sử và sứ mệnh của MAISON DELUXE Hotels & Resorts.", ogImage: "" },
   { id: "dining", title: "Ẩm Thực",         slug: "/dining", content: "Trải nghiệm ẩm thực đỉnh cao tại các nhà hàng đạt sao Michelin.", status: "published", updatedAt: new Date().toISOString(), metaTitle: "Ẩm Thực — MAISON DELUXE", metaDesc: "Ẩm thực Việt Nam và quốc tế tại MAISON DELUXE.", ogImage: "" },
@@ -51,18 +44,13 @@ const POST_CATS = [
 ];
 const catLabel = (c: string) => POST_CATS.find(x => x.value === c)?.label ?? c;
 
-const emptyPost: Partial<Post> = {
-  title: "", slug: "", excerpt: "", content: "", coverImage: "",
-  category: "news", author: "MAISON DELUXE", tags: "", published: false,
-};
-
 function loadLS<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; } catch { return fallback; }
 }
 function saveLS<T>(key: string, val: T) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
 
 /* ────────────────────────────────────────────────────────────────
- * STATUS BADGE (page)
+ * STATUS BADGE
  * ──────────────────────────────────────────────────────────────── */
 function StatusBadge({ status, onClick }: { status: "published" | "draft"; onClick?: () => void }) {
   return (
@@ -79,131 +67,13 @@ function StatusBadge({ status, onClick }: { status: "published" | "draft"; onCli
 }
 
 /* ────────────────────────────────────────────────────────────────
- * PAGE MODAL (CMS pages — localStorage)
- * ──────────────────────────────────────────────────────────────── */
-function PageModal({ page, onClose, onSaved }: { page?: Page; onClose: () => void; onSaved: (p: Page) => void }) {
-  const [form, setForm] = useState<Page>(page ?? {
-    id: Date.now().toString(), title: "", slug: "/", content: "",
-    status: "draft", updatedAt: new Date().toISOString(),
-    metaTitle: "", metaDesc: "", ogImage: "",
-  });
-  const set = (k: keyof Page, v: any) => setForm(f => ({ ...f, [k]: v }));
-  const [activeTab, setActiveTab] = useState<"content" | "seo">("content");
-
-  const handleSave = () => {
-    if (!form.title || !form.slug) return;
-    onSaved({ ...form, updatedAt: new Date().toISOString() });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-2xl bg-card border border-primary/40 shadow-2xl max-h-[92vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/20 bg-primary/5 shrink-0">
-          <h2 className="font-serif text-xl text-foreground">{page ? "Chỉnh sửa trang" : "Tạo trang mới"}</h2>
-          <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground"><X size={18} /></button>
-        </div>
-
-        <div className="flex border-b border-primary/15 shrink-0 bg-background">
-          {[{ key: "content", label: "Nội dung" }, { key: "seo", label: "SEO & Meta" }].map(({ key, label }) => (
-            <button key={key} onClick={() => setActiveTab(key as any)}
-              className={`px-5 py-2.5 text-sm border-b-2 -mb-px transition-all ${activeTab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-6 space-y-4 overflow-y-auto flex-1">
-          {activeTab === "content" ? (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Tiêu đề trang *</Label>
-                  <Input value={form.title} onChange={e => set("title", e.target.value)} placeholder="VD: Giới Thiệu" />
-                </div>
-                <div>
-                  <Label>Đường dẫn (slug) *</Label>
-                  <Input className="font-mono" value={form.slug} onChange={e => set("slug", e.target.value)} placeholder="/about" />
-                </div>
-              </div>
-              <div>
-                <Label>Nội dung trang</Label>
-                <Textarea rows={10} value={form.content} onChange={e => set("content", e.target.value)} placeholder="Nội dung trang... (hỗ trợ Markdown)" />
-              </div>
-              <div>
-                <Label>Trạng thái</Label>
-                <div className="flex gap-3 mt-1">
-                  {(["published", "draft"] as const).map(s => (
-                    <button key={s} onClick={() => set("status", s)}
-                      className={`flex items-center gap-2 px-4 py-2 border text-sm transition-all ${form.status === s ? "border-primary bg-primary/10 text-primary" : "border-primary/20 text-muted-foreground hover:border-primary/40"}`}>
-                      {s === "published" ? <Globe size={13} /> : <EyeOff size={13} />}
-                      {s === "published" ? "Đã xuất bản" : "Bản nháp"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <Label>Meta Title</Label>
-                <Input value={form.metaTitle} onChange={e => set("metaTitle", e.target.value)} placeholder="MAISON DELUXE — Tiêu đề cho Google" />
-                <p className="text-[10px] text-muted-foreground mt-1">{form.metaTitle.length}/60 ký tự {form.metaTitle.length > 60 && "— Nên rút ngắn"}</p>
-              </div>
-              <div>
-                <Label>Meta Description</Label>
-                <Textarea rows={3} value={form.metaDesc} onChange={e => set("metaDesc", e.target.value)} placeholder="Mô tả ngắn cho Google và mạng xã hội (150-160 ký tự)" />
-                <p className="text-[10px] text-muted-foreground mt-1">{form.metaDesc.length}/160 ký tự {form.metaDesc.length > 160 && "— Nên rút ngắn"}</p>
-              </div>
-              <div>
-                <Label>OG Image URL (ảnh chia sẻ mạng xã hội)</Label>
-                <div className="flex gap-2">
-                  <Input className="flex-1 font-mono" value={form.ogImage} onChange={e => set("ogImage", e.target.value)} placeholder="https://maisondeluxe.vn/images/og-home.jpg" />
-                  <div className="w-10 h-10 border border-primary/20 flex items-center justify-center bg-muted/20 shrink-0">
-                    {form.ogImage ? <img src={form.ogImage} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = "none")} /> : <ImageIcon size={14} className="text-muted-foreground" />}
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Kích thước khuyến nghị: 1200 × 630px</p>
-              </div>
-              {(form.metaTitle || form.metaDesc) && (
-                <div className="border border-primary/15 p-4 bg-muted/30">
-                  <p className="text-[10px] tracking-widest uppercase text-muted-foreground mb-2 flex items-center gap-1"><Search size={10} /> Xem trước Google</p>
-                  <div className="text-[13px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">{form.metaTitle || form.title}</div>
-                  <div className="text-[11px] text-green-700 dark:text-green-500 mt-0.5">maisondeluxe.vn{form.slug}</div>
-                  <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{form.metaDesc || form.content.slice(0, 160)}</div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-primary/15 bg-primary/5 shrink-0">
-          <Button variant="outline" onClick={onClose} className="rounded-none border-primary/40">Hủy</Button>
-          <Button onClick={handleSave} className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-6">
-            <Save size={13} className="mr-2" />{page ? "Lưu thay đổi" : "Tạo trang"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────
- * PAGES TAB (CMS pages — localStorage)
+ * PAGES TAB (list only — editor lives at /admin/content/pages/:id)
  * ──────────────────────────────────────────────────────────────── */
 function PagesTab() {
   const { toast } = useToast();
   const [pages, setPages] = useState<Page[]>(() => loadLS(PAGES_KEY, DEFAULT_PAGES));
-  const [editPage, setEditPage] = useState<Page | undefined>();
-  const [addOpen, setAddOpen] = useState(false);
 
   const persist = (p: Page[]) => { setPages(p); saveLS(PAGES_KEY, p); };
-
-  const onSaved = (p: Page) => {
-    const existing = pages.find(x => x.id === p.id);
-    persist(existing ? pages.map(x => x.id === p.id ? p : x) : [...pages, p]);
-    toast({ title: existing ? "Trang đã cập nhật" : "Trang mới đã tạo", description: p.title });
-    setEditPage(undefined); setAddOpen(false);
-  };
 
   const del = (id: string) => {
     if (!confirm("Xóa trang này?")) return;
@@ -216,14 +86,13 @@ function PagesTab() {
 
   return (
     <>
-      {addOpen && <PageModal onClose={() => setAddOpen(false)} onSaved={onSaved} />}
-      {editPage && <PageModal page={editPage} onClose={() => setEditPage(undefined)} onSaved={onSaved} />}
-
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">{pages.length} trang · {pages.filter(p => p.status === "published").length} đã xuất bản</p>
-        <Button onClick={() => setAddOpen(true)} className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
-          <Plus size={13} /> Tạo trang mới
-        </Button>
+        <Link href="/admin/content/pages/new">
+          <Button className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
+            <Plus size={13} /> Tạo trang mới
+          </Button>
+        </Link>
       </div>
 
       <div className="bg-card border border-primary/20 overflow-hidden">
@@ -239,7 +108,9 @@ function PagesTab() {
             {pages.map(p => (
               <tr key={p.id} className="hover:bg-primary/5 transition-colors">
                 <td className="px-4 py-3 font-medium text-foreground">
-                  <div>{p.title}</div>
+                  <Link href={`/admin/content/pages/${p.id}`}>
+                    <a className="hover:text-primary transition-colors">{p.title}</a>
+                  </Link>
                   {p.metaTitle && <div className="text-[10px] text-muted-foreground/60 mt-0.5">SEO: {p.metaTitle.slice(0, 40)}{p.metaTitle.length > 40 ? "…" : ""}</div>}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{p.slug}</td>
@@ -247,7 +118,9 @@ function PagesTab() {
                 <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(p.updatedAt).toLocaleDateString("vi-VN")}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => setEditPage(p)} className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"><Edit size={12} /></button>
+                    <Link href={`/admin/content/pages/${p.id}`}>
+                      <button className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors" title="Sửa"><Edit size={12} /></button>
+                    </Link>
                     <button onClick={() => del(p.id)} className="p-1.5 border border-red-300/40 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"><Trash2 size={12} /></button>
                   </div>
                 </td>
@@ -261,14 +134,12 @@ function PagesTab() {
 }
 
 /* ────────────────────────────────────────────────────────────────
- * POSTS TAB (Bài viết / Tin tức — REAL API)
+ * POSTS TAB (list only — editor lives at /admin/content/posts/:id)
  * ──────────────────────────────────────────────────────────────── */
 function PostsTab() {
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filterCat, setFilterCat] = useState<string>("all");
-  const [editing, setEditing] = useState<Partial<Post> | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     try {
@@ -279,22 +150,6 @@ function PostsTab() {
   useEffect(() => { load(); }, []);
 
   const filtered = filterCat === "all" ? posts : posts.filter(p => p.category === filterCat);
-
-  const onSave = async () => {
-    if (!editing) return;
-    if (!editing.title?.trim()) { toast({ title: "Vui lòng nhập tiêu đề", variant: "destructive" }); return; }
-    setSaving(true);
-    try {
-      const url = editing.id ? `${API}/api/blog-posts/${editing.id}` : `${API}/api/blog-posts`;
-      const method = editing.id ? "PATCH" : "POST";
-      const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing) });
-      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error ?? r.statusText); }
-      toast({ title: editing.id ? "Đã cập nhật bài viết" : "Đã tạo bài viết" });
-      setEditing(null); load();
-    } catch (e: any) {
-      toast({ title: "Lỗi", description: e.message, variant: "destructive" });
-    } finally { setSaving(false); }
-  };
 
   const onDelete = async (id: number) => {
     if (!confirm("Xoá bài viết này?")) return;
@@ -310,27 +165,39 @@ function PostsTab() {
     load();
   };
 
+  // ── Category filter chip styling ──────────────────────────────────────
+  // Active: solid primary (gold) background.
+  // Inactive: subtle border, but on hover the chip lifts to a soft primary
+  // tint (gold/10) with primary border + primary text — much more visible
+  // than the previous transparent hover.
+  const chipClass = (active: boolean) =>
+    `px-3 h-9 text-[10px] uppercase tracking-widest border transition-colors duration-150 ${
+      active
+        ? "bg-primary text-primary-foreground border-primary"
+        : "border-border text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary"
+    }`;
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFilterCat("all")}
-            className={`px-3 h-9 text-[10px] uppercase tracking-widest border ${filterCat === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary"}`}>
+          <button onClick={() => setFilterCat("all")} className={chipClass(filterCat === "all")}>
             Tất cả ({posts.length})
           </button>
           {POST_CATS.map(c => {
             const n = posts.filter(p => p.category === c.value).length;
             return (
-              <button key={c.value} onClick={() => setFilterCat(c.value)}
-                className={`px-3 h-9 text-[10px] uppercase tracking-widest border ${filterCat === c.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary"}`}>
+              <button key={c.value} onClick={() => setFilterCat(c.value)} className={chipClass(filterCat === c.value)}>
                 {c.label} ({n})
               </button>
             );
           })}
         </div>
-        <Button onClick={() => setEditing({ ...emptyPost })} className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
-          <Plus size={13} /> Bài viết mới
-        </Button>
+        <Link href="/admin/content/posts/new">
+          <Button className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
+            <Plus size={13} /> Bài viết mới
+          </Button>
+        </Link>
       </div>
 
       {filtered.length === 0 ? (
@@ -354,7 +221,9 @@ function PostsTab() {
               {filtered.map(p => (
                 <tr key={p.id} className="border-t border-border hover:bg-secondary/40">
                   <td className="p-3">
-                    <div className="font-medium text-foreground">{p.title}</div>
+                    <Link href={`/admin/content/posts/${p.id}`}>
+                      <a className="font-medium text-foreground hover:text-primary transition-colors">{p.title}</a>
+                    </Link>
                     <div className="text-xs text-muted-foreground mt-0.5">/{p.slug}</div>
                   </td>
                   <td className="p-3"><span className="inline-flex items-center gap-1.5 text-xs"><Tag size={11} /> {catLabel(p.category)}</span></td>
@@ -373,7 +242,9 @@ function PostsTab() {
                           <Button size="sm" variant="ghost" title="Xem"><ExternalLink size={14} /></Button>
                         </Link>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => setEditing(p)}><Edit size={14} /></Button>
+                      <Link href={`/admin/content/posts/${p.id}`}>
+                        <Button size="sm" variant="ghost" title="Sửa"><Edit size={14} /></Button>
+                      </Link>
                       <Button size="sm" variant="ghost" onClick={() => onDelete(p.id)} className="text-destructive hover:text-destructive"><Trash2 size={14} /></Button>
                     </div>
                   </td>
@@ -381,55 +252,6 @@ function PostsTab() {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {editing && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-stretch justify-end" onClick={() => !saving && setEditing(null)}>
-          <div className="w-full max-w-2xl bg-card border-l border-primary/30 overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-              <h2 className="font-serif text-xl text-foreground">{editing.id ? "Sửa bài viết" : "Bài viết mới"}</h2>
-              <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div><Label>Tiêu đề *</Label><Input value={editing.title ?? ""} onChange={e => setEditing({ ...editing, title: e.target.value })} /></div>
-              <div><Label>Slug (URL — để trống sẽ tự sinh)</Label>
-                <Input value={editing.slug ?? ""} placeholder="vd: khuyen-mai-mua-he-2026"
-                  onChange={e => setEditing({ ...editing, slug: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Chuyên mục</Label>
-                  <select className="w-full h-10 px-3 border border-input rounded bg-background text-sm"
-                    value={editing.category ?? "news"} onChange={e => setEditing({ ...editing, category: e.target.value })}>
-                    {POST_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select></div>
-                <div><Label>Tác giả</Label><Input value={editing.author ?? ""} onChange={e => setEditing({ ...editing, author: e.target.value })} /></div>
-              </div>
-              <div><Label>Ảnh bìa (URL)</Label>
-                <Input value={editing.coverImage ?? ""} placeholder="https://..."
-                  onChange={e => setEditing({ ...editing, coverImage: e.target.value })} />
-                {editing.coverImage && <img src={editing.coverImage} alt="" className="mt-2 w-full max-h-48 object-cover border border-border" />}
-              </div>
-              <div><Label>Tóm tắt</Label>
-                <Textarea rows={3} value={editing.excerpt ?? ""} onChange={e => setEditing({ ...editing, excerpt: e.target.value })} /></div>
-              <div><Label>Nội dung (HTML hoặc văn bản)</Label>
-                <Textarea rows={14} value={editing.content ?? ""} className="font-mono text-xs"
-                  onChange={e => setEditing({ ...editing, content: e.target.value })} /></div>
-              <div><Label>Thẻ (cách nhau bằng dấu phẩy)</Label>
-                <Input value={editing.tags ?? ""} placeholder="luxury, hanoi, spa"
-                  onChange={e => setEditing({ ...editing, tags: e.target.value })} /></div>
-              <div className="flex items-center justify-between border border-border rounded p-3">
-                <div>
-                  <Label className="!m-0">Xuất bản</Label>
-                  <p className="text-xs text-muted-foreground">Khi bật, bài viết hiển thị công khai trên /news.</p>
-                </div>
-                <Switch checked={!!editing.published} onCheckedChange={c => setEditing({ ...editing, published: c })} />
-              </div>
-            </div>
-            <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditing(null)} disabled={saving}>Huỷ</Button>
-              <Button onClick={onSave} disabled={saving}><Save size={14} className="mr-1" /> {saving ? "Đang lưu…" : "Lưu"}</Button>
-            </div>
-          </div>
         </div>
       )}
     </>
