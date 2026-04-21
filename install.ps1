@@ -59,6 +59,13 @@ $Config = @{
     MomoSecretKey   = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
     MomoEndpoint    = "https://test-payment.momo.vn/v2/gateway/api/create"
 
+    # Superadmin auto-seed: chen 1 dong vao bang user_roles tren Neon
+    # de tai khoan Clerk nay co quyen vao admin (middleware requireAdmin).
+    # De trong (chuoi rong) -> bo qua buoc seed.
+    SuperAdminClerkId = "user_3CfK8RPnSR1EMJXWYbD6s2Zy3Xf"
+    SuperAdminEmail   = "tthanhxuan456@gmail.com"
+    SuperAdminName    = "Thanh Xuan"
+
     NodeVersion     = "22.14.0"
     NodeMinMajor    = 20
     PgVersion       = "16"
@@ -291,6 +298,67 @@ try {
         Write-OK "Frontend built"
     } else {
         Write-Info "Skipping build (-SkipBuild)"
+    }
+
+    # ----------------------------------------------------------
+    # Sync schema voi Neon (idempotent — chi them cot/bang moi)
+    # Bao gom: chat_sessions cot moi (ticket_number, priority, assignee_*),
+    # bang chat_reply_templates (mau tra loi nhanh).
+    # ----------------------------------------------------------
+    Write-Info "Pushing schema to Neon (drizzle push --force)..."
+    $env:NEON_DATABASE_URL = $NeonDatabaseUrl
+    $env:DATABASE_URL      = $DatabaseUrl
+    & pnpm --filter "@workspace/db" run push-force
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warn "DB push failed — kiem tra ket noi Neon (script van tiep tuc)."
+    } else {
+        Write-OK "DB schema synced to Neon"
+    }
+
+    # ----------------------------------------------------------
+    # Seed superadmin role vao bang user_roles tren Neon.
+    # Nho buoc nay tai khoan Clerk SuperAdminClerkId moi vao duoc admin
+    # (middleware requireAdmin tra cuu role tu DB).
+    # ----------------------------------------------------------
+    if (-not [string]::IsNullOrWhiteSpace($Config.SuperAdminClerkId)) {
+        Write-Info "Seeding superadmin role: $($Config.SuperAdminEmail)"
+        $seedScript = @'
+import pg from "pg";
+const { Client } = pg;
+const c = new Client({
+  connectionString: process.env.NEON_DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+await c.connect();
+const r = await c.query(
+  `INSERT INTO user_roles (clerk_user_id, email, name, role)
+   VALUES ($1, $2, $3, 'superadmin')
+   ON CONFLICT (clerk_user_id) DO UPDATE
+     SET role='superadmin', email=EXCLUDED.email, name=EXCLUDED.name, updated_at=NOW()
+   RETURNING id, clerk_user_id, role`,
+  [process.env.SEED_CLERK_ID, process.env.SEED_EMAIL, process.env.SEED_NAME]
+);
+console.log("user_roles row:", JSON.stringify(r.rows[0]));
+await c.end();
+'@
+        $seedFile = Join-Path $TempDir "seed-admin.mjs"
+        [System.IO.File]::WriteAllText($seedFile, $seedScript, $utf8NoBom)
+        $env:SEED_CLERK_ID = $Config.SuperAdminClerkId
+        $env:SEED_EMAIL    = $Config.SuperAdminEmail
+        $env:SEED_NAME     = $Config.SuperAdminName
+        # Chay node tu thu muc lib/db de tim duoc package "pg" da cai trong workspace.
+        Push-Location (Join-Path $dstRoot "lib\db")
+        try {
+            & node $seedFile
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "Seed admin failed — neu can chay tay:"
+                Write-Warn "  cd $dstRoot\lib\db; node $seedFile"
+            } else {
+                Write-OK "Superadmin role da duoc seed/cap nhat"
+            }
+        } finally { Pop-Location }
+    } else {
+        Write-Info "Bo qua seed admin (SuperAdminClerkId trong Config bi trong)"
     }
 } finally { Pop-Location }
 
