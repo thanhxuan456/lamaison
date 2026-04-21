@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 # ============================================================
 # MAISON DELUXE Hotels & Resorts -- Windows Server Installer
 # Domain : maisondeluxehotel.com
@@ -18,7 +18,7 @@
 #   -Uninstall   Stop + xoa toan bo services
 # ============================================================
 # SSL: Script CHI dung cert da cai san tai $SslDir (Positive SSL tu VPS).
-# Khong tich hop Let's Encrypt — moi cap nhat cert do nha cung cap VPS xu ly.
+# Khong tich hop Let's Encrypt - moi cap nhat cert do nha cung cap VPS xu ly.
 
 param(
     [switch]$Reinstall,
@@ -301,7 +301,7 @@ try {
     }
 
     # ----------------------------------------------------------
-    # Sync schema voi Neon (idempotent — chi them cot/bang moi)
+    # Sync schema voi Neon (idempotent - chi them cot/bang moi)
     # Bao gom: chat_sessions cot moi (ticket_number, priority, assignee_*),
     # bang chat_reply_templates (mau tra loi nhanh).
     # ----------------------------------------------------------
@@ -310,7 +310,7 @@ try {
     $env:DATABASE_URL      = $DatabaseUrl
     & pnpm --filter "@workspace/db" run push-force
     if ($LASTEXITCODE -ne 0) {
-        Write-Warn "DB push failed — kiem tra ket noi Neon (script van tiep tuc)."
+        Write-Warn "DB push failed - kiem tra ket noi Neon (script van tiep tuc)."
     } else {
         Write-OK "DB schema synced to Neon"
     }
