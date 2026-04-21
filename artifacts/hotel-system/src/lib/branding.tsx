@@ -28,7 +28,7 @@ export const DEFAULT_BRANDING: Branding = {
   starRating: 5,
   useImageLogo: true,
   logoUrl: "/logo-upload.png",
-  logoHeight: 100,
+  logoHeight: 72,
   adminLogoUrl: "/logo-upload.png",
   faviconUrl: "/favicon.svg",
   pageTitle: "MAISON DELUXE Hotels & Resorts — Luxury Vietnam",

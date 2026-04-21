@@ -73,5 +73,5 @@ VITE_CLERK_PUBLISHABLE_KEY = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZG
 CLERK_PUBLISHABLE_KEY = "pk_test_cGlja2VkLWNyYWItNTguY2xlcmsuYWNjb3VudHMuZGV2JA"
 
 [userenv.production]
-VITE_CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsudm50aGVtZXMuc3RvcmUk"
+VITE_CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsubWFpc29uZGVsdXhlaG90ZWwuY29tJA"
 CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsudm50aGVtZXMuc3RvcmUk"

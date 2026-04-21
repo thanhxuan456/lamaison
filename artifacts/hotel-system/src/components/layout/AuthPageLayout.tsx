@@ -5,6 +5,7 @@ import { Footer } from "./Footer";
 import { BackToTop } from "@/components/BackToTop";
 import { SocialChat } from "@/components/SocialChat";
 import { useT } from "@/lib/i18n";
+import { useBranding } from "@/lib/branding";
 
 interface AuthPageLayoutProps {
   children: ReactNode;
@@ -19,6 +20,7 @@ const FEATURES = [
 
 export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
   const { t } = useT();
+  const { branding } = useBranding();
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
@@ -61,7 +63,18 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
           <div className="relative h-full flex flex-col justify-center items-center lg:items-start px-8 lg:px-14 py-12 lg:py-20 gap-5 text-center lg:text-left">
             {/* Logo */}
             <Link href="/" className="flex flex-col items-center lg:items-start gap-1 mb-2">
-              <img src="/logo.svg" alt="MAISON DELUXE" className="h-12 w-auto brightness-0 invert opacity-90" />
+              {branding.useImageLogo && branding.logoUrl ? (
+                <img
+                  src={branding.logoUrl}
+                  alt={branding.brandName}
+                  className="w-auto object-contain"
+                  style={{ height: `${branding.logoHeight ?? 56}px`, maxHeight: 80 }}
+                />
+              ) : (
+                <span className="font-serif text-2xl tracking-[0.25em] text-white">
+                  {branding.brandName}
+                </span>
+              )}
               <span className="text-[10px] tracking-[0.4em] uppercase text-primary/80 font-medium mt-1">
                 Hotels & Resorts
               </span>
@@ -141,7 +154,7 @@ export function AuthPageLayout({ children, mode }: AuthPageLayoutProps) {
                 <span className="block w-1.5 h-1.5 rotate-45 bg-primary" />
                 <span className="block w-8 h-[1px] bg-primary/50" />
               </div>
-              <p className="text-[10px] tracking-[0.35em] uppercase text-primary/70">MAISON DELUXE</p>
+              <p className="text-[10px] tracking-[0.35em] uppercase text-primary/70">{branding.brandName}</p>
               <h2 className="font-serif text-2xl text-foreground tracking-wide text-center">
                 {mode === "signin" ? t("auth.heroTitle.signin") : t("auth.heroTitle.register")}
               </h2>
