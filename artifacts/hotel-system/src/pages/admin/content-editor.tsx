@@ -4,6 +4,8 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { DEFAULT_PAGES } from "./pages";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { CategoryManager } from "@/components/admin/category-manager";
+import { loadPostCategories, type PostCategory } from "@/lib/post-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,14 +34,6 @@ interface Post {
   coverImage: string; category: string; author: string; tags: string;
   published: boolean; views: number; publishedAt: string | null; createdAt: string;
 }
-
-const POST_CATS = [
-  { value: "news",       label: "Tin tức" },
-  { value: "promotion",  label: "Khuyến mãi" },
-  { value: "experience", label: "Trải nghiệm" },
-  { value: "culinary",   label: "Ẩm thực" },
-  { value: "travel",     label: "Du lịch" },
-];
 
 const emptyPost: Partial<Post> = {
   title: "", slug: "", excerpt: "", content: "", coverImage: "",
@@ -303,6 +297,18 @@ function PostEditorContent() {
   const [form, setForm] = useState<Partial<Post>>({ ...emptyPost });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [cats, setCats] = useState<PostCategory[]>(() => loadPostCategories());
+  const [catMgrOpen, setCatMgrOpen] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => setCats(loadPostCategories());
+    window.addEventListener("post-categories:changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("post-categories:changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (isNew) return;
@@ -437,11 +443,21 @@ function PostEditorContent() {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Phân loại</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs">Chuyên mục</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs !mb-0">Chuyên mục</Label>
+                <button type="button" onClick={() => setCatMgrOpen(true)}
+                  className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+                  Quản lý ↗
+                </button>
+              </div>
               <select className="w-full h-10 px-3 border border-input rounded bg-background text-sm"
-                value={form.category ?? "news"} onChange={e => set("category", e.target.value)}>
-                {POST_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                value={form.category ?? cats[0]?.value ?? ""} onChange={e => set("category", e.target.value)}>
+                {cats.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                {form.category && !cats.some(c => c.value === form.category) && (
+                  <option value={form.category}>{form.category} (đã xoá)</option>
+                )}
               </select>
+              <CategoryManager open={catMgrOpen} onOpenChange={setCatMgrOpen} initial={cats} />
             </div>
             <div>
               <Label className="text-xs">Tác giả</Label>

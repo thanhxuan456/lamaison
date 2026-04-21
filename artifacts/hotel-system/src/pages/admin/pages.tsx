@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   FileText, Plus, Edit, Trash2, Globe, EyeOff, Eye, Newspaper,
-  Tag, Calendar, ExternalLink,
+  Tag, Calendar, ExternalLink, Settings2,
 } from "lucide-react";
+import { loadPostCategories, type PostCategory, catLabel as catLabelOf } from "@/lib/post-categories";
+import { CategoryManager } from "@/components/admin/category-manager";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 const PAGES_KEY = "grand-palace-cms-pages";
@@ -35,14 +37,6 @@ export const DEFAULT_PAGES: Page[] = [
   { id: "offers", title: "Ưu Đãi Đặc Biệt", slug: "/offers", content: "Khám phá những ưu đãi độc quyền dành riêng cho thành viên.", status: "draft",     updatedAt: new Date().toISOString(), metaTitle: "Ưu Đãi — MAISON DELUXE", metaDesc: "Ưu đãi đặc biệt cho thành viên MAISON DELUXE.", ogImage: "" },
 ];
 
-const POST_CATS = [
-  { value: "news",       label: "Tin tức" },
-  { value: "promotion",  label: "Khuyến mãi" },
-  { value: "experience", label: "Trải nghiệm" },
-  { value: "culinary",   label: "Ẩm thực" },
-  { value: "travel",     label: "Du lịch" },
-];
-const catLabel = (c: string) => POST_CATS.find(x => x.value === c)?.label ?? c;
 
 function loadLS<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; } catch { return fallback; }
@@ -140,6 +134,18 @@ function PostsTab() {
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [cats, setCats] = useState<PostCategory[]>(() => loadPostCategories());
+  const [catManagerOpen, setCatManagerOpen] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => setCats(loadPostCategories());
+    window.addEventListener("post-categories:changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("post-categories:changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
 
   const load = async () => {
     try {
@@ -184,7 +190,7 @@ function PostsTab() {
           <button onClick={() => setFilterCat("all")} className={chipClass(filterCat === "all")}>
             Tất cả ({posts.length})
           </button>
-          {POST_CATS.map(c => {
+          {cats.map(c => {
             const n = posts.filter(p => p.category === c.value).length;
             return (
               <button key={c.value} onClick={() => setFilterCat(c.value)} className={chipClass(filterCat === c.value)}>
@@ -192,6 +198,11 @@ function PostsTab() {
               </button>
             );
           })}
+          <button onClick={() => setCatManagerOpen(true)}
+            className="px-3 h-9 text-[10px] uppercase tracking-widest border border-dashed border-border text-muted-foreground hover:bg-foreground/10 hover:text-white hover:border-primary inline-flex items-center gap-1.5 transition-colors"
+            title="Quản lý chuyên mục">
+            <Settings2 size={12} /> Quản lý
+          </button>
         </div>
         <Link href="/admin/content/posts/new">
           <Button className="rounded-none bg-primary text-primary-foreground uppercase tracking-widest text-xs px-5 h-9 gap-1.5">
@@ -199,6 +210,13 @@ function PostsTab() {
           </Button>
         </Link>
       </div>
+
+      <CategoryManager
+        open={catManagerOpen}
+        onOpenChange={setCatManagerOpen}
+        initial={cats}
+        counts={posts.reduce<Record<string, number>>((acc, p) => { acc[p.category] = (acc[p.category] ?? 0) + 1; return acc; }, {})}
+      />
 
       {filtered.length === 0 ? (
         <Card><CardContent className="py-16 text-center">
@@ -226,7 +244,7 @@ function PostsTab() {
                     </Link>
                     <div className="text-xs text-muted-foreground mt-0.5">/{p.slug}</div>
                   </td>
-                  <td className="p-3"><span className="inline-flex items-center gap-1.5 text-xs"><Tag size={11} /> {catLabel(p.category)}</span></td>
+                  <td className="p-3"><span className="inline-flex items-center gap-1.5 text-xs"><Tag size={11} /> {catLabelOf(cats, p.category)}</span></td>
                   <td className="p-3">
                     <button onClick={() => togglePublish(p)}
                       className={`inline-flex items-center gap-1.5 px-2 py-1 text-[10px] uppercase tracking-widest border ${p.published ? "border-green-500/40 text-green-500" : "border-muted-foreground/30 text-muted-foreground"}`}>
