@@ -3,7 +3,8 @@ export interface PostCategory {
   label: string;
 }
 
-export const POST_CATS_KEY = "grand-palace-post-categories";
+const API = import.meta.env.VITE_API_URL ?? "";
+const SETTINGS_KEY = "postCategories";
 
 export const DEFAULT_POST_CATS: PostCategory[] = [
   { value: "news",       label: "Tin tức" },
@@ -13,20 +14,35 @@ export const DEFAULT_POST_CATS: PostCategory[] = [
   { value: "travel",     label: "Du lịch" },
 ];
 
-export function loadPostCategories(): PostCategory[] {
+function sanitize(arr: unknown): PostCategory[] {
+  if (!Array.isArray(arr)) return DEFAULT_POST_CATS;
+  const out = arr
+    .filter((c: any) => c && typeof c.value === "string" && typeof c.label === "string" && c.value && c.label)
+    .map((c: any) => ({ value: c.value, label: c.label }));
+  return out.length ? out : DEFAULT_POST_CATS;
+}
+
+export async function fetchPostCategories(): Promise<PostCategory[]> {
   try {
-    const raw = localStorage.getItem(POST_CATS_KEY);
-    if (!raw) return DEFAULT_POST_CATS;
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr) || arr.length === 0) return DEFAULT_POST_CATS;
-    return arr.filter(c => c && c.value && c.label);
+    const r = await fetch(`${API}/api/settings/${SETTINGS_KEY}`);
+    if (!r.ok) return DEFAULT_POST_CATS;
+    const json = await r.json();
+    return sanitize(json?.items);
   } catch { return DEFAULT_POST_CATS; }
 }
 
-export function savePostCategories(cats: PostCategory[]) {
-  try { localStorage.setItem(POST_CATS_KEY, JSON.stringify(cats)); } catch {}
-  // Notify other tabs/components in the same window
+export async function savePostCategories(cats: PostCategory[]): Promise<PostCategory[]> {
+  const r = await fetch(`${API}/api/settings/${SETTINGS_KEY}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: cats }),
+  });
+  if (!r.ok) throw new Error("Không thể lưu danh sách chuyên mục");
+  const json = await r.json();
+  const out = sanitize(json?.items);
+  // Notify other components in the same window
   window.dispatchEvent(new CustomEvent("post-categories:changed"));
+  return out;
 }
 
 export function slugifyCat(s: string): string {

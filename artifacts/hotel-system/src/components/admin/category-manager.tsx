@@ -54,7 +54,8 @@ export function CategoryManager({ open, onOpenChange, initial, counts = {} }: Pr
     setList([...DEFAULT_POST_CATS]);
   };
 
-  const save = () => {
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
     // Validate
     const cleaned = list
       .map(c => ({ value: c.value.trim(), label: c.label.trim() }))
@@ -65,9 +66,16 @@ export function CategoryManager({ open, onOpenChange, initial, counts = {} }: Pr
       if (slugs.has(c.value)) { toast({ title: `Mã chuyên mục trùng: "${c.value}"`, variant: "destructive" }); return; }
       slugs.add(c.value);
     }
-    savePostCategories(cleaned);
-    toast({ title: "Đã lưu danh sách chuyên mục" });
-    onOpenChange(false);
+    setSaving(true);
+    try {
+      await savePostCategories(cleaned);
+      toast({ title: "Đã lưu danh sách chuyên mục" });
+      onOpenChange(false);
+    } catch (err: any) {
+      toast({ title: "Lỗi khi lưu", description: err?.message ?? "Vui lòng thử lại", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -123,8 +131,8 @@ export function CategoryManager({ open, onOpenChange, initial, counts = {} }: Pr
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-1.5">
             <X size={13} /> Huỷ
           </Button>
-          <Button type="button" onClick={save} className="gap-1.5">
-            <Save size={13} /> Lưu thay đổi
+          <Button type="button" onClick={save} disabled={saving} className="gap-1.5">
+            <Save size={13} /> {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </Button>
         </DialogFooter>
       </DialogContent>

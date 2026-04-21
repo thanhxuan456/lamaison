@@ -5,7 +5,7 @@ import { AdminGuard } from "./guard";
 import { DEFAULT_PAGES } from "./pages";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { CategoryManager } from "@/components/admin/category-manager";
-import { loadPostCategories, type PostCategory } from "@/lib/post-categories";
+import { fetchPostCategories, DEFAULT_POST_CATS, type PostCategory } from "@/lib/post-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -297,17 +297,15 @@ function PostEditorContent() {
   const [form, setForm] = useState<Partial<Post>>({ ...emptyPost });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [cats, setCats] = useState<PostCategory[]>(() => loadPostCategories());
+  const [cats, setCats] = useState<PostCategory[]>(DEFAULT_POST_CATS);
   const [catMgrOpen, setCatMgrOpen] = useState(false);
 
   useEffect(() => {
-    const onChange = () => setCats(loadPostCategories());
-    window.addEventListener("post-categories:changed", onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener("post-categories:changed", onChange);
-      window.removeEventListener("storage", onChange);
-    };
+    let cancelled = false;
+    const refresh = () => fetchPostCategories().then(c => { if (!cancelled) setCats(c); });
+    refresh();
+    window.addEventListener("post-categories:changed", refresh);
+    return () => { cancelled = true; window.removeEventListener("post-categories:changed", refresh); };
   }, []);
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import {
   FileText, Plus, Edit, Trash2, Globe, EyeOff, Eye, Newspaper,
   Tag, Calendar, ExternalLink, Settings2,
 } from "lucide-react";
-import { loadPostCategories, type PostCategory, catLabel as catLabelOf } from "@/lib/post-categories";
+import { fetchPostCategories, DEFAULT_POST_CATS, type PostCategory, catLabel as catLabelOf } from "@/lib/post-categories";
 import { CategoryManager } from "@/components/admin/category-manager";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -134,17 +134,15 @@ function PostsTab() {
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filterCat, setFilterCat] = useState<string>("all");
-  const [cats, setCats] = useState<PostCategory[]>(() => loadPostCategories());
+  const [cats, setCats] = useState<PostCategory[]>(DEFAULT_POST_CATS);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
 
   useEffect(() => {
-    const onChange = () => setCats(loadPostCategories());
-    window.addEventListener("post-categories:changed", onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener("post-categories:changed", onChange);
-      window.removeEventListener("storage", onChange);
-    };
+    let cancelled = false;
+    const refresh = () => fetchPostCategories().then(c => { if (!cancelled) setCats(c); });
+    refresh();
+    window.addEventListener("post-categories:changed", refresh);
+    return () => { cancelled = true; window.removeEventListener("post-categories:changed", refresh); };
   }, []);
 
   const load = async () => {

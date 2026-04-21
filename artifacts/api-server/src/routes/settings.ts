@@ -112,6 +112,16 @@ const DEFAULT_PAYMENT_SETTINGS = {
   bank: { enabled: true, bankCode: "VCB", accountNumber: "", accountName: "MAISON DELUXE HOTELS", defaultDescription: "Dat phong MAISON DELUXE" },
 };
 
+const DEFAULT_POST_CATEGORIES = {
+  items: [
+    { value: "news",       label: "Tin tức" },
+    { value: "promotion",  label: "Khuyến mãi" },
+    { value: "experience", label: "Trải nghiệm" },
+    { value: "culinary",   label: "Ẩm thực" },
+    { value: "travel",     label: "Du lịch" },
+  ],
+};
+
 // Safelist of keys that may be read/written via the generic endpoint and their defaults.
 const KEY_DEFAULTS: Record<string, unknown> = {
   theme: DEFAULT_THEME,
@@ -119,6 +129,7 @@ const KEY_DEFAULTS: Record<string, unknown> = {
   footer: DEFAULT_FOOTER,
   contactMap: DEFAULT_CONTACT_MAP,
   "payment-settings": DEFAULT_PAYMENT_SETTINGS,
+  postCategories: DEFAULT_POST_CATEGORIES,
 };
 
 function defaultFor(key: string): any {
