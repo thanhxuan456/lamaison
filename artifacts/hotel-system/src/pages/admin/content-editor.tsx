@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useRoute, Link } from "wouter";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Save, Globe, EyeOff, Search, Image as ImageIcon,
-  Eye, Trash2, ExternalLink,
+  Eye, Trash2, ExternalLink, Upload, X, Link2,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -49,6 +49,214 @@ function loadLS<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; } catch { return fallback; }
 }
 function saveLS<T>(key: string, val: T) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+/* ────────────────────────────────────────────────────────────────
+ * MediaPicker — WordPress-style featured image picker
+ * - Pick from local file (or paste URL)
+ * - Preview with native dimensions + file size
+ * - Resize presets: Thumbnail 150, Medium 600, Large 1200, Full
+ * - Outputs a data URL (or original URL) into `value`
+ * ──────────────────────────────────────────────────────────────── */
+const SIZE_PRESETS = [
+  { key: "thumbnail", label: "Thumbnail", w: 150,  h: 150,  crop: true  },
+  { key: "medium",    label: "Medium",    w: 600,  h: 600,  crop: false },
+  { key: "large",     label: "Large",     w: 1200, h: 1200, crop: false },
+  { key: "full",      label: "Full size", w: 0,    h: 0,    crop: false },
+] as const;
+type SizeKey = typeof SIZE_PRESETS[number]["key"];
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(r.error ?? new Error("read error"));
+    r.readAsDataURL(file);
+  });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error("image load error"));
+    img.src = src;
+  });
+}
+
+async function resizeDataURL(src: string, target: typeof SIZE_PRESETS[number]): Promise<{ url: string; w: number; h: number }> {
+  const img = await loadImage(src);
+  if (target.key === "full") return { url: src, w: img.naturalWidth, h: img.naturalHeight };
+
+  const { w: tw, h: th, crop } = target;
+  let dw: number, dh: number, sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+
+  if (crop) {
+    // square crop centered
+    dw = tw; dh = th;
+    const side = Math.min(sw, sh);
+    sx = (sw - side) / 2; sy = (sh - side) / 2; sw = sh = side;
+  } else {
+    const ratio = Math.min(tw / sw, th / sh, 1);
+    dw = Math.round(sw * ratio); dh = Math.round(sh * ratio);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = dw; canvas.height = dh;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+  const url = canvas.toDataURL("image/jpeg", 0.85);
+  return { url, w: dw, h: dh };
+}
+
+function humanBytes(n: number): string {
+  if (!n) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function MediaPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const [mode, setMode] = useState<"file" | "url">(value?.startsWith("data:") ? "file" : "url");
+  const [origUrl, setOrigUrl] = useState<string>(value);
+  const [origMeta, setOrigMeta] = useState<{ w: number; h: number; bytes: number; name?: string } | null>(null);
+  const [size, setSize] = useState<SizeKey>("full");
+  const [busy, setBusy] = useState(false);
+
+  // When the user picks a file
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Vui lòng chọn file ảnh", variant: "destructive" }); return; }
+    setBusy(true);
+    try {
+      const dataUrl = await readFileAsDataURL(file);
+      const img = await loadImage(dataUrl);
+      setOrigUrl(dataUrl);
+      setOrigMeta({ w: img.naturalWidth, h: img.naturalHeight, bytes: file.size, name: file.name });
+      setSize("full");
+      onChange(dataUrl);
+      setMode("file");
+    } catch (e: any) {
+      toast({ title: "Không đọc được file", description: e.message, variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  // When the user types/pastes a URL
+  const onUrlBlur = async (u: string) => {
+    setOrigUrl(u);
+    onChange(u);
+    if (!u) { setOrigMeta(null); return; }
+    try { const img = await loadImage(u); setOrigMeta({ w: img.naturalWidth, h: img.naturalHeight, bytes: 0 }); }
+    catch { setOrigMeta(null); }
+  };
+
+  // Apply a resize preset to the current image
+  const applySize = async (key: SizeKey) => {
+    if (!origUrl) return;
+    setSize(key);
+    const preset = SIZE_PRESETS.find(p => p.key === key)!;
+    setBusy(true);
+    try {
+      const out = await resizeDataURL(origUrl, preset);
+      onChange(out.url);
+    } catch (e: any) {
+      toast({ title: "Không thể resize ảnh", description: "Ảnh từ URL ngoài có thể bị chặn CORS — hãy tải file lên thay thế.", variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const remove = () => {
+    setOrigUrl(""); setOrigMeta(null); setSize("full");
+    onChange("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  // Derived dimensions of the currently-selected size preview
+  const preset = SIZE_PRESETS.find(p => p.key === size)!;
+  const displayW = preset.key === "full" ? origMeta?.w : Math.min(preset.w, origMeta?.w ?? preset.w);
+  const displayH = preset.key === "full" ? origMeta?.h : (preset.crop ? preset.h : (origMeta ? Math.round((origMeta.h * (displayW ?? preset.w)) / origMeta.w) : preset.h));
+
+  return (
+    <div className="space-y-3">
+      {/* Mode tabs */}
+      <div className="flex border border-border">
+        {(["file", "url"] as const).map(m => (
+          <button key={m} onClick={() => setMode(m)} type="button"
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-foreground/10 hover:text-white"}`}>
+            {m === "file" ? <><Upload size={12} /> Tải lên</> : <><Link2 size={12} /> URL</>}
+          </button>
+        ))}
+      </div>
+
+      {mode === "url" ? (
+        <Input value={value ?? ""} placeholder="https://..." className="font-mono text-xs"
+          onChange={e => onChange(e.target.value)}
+          onBlur={e => onUrlBlur(e.target.value)} />
+      ) : (
+        <>
+          <input ref={inputRef} type="file" accept="image/*" hidden
+            onChange={e => onFile(e.target.files?.[0])} />
+          <Button type="button" variant="outline" size="sm" disabled={busy}
+            onClick={() => inputRef.current?.click()}
+            className="w-full gap-1.5 text-xs">
+            <Upload size={13} /> {busy ? "Đang xử lý…" : "Chọn ảnh từ máy"}
+          </Button>
+        </>
+      )}
+
+      {/* Preview */}
+      {value ? (
+        <div className="border border-border bg-muted/20">
+          <div className="relative bg-[repeating-conic-gradient(#0001_0_25%,transparent_0_50%)] bg-[length:16px_16px]">
+            <img src={value} alt="cover preview" className="w-full max-h-64 object-contain" />
+            <button type="button" onClick={remove}
+              className="absolute top-1.5 right-1.5 p-1 bg-background/80 hover:bg-destructive hover:text-destructive-foreground border border-border rounded transition-colors"
+              title="Xoá ảnh"><X size={13} /></button>
+          </div>
+          <div className="px-3 py-2 text-[10px] text-muted-foreground border-t border-border flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {origMeta?.name && <strong className="text-foreground/80">{origMeta.name}</strong>}
+              {origMeta?.w ? <> · {displayW}×{displayH}px</> : null}
+              {origMeta?.bytes ? <> · {humanBytes(origMeta.bytes)}</> : null}
+            </span>
+            <span className="uppercase tracking-widest">{preset.label}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-dashed border-border h-32 flex flex-col items-center justify-center text-muted-foreground gap-1.5">
+          <ImageIcon size={20} className="opacity-40" />
+          <span className="text-[11px]">Chưa có ảnh bìa</span>
+        </div>
+      )}
+
+      {/* Size presets */}
+      {value && origMeta && (
+        <div>
+          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Kích thước</Label>
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            {SIZE_PRESETS.map(p => (
+              <button key={p.key} type="button" disabled={busy}
+                onClick={() => applySize(p.key)}
+                className={`px-2 py-1.5 text-[10px] uppercase tracking-widest border transition-colors ${size === p.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-foreground/10 hover:text-white hover:border-primary"}`}>
+                {p.label}
+                <div className="text-[9px] opacity-70 mt-0.5 normal-case tracking-normal">
+                  {p.key === "full" ? `${origMeta.w}×${origMeta.h}` : (p.crop ? `${p.w}×${p.h}` : `≤ ${p.w}px`)}
+                </div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            {size === "thumbnail" && "Crop vuông 1:1, dùng cho thumbnail card và avatar bài viết."}
+            {size === "medium" && "Vừa với cột sidebar, danh sách bài viết, OG image."}
+            {size === "large" && "Hero ảnh đầu trang, banner."}
+            {size === "full" && "Giữ nguyên kích thước gốc."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ────────────────────────────────────────────────────────────────
  * EditorChrome — common page header
@@ -245,19 +453,19 @@ function PostEditorContent() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">URL & Ảnh bìa</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label className="text-xs">Slug (để trống tự sinh)</Label>
-              <Input value={form.slug ?? ""} placeholder="vd: khuyen-mai-mua-he-2026"
-                className="font-mono text-xs"
-                onChange={e => set("slug", e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Ảnh bìa (URL)</Label>
-              <Input value={form.coverImage ?? ""} placeholder="https://..." className="font-mono text-xs"
-                onChange={e => set("coverImage", e.target.value)} />
-            </div>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">URL</CardTitle></CardHeader>
+          <CardContent>
+            <Label className="text-xs">Slug (để trống tự sinh)</Label>
+            <Input value={form.slug ?? ""} placeholder="vd: khuyen-mai-mua-he-2026"
+              className="font-mono text-xs"
+              onChange={e => set("slug", e.target.value)} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-1.5"><ImageIcon size={14} /> Ảnh bìa (Featured Image)</CardTitle></CardHeader>
+          <CardContent>
+            <MediaPicker value={form.coverImage ?? ""} onChange={v => set("coverImage", v)} />
           </CardContent>
         </Card>
       </aside>
