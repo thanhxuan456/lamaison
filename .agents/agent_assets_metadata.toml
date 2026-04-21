@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "19l92yfwrqTPUD7QeCbSf"
@@ -36,3 +35,9 @@ id = "J0nM7czhuJKsKfjtFhrCB"
 uri = "file://artifacts/hotel-system/public/images/restaurant.png"
 type = "image"
 title = "Elegant hotel restaurant"
+
+[[outputs]]
+id = "nPqwvbmfKhwQrUrGIfQtW"
+uri = "file://INSTALL_GUIDE.md"
+type = "text"
+title = "Hướng dẫn cài đặt MAISON DELUXE Hotels"
