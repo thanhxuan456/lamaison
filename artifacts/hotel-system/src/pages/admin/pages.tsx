@@ -174,7 +174,7 @@ function PostsTab() {
     `px-3 h-9 text-[10px] uppercase tracking-widest border transition-colors duration-150 ${
       active
         ? "bg-primary text-primary-foreground border-primary"
-        : "border-border text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary"
+        : "border-border text-muted-foreground hover:bg-foreground/10 hover:text-white hover:border-primary"
     }`;
 
   return (
@@ -219,7 +219,7 @@ function PostsTab() {
             </thead>
             <tbody>
               {filtered.map(p => (
-                <tr key={p.id} className="border-t border-border hover:bg-secondary/40">
+                <tr key={p.id} className="border-t border-border hover:bg-foreground/5 transition-colors">
                   <td className="p-3">
                     <Link href={`/admin/content/posts/${p.id}`}>
                       <a className="font-medium text-foreground hover:text-primary transition-colors">{p.title}</a>
