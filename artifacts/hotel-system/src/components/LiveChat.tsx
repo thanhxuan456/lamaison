@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
-import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface Message {
   id: string;
-  senderType: "user" | "admin" | "system";
+  senderType: "user" | "admin" | "system" | "bot";
   senderName: string;
   message: string;
   createdAt: string;
@@ -24,6 +25,7 @@ export function LiveChat() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [wsConnected, setWsConnected] = useState(false);
+  const [adminOnline, setAdminOnline] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionInitialized = useRef(false);
@@ -37,18 +39,24 @@ export function LiveChat() {
   const connectWs = useCallback((sid: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${proto}//${window.location.host}${API_URL}/api/chat/ws/${sid}`;
+    const wsUrl = `${proto}//${window.location.host}${API_URL}/api/chat/ws/${sid}?role=user`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => setWsConnected(true);
     ws.onclose = () => {
       setWsConnected(false);
+      setAdminOnline(false);
       setTimeout(() => connectWs(sid), 3000);
     };
     ws.onmessage = (e) => {
       try {
-        const msg: Message = JSON.parse(e.data);
+        const data = JSON.parse(e.data);
+        if (data?.type === "presence") {
+          setAdminOnline(Boolean(data.adminOnline));
+          return;
+        }
+        const msg: Message = data;
         setMessages((prev) => [...prev, msg]);
         if (!open || minimized) setUnread((u) => u + 1);
       } catch { }
@@ -73,7 +81,7 @@ export function LiveChat() {
     const res = await fetch(`${API_URL}/api/chat/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestName, guestEmail }),
+      body: JSON.stringify({ guestName, guestEmail, clerkUserId: user?.id ?? null }),
     });
     if (res.ok) {
       const session = await res.json();
@@ -159,7 +167,13 @@ export function LiveChat() {
               </div>
               <div>
                 <div className="font-serif text-sm text-foreground">{t("chat.title")}</div>
-                <div className="text-[10px] text-muted-foreground">{wsConnected ? t("chat.online") : t("chat.connecting")}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {!wsConnected
+                    ? t("chat.connecting")
+                    : adminOnline
+                      ? <span className="text-green-500">● Tư vấn viên đang trực</span>
+                      : <span>○ Tự động trả lời</span>}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -174,6 +188,18 @@ export function LiveChat() {
 
           {!minimized && (
             <>
+              {/* Login hint for guests */}
+              {!user && (
+                <div className="px-3 py-2 bg-primary/5 border-b border-primary/10 text-[11px] text-muted-foreground flex items-center gap-2">
+                  <LogIn size={12} className="text-primary shrink-0" />
+                  <span>
+                    Đang trò chuyện với tư cách khách.{" "}
+                    <Link href="/sign-in" className="text-primary hover:underline">Đăng nhập</Link>
+                    {" "}để lưu lịch sử & nhận hỗ trợ ưu tiên.
+                  </span>
+                </div>
+              )}
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((msg) => {
@@ -183,18 +209,28 @@ export function LiveChat() {
                     </div>
                   );
                   const isUser = msg.senderType === "user";
+                  const isBot = msg.senderType === "bot";
                   return (
                     <div key={msg.id} className={`flex ${isUser ? "justify-end" : "justify-start"} gap-2`}>
                       {!isUser && (
-                        <div className="w-7 h-7 shrink-0 bg-primary/20 border border-primary flex items-center justify-center mt-1">
-                          <span className="text-[9px] font-serif text-primary font-bold">GP</span>
+                        <div className={`w-7 h-7 shrink-0 border flex items-center justify-center mt-1 ${
+                          isBot ? "bg-muted border-muted-foreground/30" : "bg-primary/20 border-primary"
+                        }`}>
+                          {isBot
+                            ? <Bot size={12} className="text-muted-foreground" />
+                            : <span className="text-[9px] font-serif text-primary font-bold">MD</span>}
                         </div>
                       )}
                       <div className={`max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col gap-0.5`}>
+                        {!isUser && (
+                          <div className="text-[10px] text-muted-foreground/80 px-1">{msg.senderName}</div>
+                        )}
                         <div className={`px-3 py-2 text-sm leading-relaxed ${
                           isUser
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground border border-primary/15"
+                            : isBot
+                              ? "bg-muted/60 text-foreground border border-dashed border-muted-foreground/30 italic"
+                              : "bg-muted text-foreground border border-primary/15"
                         }`}>
                           {msg.message}
                         </div>

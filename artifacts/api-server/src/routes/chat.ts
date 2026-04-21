@@ -6,8 +6,27 @@ import { WebSocketServer, WebSocket } from "ws";
 
 const router = Router();
 
-// In-memory map: sessionId → Set of connected WebSocket clients
+// In-memory maps
+// All clients (user + admin) for a session — receive messages + presence
 const sessions = new Map<string, Set<WebSocket>>();
+// Admin clients only — used to know if anyone is supporting this session
+const adminPresence = new Map<string, Set<WebSocket>>();
+// Pending auto-reply timers (one per session)
+const pendingAutoReplies = new Map<string, NodeJS.Timeout>();
+
+const AUTO_REPLY_DELAY_MS = 30_000;
+const AUTO_REPLY_NAME = "Trợ lý ảo MAISON DELUXE";
+const AUTO_REPLY_TEXT =
+  "Cảm ơn bạn đã liên hệ MAISON DELUXE Hotels. Hiện tại các tư vấn viên đang bận hoặc ngoài giờ làm việc. " +
+  "Chúng tôi sẽ phản hồi sớm nhất có thể qua khung chat này. " +
+  "Trong lúc chờ, quý khách có thể liên hệ Hotline +84 1800 9999 hoặc email contact@maisondeluxe.vn để được hỗ trợ trực tiếp.";
+
+function hasAdminOnline(sessionId: string): boolean {
+  const set = adminPresence.get(sessionId);
+  if (!set || set.size === 0) return false;
+  for (const ws of set) if (ws.readyState === WebSocket.OPEN) return true;
+  return false;
+}
 
 function broadcast(sessionId: string, data: object) {
   const clients = sessions.get(sessionId);
@@ -16,6 +35,33 @@ function broadcast(sessionId: string, data: object) {
   for (const ws of clients) {
     if (ws.readyState === WebSocket.OPEN) ws.send(str);
   }
+}
+
+function broadcastPresence(sessionId: string) {
+  broadcast(sessionId, { type: "presence", adminOnline: hasAdminOnline(sessionId) });
+}
+
+async function scheduleAutoReply(sessionId: string) {
+  // cancel any earlier scheduled reply for this session
+  const existing = pendingAutoReplies.get(sessionId);
+  if (existing) clearTimeout(existing);
+  const timer = setTimeout(async () => {
+    pendingAutoReplies.delete(sessionId);
+    if (hasAdminOnline(sessionId)) return; // someone joined, no need
+    try {
+      const [auto] = await db
+        .insert(chatMessagesTable)
+        .values({
+          sessionId,
+          senderType: "bot",
+          senderName: AUTO_REPLY_NAME,
+          message: AUTO_REPLY_TEXT,
+        })
+        .returning();
+      broadcast(sessionId, auto);
+    } catch { /* ignore */ }
+  }, AUTO_REPLY_DELAY_MS);
+  pendingAutoReplies.set(sessionId, timer);
 }
 
 // POST /api/chat/sessions — start a new chat session
@@ -69,6 +115,13 @@ router.post("/chat/sessions/:id/messages", async (req, res) => {
       .where(eq(chatSessionsTable.id, parseInt(req.params.id)));
 
     broadcast(req.params.id, msg);
+
+    // Auto-reply trigger: only when an end-user posts AND no admin is currently
+    // attending the session. Wait AUTO_REPLY_DELAY_MS to let an admin join first.
+    if ((senderType ?? "user") === "user" && !hasAdminOnline(req.params.id)) {
+      scheduleAutoReply(req.params.id);
+    }
+
     res.json(msg);
   } catch (err) {
     req.log.error({ err }, "Failed to send message");
@@ -136,11 +189,31 @@ export function setupChatWebSocket(wss: WebSocketServer) {
     if (!match) { ws.close(); return; }
     const sessionId = match[1];
 
+    // Detect role from query string: ?role=admin or ?role=user (default user)
+    const roleMatch = url.match(/[?&]role=(admin|user)/);
+    const role: "admin" | "user" = roleMatch?.[1] === "admin" ? "admin" : "user";
+
     if (!sessions.has(sessionId)) sessions.set(sessionId, new Set());
     sessions.get(sessionId)!.add(ws);
 
+    if (role === "admin") {
+      if (!adminPresence.has(sessionId)) adminPresence.set(sessionId, new Set());
+      adminPresence.get(sessionId)!.add(ws);
+      // Cancel any pending auto-reply since a human just joined
+      const pending = pendingAutoReplies.get(sessionId);
+      if (pending) { clearTimeout(pending); pendingAutoReplies.delete(sessionId); }
+      broadcastPresence(sessionId);
+    } else {
+      // Tell the user immediately whether someone is already attending
+      try { ws.send(JSON.stringify({ type: "presence", adminOnline: hasAdminOnline(sessionId) })); } catch {}
+    }
+
     ws.on("close", () => {
       sessions.get(sessionId)?.delete(ws);
+      if (role === "admin") {
+        adminPresence.get(sessionId)?.delete(ws);
+        broadcastPresence(sessionId);
+      }
     });
 
     // Ping to keep alive

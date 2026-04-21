@@ -71,13 +71,14 @@ export default function AdminChat() {
     } catch {}
 
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${proto}//${window.location.host}${API}/api/chat/ws/${session.id}`);
+    const ws = new WebSocket(`${proto}//${window.location.host}${API}/api/chat/ws/${session.id}?role=admin`);
     wsRef.current = ws;
     ws.onopen = () => setWsConnected(true);
     ws.onclose = () => setWsConnected(false);
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
+        if (msg.type === "presence") return; // ignore — admin already knows it's online
         if (msg.type === "message") setMessages((prev) => [...prev, msg.data]);
         else if (msg.id) setMessages((prev) => [...prev, msg]);
       } catch {}
