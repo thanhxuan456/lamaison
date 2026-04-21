@@ -280,6 +280,9 @@ try {
 
         Write-Info "Building hotel-system frontend..."
         $env:BASE_PATH = "/"
+        # CRITICAL: Vite inline VITE_* vars vao bundle TAI BUILD TIME.
+        # Neu khong set, ClerkProvider se nhan key rong va react crash -> trang trang.
+        $env:VITE_CLERK_PUBLISHABLE_KEY = $Config.ClerkPublishableKey
         & pnpm --filter "@workspace/hotel-system" run build
         if ($LASTEXITCODE -ne 0) { Fail "Frontend build failed" }
         Write-OK "Frontend built"
