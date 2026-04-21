@@ -17,9 +17,15 @@ export const hotelsTable = pgTable("hotels", {
   totalRooms: integer("total_rooms").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
+  layoutTemplate: text("layout_template").notNull().default("classic"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertHotelSchema = createInsertSchema(hotelsTable).omit({ id: true, createdAt: true });
+export const HOTEL_LAYOUT_TEMPLATES = ["classic", "magazine", "modern"] as const;
+export type HotelLayoutTemplate = (typeof HOTEL_LAYOUT_TEMPLATES)[number];
+
+export const insertHotelSchema = createInsertSchema(hotelsTable, {
+  layoutTemplate: z.enum(HOTEL_LAYOUT_TEMPLATES).default("classic"),
+}).omit({ id: true, createdAt: true });
 export type InsertHotel = z.infer<typeof insertHotelSchema>;
 export type Hotel = typeof hotelsTable.$inferSelect;

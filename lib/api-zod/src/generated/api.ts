@@ -18,6 +18,8 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List all hotels
  */
+export const listHotelsResponseLayoutTemplateDefault = `classic`;
+
 export const ListHotelsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
@@ -33,6 +35,9 @@ export const ListHotelsResponseItem = zod.object({
   availableRooms: zod.number(),
   phone: zod.string(),
   email: zod.string(),
+  layoutTemplate: zod
+    .enum(["classic", "magazine", "modern"])
+    .default(listHotelsResponseLayoutTemplateDefault),
 });
 export const ListHotelsResponse = zod.array(ListHotelsResponseItem);
 
@@ -42,6 +47,8 @@ export const ListHotelsResponse = zod.array(ListHotelsResponseItem);
 export const GetHotelParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const getHotelResponseLayoutTemplateDefault = `classic`;
 
 export const GetHotelResponse = zod.object({
   id: zod.number(),
@@ -58,6 +65,9 @@ export const GetHotelResponse = zod.object({
   availableRooms: zod.number(),
   phone: zod.string(),
   email: zod.string(),
+  layoutTemplate: zod
+    .enum(["classic", "magazine", "modern"])
+    .default(getHotelResponseLayoutTemplateDefault),
 });
 
 /**
@@ -139,6 +149,8 @@ export const GetRoomResponse = zod.object({
 /**
  * @summary List all bookings
  */
+export const listBookingsResponseHotelLayoutTemplateDefault = `classic`;
+
 export const ListBookingsResponseItem = zod.object({
   id: zod.number(),
   roomId: zod.number(),
@@ -197,6 +209,9 @@ export const ListBookingsResponseItem = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(listBookingsResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });
@@ -222,6 +237,8 @@ export const CreateBookingBody = zod.object({
 export const GetBookingParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const getBookingResponseHotelLayoutTemplateDefault = `classic`;
 
 export const GetBookingResponse = zod.object({
   id: zod.number(),
@@ -281,6 +298,9 @@ export const GetBookingResponse = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(getBookingResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });
@@ -291,6 +311,8 @@ export const GetBookingResponse = zod.object({
 export const CancelBookingParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const cancelBookingResponseHotelLayoutTemplateDefault = `classic`;
 
 export const CancelBookingResponse = zod.object({
   id: zod.number(),
@@ -350,6 +372,9 @@ export const CancelBookingResponse = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(cancelBookingResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });
@@ -360,6 +385,8 @@ export const CancelBookingResponse = zod.object({
 export const CheckInBookingParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const checkInBookingResponseHotelLayoutTemplateDefault = `classic`;
 
 export const CheckInBookingResponse = zod.object({
   id: zod.number(),
@@ -419,6 +446,9 @@ export const CheckInBookingResponse = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(checkInBookingResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });
@@ -429,6 +459,8 @@ export const CheckInBookingResponse = zod.object({
 export const CheckOutBookingParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const checkOutBookingResponseHotelLayoutTemplateDefault = `classic`;
 
 export const CheckOutBookingResponse = zod.object({
   id: zod.number(),
@@ -488,6 +520,9 @@ export const CheckOutBookingResponse = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(checkOutBookingResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });
@@ -553,6 +588,8 @@ export const ListGuestsResponse = zod.array(ListGuestsResponseItem);
 export const GetGuestParams = zod.object({
   id: zod.coerce.number(),
 });
+
+export const getGuestResponseTwoBookingsItemHotelLayoutTemplateDefault = `classic`;
 
 export const GetGuestResponse = zod
   .object({
@@ -627,6 +664,11 @@ export const GetGuestResponse = zod
               availableRooms: zod.number(),
               phone: zod.string(),
               email: zod.string(),
+              layoutTemplate: zod
+                .enum(["classic", "magazine", "modern"])
+                .default(
+                  getGuestResponseTwoBookingsItemHotelLayoutTemplateDefault,
+                ),
             })
             .optional(),
         }),
@@ -655,6 +697,8 @@ export const IngestOtaBookingBody = zod.object({
   totalPrice: zod.number(),
   specialRequests: zod.string().optional(),
 });
+
+export const ingestOtaBookingResponseHotelLayoutTemplateDefault = `classic`;
 
 export const IngestOtaBookingResponse = zod.object({
   id: zod.number(),
@@ -714,6 +758,9 @@ export const IngestOtaBookingResponse = zod.object({
       availableRooms: zod.number(),
       phone: zod.string(),
       email: zod.string(),
+      layoutTemplate: zod
+        .enum(["classic", "magazine", "modern"])
+        .default(ingestOtaBookingResponseHotelLayoutTemplateDefault),
     })
     .optional(),
 });

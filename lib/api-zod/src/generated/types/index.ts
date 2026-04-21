@@ -12,6 +12,7 @@ export * from "./guest";
 export * from "./guestWithHistory";
 export * from "./healthStatus";
 export * from "./hotel";
+export * from "./hotelLayoutTemplate";
 export * from "./hotelSummary";
 export * from "./otaIngestRequest";
 export * from "./room";

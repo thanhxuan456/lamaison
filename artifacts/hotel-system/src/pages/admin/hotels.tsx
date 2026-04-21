@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Hotel, Plus, Edit, Trash2, Eye, Star, X, Loader2 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { Link } from "wouter";
+import { HOTEL_TEMPLATES } from "@/lib/hotel-templates";
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
@@ -15,6 +16,7 @@ const EMPTY_HOTEL = {
   slug: "", name: "", location: "", city: "", address: "", description: "",
   rating: "5.0", imageUrl: "/images/hero.png", amenities: [] as string[],
   priceFrom: "500", totalRooms: 50, phone: "", email: "",
+  layoutTemplate: "classic",
 };
 
 type HotelForm = typeof EMPTY_HOTEL;
@@ -41,6 +43,7 @@ function HotelModal({ hotel, onClose, onSaved }: {
     rating: String(hotel.rating), imageUrl: hotel.imageUrl,
     amenities: hotel.amenities ?? [], priceFrom: String(hotel.priceFrom),
     totalRooms: hotel.totalRooms, phone: hotel.phone, email: hotel.email,
+    layoutTemplate: hotel.layoutTemplate ?? "classic",
   } : EMPTY_HOTEL);
   const [saving, setSaving] = useState(false);
   const [amenityInput, setAmenityInput] = useState("");
@@ -109,6 +112,31 @@ function HotelModal({ hotel, onClose, onSaved }: {
             <Field label="Price From (USD)" value={String(form.priceFrom)} onChange={(v) => set("priceFrom", v)} type="number" />
             <Field label="Total Rooms" value={String(form.totalRooms)} onChange={(v) => set("totalRooms", Number(v))} type="number" />
             <Field label="Image URL" value={form.imageUrl} onChange={(v) => set("imageUrl", v)} />
+          </div>
+
+          <div>
+            <label
+              htmlFor="hotel-layout-template"
+              className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5"
+            >
+              Layout Template (Giao diện chi nhánh)
+            </label>
+            <select
+              id="hotel-layout-template"
+              aria-describedby="hotel-layout-template-desc"
+              className="w-full border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors"
+              value={form.layoutTemplate}
+              onChange={(e) => set("layoutTemplate", e.target.value)}
+            >
+              {HOTEL_TEMPLATES.map(tpl => (
+                <option key={tpl.id} value={tpl.id}>{tpl.label}</option>
+              ))}
+            </select>
+            <p id="hotel-layout-template-desc" className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+              {HOTEL_TEMPLATES.find(t => t.id === form.layoutTemplate)?.description}
+              <br />
+              <span className="text-primary/70">Header, menu, footer của trang chính sẽ được giữ nguyên.</span>
+            </p>
           </div>
 
           <div>

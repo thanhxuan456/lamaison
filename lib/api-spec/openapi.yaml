@@ -367,6 +367,10 @@ components:
           type: string
         email:
           type: string
+        layoutTemplate:
+          type: string
+          enum: [classic, magazine, modern]
+          default: classic
       required:
         - id
         - name
@@ -382,6 +386,7 @@ components:
         - availableRooms
         - phone
         - email
+        - layoutTemplate
 
     HotelSummary:
       type: object

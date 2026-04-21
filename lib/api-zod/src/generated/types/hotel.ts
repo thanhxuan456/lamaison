@@ -5,6 +5,7 @@
  * Luxury Hotel System API
  * OpenAPI spec version: 0.1.0
  */
+import type { HotelLayoutTemplate } from "./hotelLayoutTemplate";
 
 export interface Hotel {
   id: number;
@@ -21,4 +22,5 @@ export interface Hotel {
   availableRooms: number;
   phone: string;
   email: string;
+  layoutTemplate: HotelLayoutTemplate;
 }

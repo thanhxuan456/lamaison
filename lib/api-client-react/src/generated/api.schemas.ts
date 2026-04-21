@@ -9,6 +9,15 @@ export interface HealthStatus {
   status: string;
 }
 
+export type HotelLayoutTemplate =
+  (typeof HotelLayoutTemplate)[keyof typeof HotelLayoutTemplate];
+
+export const HotelLayoutTemplate = {
+  classic: "classic",
+  magazine: "magazine",
+  modern: "modern",
+} as const;
+
 export interface Hotel {
   id: number;
   name: string;
@@ -24,6 +33,7 @@ export interface Hotel {
   availableRooms: number;
   phone: string;
   email: string;
+  layoutTemplate: HotelLayoutTemplate;
 }
 
 export interface HotelSummary {
