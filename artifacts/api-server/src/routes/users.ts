@@ -26,7 +26,7 @@ router.get("/users", async (_req, res) => {
 router.post("/users", async (req, res) => {
   try {
     const { clerkUserId, email, name, role, notes } = req.body ?? {};
-    if (!clerkUserId || !email) return res.status(400).json({ error: "clerkUserId and email are required" });
+    if (!clerkUserId || !email) { res.status(400).json({ error: "clerkUserId and email are required" }); return; }
 
     const existing = await db.select().from(userRolesTable).where(eq(userRolesTable.clerkUserId, clerkUserId));
     if (existing.length > 0) {
@@ -34,7 +34,7 @@ router.post("/users", async (req, res) => {
         .set({ email, name, role, notes, updatedAt: new Date() })
         .where(eq(userRolesTable.clerkUserId, clerkUserId))
         .returning();
-      return res.json(updated);
+      res.json(updated); return;
     }
 
     const [created] = await db.insert(userRolesTable).values({
@@ -54,7 +54,7 @@ router.post("/users", async (req, res) => {
 router.put("/users/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
     const { role, commissionRate, notes, name } = req.body ?? {};
     const patch: Record<string, unknown> = { updatedAt: new Date() };
     if (role !== undefined) patch.role = role;
@@ -67,7 +67,7 @@ router.put("/users/:id", async (req, res) => {
       .where(eq(userRolesTable.id, id))
       .returning();
 
-    if (!updated) return res.status(404).json({ error: "User not found" });
+    if (!updated) { res.status(404).json({ error: "User not found" }); return; }
     res.json(updated);
   } catch (e: any) {
     res.status(400).json({ error: e.message ?? "Invalid data" });
@@ -78,7 +78,7 @@ router.put("/users/:id", async (req, res) => {
 router.delete("/users/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
     await db.delete(userRolesTable).where(eq(userRolesTable.id, id));
     res.json({ success: true });
   } catch {
@@ -90,7 +90,7 @@ router.delete("/users/:id", async (req, res) => {
 router.post("/users/:id/affiliate", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
     const code = genCode();
     const rate = Number(req.body?.commissionRate ?? 5);
 
@@ -99,7 +99,7 @@ router.post("/users/:id/affiliate", async (req, res) => {
       .where(eq(userRolesTable.id, id))
       .returning();
 
-    if (!updated) return res.status(404).json({ error: "User not found" });
+    if (!updated) { res.status(404).json({ error: "User not found" }); return; }
     res.json(updated);
   } catch (e: any) {
     res.status(400).json({ error: e.message ?? "Failed to generate code" });

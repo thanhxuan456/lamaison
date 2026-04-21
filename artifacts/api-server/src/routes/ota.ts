@@ -50,7 +50,7 @@ router.put("/ota/channels/:id", (req, res) => {
   if (store.length === 0) store = getDefaultChannels();
   const { id } = req.params;
   const idx = store.findIndex((c) => c.id === id);
-  if (idx === -1) return res.status(404).json({ error: "Channel not found" });
+  if (idx === -1) { res.status(404).json({ error: "Channel not found" }); return; }
   store[idx] = { ...store[idx], ...req.body, id };
   res.json(store[idx]);
 });

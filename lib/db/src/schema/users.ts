@@ -1,6 +1,6 @@
 import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const USER_ROLES = ["superadmin", "admin", "manager", "staff", "affiliate", "vip", "guest"] as const;
 export type UserRole = typeof USER_ROLES[number];

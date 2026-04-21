@@ -7,11 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useMemo, useState, useEffect, useRef } from "react";
-import {
-  Check, User, Wind, Maximize, Crown, Star, Calendar, Users as UsersIcon,
-  Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Sparkles, ShieldCheck,
-  CreditCard, Award, MapPin, Loader2, ExternalLink, QrCode, Building2,
-} from "lucide-react";
+import { Check, User, Wind, Maximize, Crown, Star, Calendar, Users as UsersIcon, Mail, Phone, MessageSquare, ChevronLeft, ChevronRight, Sparkles, ShieldCheck, CreditCard, Award, MapPin, Loader as Loader2, ExternalLink, QrCode, Building2 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -162,7 +158,7 @@ export default function RoomDetail() {
       {
         onSuccess: async (data) => {
           setBookingId(data.id);
-          setBookingAmount(parseFloat(data.totalPrice ?? "0"));
+          setBookingAmount(data.totalPrice ?? 0);
           const momoOk = paySettings.momo.enabled && paySettings.momo.configured;
           const bankOk = paySettings.bank.enabled && !!paySettings.bank.accountNumber;
           if (momoOk && !bankOk) {

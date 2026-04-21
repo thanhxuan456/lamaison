@@ -161,14 +161,14 @@ router.put("/settings/theme", async (req, res) => {
 // Generic key endpoints (safelisted)
 router.get("/settings/:key", async (req, res) => {
   const key = req.params.key;
-  if (!(key in KEY_DEFAULTS)) return res.status(404).json({ error: "Unknown setting key" });
+  if (!(key in KEY_DEFAULTS)) { res.status(404).json({ error: "Unknown setting key" }); return; }
   try { res.json(await readKey(key)); }
   catch { res.status(500).json({ error: "Internal server error" }); }
 });
 
 router.put("/settings/:key", async (req, res) => {
   const key = req.params.key;
-  if (!(key in KEY_DEFAULTS)) return res.status(404).json({ error: "Unknown setting key" });
+  if (!(key in KEY_DEFAULTS)) { res.status(404).json({ error: "Unknown setting key" }); return; }
   try { res.json(await writeKey(key, req.body)); }
   catch (err) { req.log.error({ err, key }, "Failed to save setting"); res.status(500).json({ error: "Internal server error" }); }
 });

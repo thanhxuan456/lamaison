@@ -64,8 +64,7 @@ router.get("/blog-posts/:slugOrId", async (req, res) => {
     const [row] = await db.select().from(blogPostsTable)
       .where(isNum ? eq(blogPostsTable.id, Number(k)) : eq(blogPostsTable.slug, k))
       .limit(1);
-    if (!row || (!showAll && !row.published)) return res.status(404).json({ error: "Not found" });
-    // Best-effort view counter (don't await to avoid latency)
+    if (!row || (!showAll && !row.published)) { res.status(404).json({ error: "Not found" }); return; }
     db.update(blogPostsTable).set({ views: sql`${blogPostsTable.views} + 1` })
       .where(eq(blogPostsTable.id, row.id)).catch(() => {});
     res.json(row);
@@ -84,7 +83,7 @@ router.post("/blog-posts", async (req, res) => {
     }).returning();
     res.status(201).json(row);
   } catch (e: any) {
-    if (e?.code === "23505") return res.status(409).json({ error: "Slug đã tồn tại" });
+    if (e?.code === "23505") { res.status(409).json({ error: "Slug đã tồn tại" }); return; }
     res.status(400).json({ error: e.message ?? "invalid" });
   }
 });
@@ -99,7 +98,7 @@ router.patch("/blog-posts/:id", async (req, res) => {
       if (cur && !cur.publishedAt) patch.publishedAt = new Date();
     }
     const [row] = await db.update(blogPostsTable).set(patch).where(eq(blogPostsTable.id, id)).returning();
-    if (!row) return res.status(404).json({ error: "Not found" });
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (e: any) {
     res.status(400).json({ error: e.message ?? "invalid" });

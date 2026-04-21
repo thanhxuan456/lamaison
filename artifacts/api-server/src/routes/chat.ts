@@ -94,7 +94,7 @@ router.get("/chat/sessions", async (req, res) => {
 router.delete("/chat/sessions/:id", async (req, res) => {
   try {
     const sessionId = parseInt(req.params.id);
-    if (Number.isNaN(sessionId)) return res.status(400).json({ error: "Invalid id" });
+    if (Number.isNaN(sessionId)) { res.status(400).json({ error: "Invalid id" }); return; }
     await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, String(sessionId)));
     await db.delete(chatSessionsTable).where(eq(chatSessionsTable.id, sessionId));
     // disconnect any active WS clients for this session
@@ -111,10 +111,10 @@ router.delete("/chat/sessions/:id", async (req, res) => {
 router.post("/chat/sessions/bulk-delete", async (req, res) => {
   try {
     const ids: unknown = req.body?.ids;
-    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids[] required" });
-    if (ids.length > 200) return res.status(400).json({ error: "too many ids (max 200)" });
+    if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids[] required" }); return; }
+    if (ids.length > 200) { res.status(400).json({ error: "too many ids (max 200)" }); return; }
     const numericIds = ids.map(Number).filter(n => Number.isFinite(n));
-    if (numericIds.length === 0) return res.status(400).json({ error: "no valid ids" });
+    if (numericIds.length === 0) { res.status(400).json({ error: "no valid ids" }); return; }
     await db.delete(chatMessagesTable).where(inArray(chatMessagesTable.sessionId, numericIds.map(String)));
     await db.delete(chatSessionsTable).where(inArray(chatSessionsTable.id, numericIds));
     for (const id of numericIds) {
