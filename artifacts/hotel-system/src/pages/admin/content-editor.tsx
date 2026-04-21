@@ -425,12 +425,33 @@ function PostEditorContent() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Xuất bản</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between border border-border rounded p-3">
+            <div
+              className={`flex items-center justify-between rounded p-3 border transition-colors ${
+                form.published
+                  ? "border-green-500/60 bg-green-500/5"
+                  : "border-border"
+              }`}
+            >
               <div>
-                <Label className="!m-0 text-xs">Trạng thái</Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{form.published ? "Hiển thị công khai trên /news" : "Chỉ admin nhìn thấy"}</p>
+                <Label className="!m-0 text-xs flex items-center gap-1.5">
+                  Trạng thái
+                  {form.published && (
+                    <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-widest">
+                      ● Đang bật
+                    </span>
+                  )}
+                </Label>
+                <p className={`text-[11px] mt-0.5 ${
+                  form.published ? "text-green-700 dark:text-green-400" : "text-muted-foreground"
+                }`}>
+                  {form.published ? "Hiển thị công khai trên /news" : "Chỉ admin nhìn thấy"}
+                </p>
               </div>
-              <Switch checked={!!form.published} onCheckedChange={c => set("published", c)} />
+              <Switch
+                checked={!!form.published}
+                onCheckedChange={c => set("published", c)}
+                className="data-[state=checked]:!bg-green-500 data-[state=checked]:!border-green-500"
+              />
             </div>
             {form.publishedAt && (
               <p className="text-[11px] text-muted-foreground">Đăng ngày: {new Date(form.publishedAt).toLocaleString("vi-VN")}</p>
