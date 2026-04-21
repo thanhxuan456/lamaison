@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db, contactMessagesTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
@@ -36,7 +37,7 @@ router.post("/contact-messages", async (req, res) => {
   }
 });
 
-router.get("/contact-messages", async (_req, res) => {
+router.get("/contact-messages", requireAdmin(), async (_req, res) => {
   try {
     const rows = await db
       .select()
@@ -58,7 +59,7 @@ router.get("/contact-messages", async (_req, res) => {
   }
 });
 
-router.patch("/contact-messages/:id", async (req, res) => {
+router.patch("/contact-messages/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -76,7 +77,7 @@ router.patch("/contact-messages/:id", async (req, res) => {
   }
 });
 
-router.delete("/contact-messages/:id", async (req, res) => {
+router.delete("/contact-messages/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) { res.status(400).json({ error: "Invalid id" }); return; }

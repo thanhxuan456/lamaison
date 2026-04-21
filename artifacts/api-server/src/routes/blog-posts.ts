@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router, type IRouter } from "express";
 import { eq, desc, sql, and, isNull } from "drizzle-orm";
 import { db, blogPostsTable } from "@workspace/db";
@@ -74,7 +75,7 @@ router.get("/blog-posts/:slugOrId", async (req, res) => {
   }
 });
 
-router.post("/blog-posts", async (req, res) => {
+router.post("/blog-posts", requireAdmin(), async (req, res) => {
   try {
     const data = parseBody(req.body, false);
     const slug = (data.slug && data.slug.trim()) || slugify(data.title);
@@ -90,7 +91,7 @@ router.post("/blog-posts", async (req, res) => {
   }
 });
 
-router.patch("/blog-posts/:id", async (req, res) => {
+router.patch("/blog-posts/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const data = parseBody(req.body, true);
@@ -128,7 +129,7 @@ async function maybeAutoPublishSocial(postId: number, req: any) {
   } catch { /* never block the user response */ }
 }
 
-router.delete("/blog-posts/:id", async (req, res) => {
+router.delete("/blog-posts/:id", requireAdmin(), async (req, res) => {
   try {
     await db.delete(blogPostsTable).where(eq(blogPostsTable.id, Number(req.params.id)));
     res.json({ ok: true });

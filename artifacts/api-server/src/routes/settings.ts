@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { appSettingsTable } from "@workspace/db";
@@ -164,7 +165,7 @@ router.get("/settings/theme", async (_req, res) => {
   catch { res.status(500).json({ error: "Internal server error" }); }
 });
 
-router.put("/settings/theme", async (req, res) => {
+router.put("/settings/theme", requireAdmin(), async (req, res) => {
   try { res.json(await writeKey(THEME_KEY, req.body)); }
   catch (err) { req.log.error({ err }, "Failed to save theme"); res.status(500).json({ error: "Internal server error" }); }
 });
@@ -177,7 +178,7 @@ router.get("/settings/:key", async (req, res) => {
   catch { res.status(500).json({ error: "Internal server error" }); }
 });
 
-router.put("/settings/:key", async (req, res) => {
+router.put("/settings/:key", requireAdmin(), async (req, res) => {
   const key = req.params.key;
   if (!(key in KEY_DEFAULTS)) { res.status(404).json({ error: "Unknown setting key" }); return; }
   try { res.json(await writeKey(key, req.body)); }

@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { bookingsTable, roomsTable } from "@workspace/db";
@@ -40,13 +41,13 @@ function getDefaultChannels(): OtaChannelConfig[] {
 }
 
 // GET all OTA channel configs
-router.get("/ota/channels", (_req, res) => {
+router.get("/ota/channels", requireAdmin(), (_req, res) => {
   if (store.length === 0) store = getDefaultChannels();
   res.json(store);
 });
 
 // PUT update a channel config
-router.put("/ota/channels/:id", (req, res) => {
+router.put("/ota/channels/:id", requireAdmin(), (req, res) => {
   if (store.length === 0) store = getDefaultChannels();
   const { id } = req.params;
   const idx = store.findIndex((c) => c.id === id);
@@ -56,7 +57,7 @@ router.put("/ota/channels/:id", (req, res) => {
 });
 
 // POST /api/ota/channels/:id/test — simulate a connection test
-router.post("/ota/channels/:id/test", (req, res) => {
+router.post("/ota/channels/:id/test", requireAdmin(), (req, res) => {
   if (store.length === 0) store = getDefaultChannels();
   const { id } = req.params;
   const channel = store.find((c) => c.id === id);
@@ -72,7 +73,7 @@ router.post("/ota/channels/:id/test", (req, res) => {
 });
 
 // POST /api/ota/channels/:id/sync — simulate a sync push
-router.post("/ota/channels/:id/sync", (req, res) => {
+router.post("/ota/channels/:id/sync", requireAdmin(), (req, res) => {
   if (store.length === 0) store = getDefaultChannels();
   const { id } = req.params;
   const channel = store.find((c) => c.id === id);

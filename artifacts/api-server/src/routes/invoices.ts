@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db, invoicesTable, bookingsTable, roomOrdersTable, roomsTable, hotelsTable, type InvoiceLine } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
@@ -78,7 +79,7 @@ async function buildInvoiceForBooking(bookingId: number) {
   };
 }
 
-router.get("/invoices", async (req, res) => {
+router.get("/invoices", requireAdmin(), async (req, res) => {
   try {
     const bookingId = req.query.bookingId ? Number(req.query.bookingId) : undefined;
     const rows = bookingId
@@ -91,7 +92,7 @@ router.get("/invoices", async (req, res) => {
   }
 });
 
-router.get("/invoices/:id", async (req, res) => {
+router.get("/invoices/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const [row] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
@@ -121,7 +122,7 @@ export async function upsertInvoiceForBooking(bookingId: number) {
   return { row, created: true };
 }
 
-router.post("/invoices/generate/:bookingId", async (req, res) => {
+router.post("/invoices/generate/:bookingId", requireAdmin(), async (req, res) => {
   try {
     const bookingId = Number(req.params.bookingId);
     const { row, created } = await upsertInvoiceForBooking(bookingId);
@@ -131,7 +132,7 @@ router.post("/invoices/generate/:bookingId", async (req, res) => {
   }
 });
 
-router.put("/invoices/:id", async (req, res) => {
+router.put("/invoices/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const updates: any = {};
@@ -146,7 +147,7 @@ router.put("/invoices/:id", async (req, res) => {
   }
 });
 
-router.delete("/invoices/:id", async (req, res) => {
+router.delete("/invoices/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     await db.delete(invoicesTable).where(eq(invoicesTable.id, id));

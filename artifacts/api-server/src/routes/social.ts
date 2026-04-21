@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db, appSettingsTable, socialPublishLogTable, blogPostsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
@@ -79,11 +80,11 @@ async function writeSocialConfig(c: SocialConfig) {
     .onConflictDoUpdate({ target: appSettingsTable.key, set: { value: c as any, updatedAt: new Date() } });
 }
 
-router.get("/integrations/social", async (_req, res) => {
+router.get("/integrations/social", requireAdmin(), async (_req, res) => {
   res.json(maskTokens(await readSocialConfig()));
 });
 
-router.put("/integrations/social", async (req, res) => {
+router.put("/integrations/social", requireAdmin(), async (req, res) => {
   try {
     const existing = await readSocialConfig();
     const body = (req.body ?? {}) as Partial<SocialConfig>;
@@ -191,7 +192,7 @@ export async function publishPostToSocial(postId: number, hostHint?: string) {
   return { ok: true, results } as const;
 }
 
-router.post("/blog-posts/:id/publish-social", async (req, res) => {
+router.post("/blog-posts/:id/publish-social", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) { res.status(400).json({ error: "invalid id" }); return; }
@@ -205,7 +206,7 @@ router.post("/blog-posts/:id/publish-social", async (req, res) => {
 });
 
 /** Manually refresh TikTok token (called from admin UI). */
-router.post("/integrations/social/tiktok/refresh", async (_req, res) => {
+router.post("/integrations/social/tiktok/refresh", requireAdmin(), async (_req, res) => {
   try {
     const cfg = await readSocialConfig();
     const r = await refreshTikTokToken(cfg.tiktok);
@@ -222,7 +223,7 @@ router.post("/integrations/social/tiktok/refresh", async (_req, res) => {
   }
 });
 
-router.get("/blog-posts/:id/social-log", async (req, res) => {
+router.get("/blog-posts/:id/social-log", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const rows = await db.select().from(socialPublishLogTable)

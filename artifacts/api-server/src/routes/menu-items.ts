@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db, menuItemsTable, insertMenuItemSchema } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
@@ -17,7 +18,7 @@ router.get("/menu-items", async (req, res) => {
   }
 });
 
-router.post("/menu-items", async (req, res) => {
+router.post("/menu-items", requireAdmin(), async (req, res) => {
   try {
     const parsed = insertMenuItemSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() }); return; }
@@ -28,7 +29,7 @@ router.post("/menu-items", async (req, res) => {
   }
 });
 
-router.put("/menu-items/:id", async (req, res) => {
+router.put("/menu-items/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const parsed = insertMenuItemSchema.partial().safeParse(req.body);
@@ -41,7 +42,7 @@ router.put("/menu-items/:id", async (req, res) => {
   }
 });
 
-router.delete("/menu-items/:id", async (req, res) => {
+router.delete("/menu-items/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     await db.delete(menuItemsTable).where(eq(menuItemsTable.id, id));

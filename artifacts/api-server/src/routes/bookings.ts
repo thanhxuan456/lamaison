@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import {
@@ -64,7 +65,7 @@ export async function upsertGuest(input: { fullName: string; email: string; phon
   return row;
 }
 
-router.get("/bookings", async (req, res) => {
+router.get("/bookings", requireAdmin(), async (req, res) => {
   try {
     const bookings = await db.select().from(bookingsTable);
     const enriched = await Promise.all(bookings.map(enrichBooking));
@@ -155,7 +156,7 @@ router.get("/bookings/:id", async (req, res) => {
   }
 });
 
-router.post("/bookings/:id/check-in", async (req, res) => {
+router.post("/bookings/:id/check-in", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid booking ID" }); return; }
@@ -187,7 +188,7 @@ router.post("/bookings/:id/check-in", async (req, res) => {
   }
 });
 
-router.post("/bookings/:id/check-out", async (req, res) => {
+router.post("/bookings/:id/check-out", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid booking ID" }); return; }
@@ -213,7 +214,7 @@ router.post("/bookings/:id/check-out", async (req, res) => {
   }
 });
 
-router.delete("/bookings/:id", async (req, res) => {
+router.delete("/bookings/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -264,7 +265,7 @@ router.delete("/bookings/:id", async (req, res) => {
   }
 });
 
-router.delete("/bookings/:id/force", async (req, res) => {
+router.delete("/bookings/:id/force", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {

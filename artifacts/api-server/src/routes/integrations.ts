@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { appSettingsTable } from "@workspace/db";
@@ -57,7 +58,7 @@ function maskPassword(config: EInvoiceConfig) {
 }
 
 // GET /api/integrations/einvoice — trả config (mask password)
-router.get("/integrations/einvoice", async (req, res) => {
+router.get("/integrations/einvoice", requireAdmin(), async (req, res) => {
   try {
     const config = await readEInvoiceConfig();
     res.json(maskPassword(config));
@@ -68,7 +69,7 @@ router.get("/integrations/einvoice", async (req, res) => {
 });
 
 // PUT /api/integrations/einvoice — lưu config vào DB
-router.put("/integrations/einvoice", async (req, res) => {
+router.put("/integrations/einvoice", requireAdmin(), async (req, res) => {
   try {
     const existing = await readEInvoiceConfig();
     const body = req.body as Partial<EInvoiceConfig>;
@@ -89,7 +90,7 @@ router.put("/integrations/einvoice", async (req, res) => {
 });
 
 // POST /api/integrations/einvoice/test — test kết nối thật đến nhà cung cấp
-router.post("/integrations/einvoice/test", async (req, res) => {
+router.post("/integrations/einvoice/test", requireAdmin(), async (req, res) => {
   try {
     const config = await readEInvoiceConfig();
 

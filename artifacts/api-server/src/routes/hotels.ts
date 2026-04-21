@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { hotelsTable, roomsTable, bookingsTable, insertHotelSchema } from "@workspace/db";
@@ -22,7 +23,7 @@ router.get("/hotels", async (req, res) => {
   }
 });
 
-router.post("/hotels", async (req, res) => {
+router.post("/hotels", requireAdmin(), async (req, res) => {
   try {
     const parsed = insertHotelSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -55,7 +56,7 @@ router.get("/hotels/:id", async (req, res) => {
   }
 });
 
-router.put("/hotels/:id", async (req, res) => {
+router.put("/hotels/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid hotel ID" }); return; }
@@ -70,7 +71,7 @@ router.put("/hotels/:id", async (req, res) => {
   }
 });
 
-router.delete("/hotels/:id", async (req, res) => {
+router.delete("/hotels/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid hotel ID" }); return; }

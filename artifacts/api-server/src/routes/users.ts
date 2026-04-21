@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { userRolesTable } from "@workspace/db";
@@ -13,7 +14,7 @@ function genCode(prefix = "GP") {
 }
 
 // GET /api/users — list all users with roles
-router.get("/users", async (_req, res) => {
+router.get("/users", requireAdmin(), async (_req, res) => {
   try {
     const rows = await db.select().from(userRolesTable).orderBy(userRolesTable.createdAt);
     res.json(rows);
@@ -23,7 +24,7 @@ router.get("/users", async (_req, res) => {
 });
 
 // POST /api/users — upsert (create or update) a user role entry
-router.post("/users", async (req, res) => {
+router.post("/users", requireAdmin(), async (req, res) => {
   try {
     const { clerkUserId, email, name, role, notes } = req.body ?? {};
     if (!clerkUserId || !email) { res.status(400).json({ error: "clerkUserId and email are required" }); return; }
@@ -51,7 +52,7 @@ router.post("/users", async (req, res) => {
 });
 
 // PUT /api/users/:id — update role / commission / notes
-router.put("/users/:id", async (req, res) => {
+router.put("/users/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -75,7 +76,7 @@ router.put("/users/:id", async (req, res) => {
 });
 
 // DELETE /api/users/:id — remove role entry
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -87,7 +88,7 @@ router.delete("/users/:id", async (req, res) => {
 });
 
 // POST /api/users/:id/affiliate — generate affiliate code
-router.post("/users/:id/affiliate", async (req, res) => {
+router.post("/users/:id/affiliate", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }

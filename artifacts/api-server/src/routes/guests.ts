@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { guestsTable, bookingsTable, roomsTable, hotelsTable } from "@workspace/db";
@@ -12,7 +13,7 @@ function csvEscape(v: unknown): string {
   return s;
 }
 
-router.get("/guests", async (req, res) => {
+router.get("/guests", requireAdmin(), async (req, res) => {
   try {
     const rows = await db
       .select({
@@ -45,7 +46,7 @@ router.get("/guests", async (req, res) => {
 });
 
 /** CSV export. Optional ?ids=1,2,3 filter; otherwise exports all. */
-router.get("/guests/export.csv", async (req, res) => {
+router.get("/guests/export.csv", requireAdmin(), async (req, res) => {
   try {
     const idsParam = String(req.query.ids ?? "").trim();
     const ids = idsParam
@@ -93,7 +94,7 @@ router.get("/guests/export.csv", async (req, res) => {
 });
 
 /** Bulk check-out: for each guest in `ids`, check out every booking currently in `checked_in`. */
-router.post("/guests/bulk-checkout", async (req, res) => {
+router.post("/guests/bulk-checkout", requireAdmin(), async (req, res) => {
   try {
     const ids: number[] = Array.isArray(req.body?.ids)
       ? req.body.ids.map((x: unknown) => parseInt(String(x), 10)).filter((n: number) => Number.isFinite(n))
@@ -136,7 +137,7 @@ router.post("/guests/bulk-checkout", async (req, res) => {
  * Past bookings (cancelled/checked_out/no_show) have their `guestId` nulled so booking
  * records remain intact for accounting.
  */
-router.delete("/guests", async (req, res) => {
+router.delete("/guests", requireAdmin(), async (req, res) => {
   try {
     const ids: number[] = Array.isArray(req.body?.ids)
       ? req.body.ids.map((x: unknown) => parseInt(String(x), 10)).filter((n: number) => Number.isFinite(n))
@@ -169,7 +170,7 @@ router.delete("/guests", async (req, res) => {
   }
 });
 
-router.get("/guests/:id", async (req, res) => {
+router.get("/guests/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid guest ID" }); return; }

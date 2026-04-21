@@ -1,3 +1,4 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { roomsTable, bookingsTable, insertRoomSchema } from "@workspace/db";
@@ -15,7 +16,7 @@ router.get("/rooms", async (req, res) => {
   }
 });
 
-router.post("/rooms", async (req, res) => {
+router.post("/rooms", requireAdmin(), async (req, res) => {
   try {
     const parsed = insertRoomSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -43,7 +44,7 @@ router.get("/rooms/:id", async (req, res) => {
   }
 });
 
-router.put("/rooms/:id", async (req, res) => {
+router.put("/rooms/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid room ID" }); return; }
@@ -61,7 +62,7 @@ router.put("/rooms/:id", async (req, res) => {
 const ROOM_STATUSES = ["available", "reserved", "occupied", "cleaning", "maintenance"] as const;
 type RoomStatus = (typeof ROOM_STATUSES)[number];
 
-router.put("/rooms/:id/status", async (req, res) => {
+router.put("/rooms/:id/status", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid room ID" }); return; }
@@ -97,7 +98,7 @@ router.put("/rooms/:id/status", async (req, res) => {
   }
 });
 
-router.delete("/rooms/:id", async (req, res) => {
+router.delete("/rooms/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid room ID" }); return; }

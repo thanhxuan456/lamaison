@@ -1,10 +1,11 @@
+import { requireAdmin } from "../middlewares/requireAdmin";
 import { Router } from "express";
 import { db, roomOrdersTable, menuItemsTable, insertRoomOrderSchema, type OrderLine } from "@workspace/db";
 import { eq, desc, inArray } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/room-orders", async (req, res) => {
+router.get("/room-orders", requireAdmin(), async (req, res) => {
   try {
     const bookingId = req.query.bookingId ? Number(req.query.bookingId) : undefined;
     const rows = bookingId
@@ -17,7 +18,7 @@ router.get("/room-orders", async (req, res) => {
   }
 });
 
-router.post("/room-orders", async (req, res) => {
+router.post("/room-orders", requireAdmin(), async (req, res) => {
   try {
     const rawItems = (req.body.items ?? []) as any[];
     const ids = rawItems.map((it) => Number(it.menuItemId)).filter((n) => Number.isFinite(n));
@@ -59,7 +60,7 @@ router.post("/room-orders", async (req, res) => {
   }
 });
 
-router.put("/room-orders/:id", async (req, res) => {
+router.put("/room-orders/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const updates: any = {};
@@ -73,7 +74,7 @@ router.put("/room-orders/:id", async (req, res) => {
   }
 });
 
-router.delete("/room-orders/:id", async (req, res) => {
+router.delete("/room-orders/:id", requireAdmin(), async (req, res) => {
   try {
     const id = Number(req.params.id);
     await db.delete(roomOrdersTable).where(eq(roomOrdersTable.id, id));
