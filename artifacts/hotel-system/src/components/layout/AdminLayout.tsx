@@ -61,6 +61,7 @@ const NAV: NavEntry[] = [
     children: [
       { kind: "item", icon: FileText,  label: "Trang & Bài Viết",  path: "/admin/pages"   },
       { kind: "item", icon: Layers,    label: "Trình Tạo Trang",   path: "/admin/builder" },
+      { kind: "item", icon: Layers,    label: "Trang Theo Chi Nhánh", path: "/admin/branch-pages" },
     ],
   },
   {

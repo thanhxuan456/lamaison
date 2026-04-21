@@ -33,6 +33,7 @@ import AdminChatTickets from "@/pages/admin/chat-tickets";
 import AdminChatTemplates from "@/pages/admin/chat-templates";
 import AdminTheme from "@/pages/admin/theme";
 import AdminPages from "@/pages/admin/pages";
+import AdminBranchPages from "@/pages/admin/branch-pages";
 import AdminSettings from "@/pages/admin/settings";
 import AdminSeo from "@/pages/admin/seo";
 import AdminBuilder from "@/pages/admin/builder";
@@ -226,6 +227,7 @@ function Router() {
       <Route path="/admin/chat/templates" component={AdminChatTemplates} />
       <Route path="/admin/theme" component={AdminTheme} />
       <Route path="/admin/pages" component={AdminPages} />
+      <Route path="/admin/branch-pages" component={AdminBranchPages} />
       <Route path="/admin/content/posts/new" component={AdminPostEditor} />
       <Route path="/admin/content/posts/:id" component={AdminPostEditor} />
       <Route path="/admin/content/pages/new" component={AdminPageEditor} />

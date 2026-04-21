@@ -12,3 +12,4 @@ export * from "./contact-messages";
 export * from "./blog-posts";
 export * from "./affiliate-referrals";
 export * from "./social-publish";
+export * from "./branch-pages";

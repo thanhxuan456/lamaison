@@ -16,6 +16,7 @@ import blogPostsRouter from "./blog-posts";
 import paymentsRouter from "./payments";
 import integrationsRouter from "./integrations";
 import socialRouter from "./social";
+import branchPagesRouter from "./branch-pages";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(settingsRouter);
 router.use(contactMessagesRouter);
 router.use(blogPostsRouter);
 router.use(socialRouter);
+router.use(branchPagesRouter);
 
 export default router;
