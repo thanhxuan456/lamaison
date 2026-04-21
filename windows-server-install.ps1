@@ -333,6 +333,13 @@ $contactEncKey      = if ($existingEncryptionKey) { $existingEncryptionKey } els
 
 # Build Clerk proxy URL for frontend (proxied through API server)
 $clerkProxyUrl = "$($Config.ApiPublicUrl)/api/__clerk"
+# Clerk proxy ONLY works with live production keys (pk_live_).
+# Using a proxy URL with test/dev keys (pk_test_) causes Clerk to silently
+# fail and the sign-in / register UI will never render.
+if ($Config.ClerkPublishableKey.StartsWith("pk_test_")) {
+    $clerkProxyUrl = ""
+    Write-Warn "Clerk test key detected -- disabling VITE_CLERK_PROXY_URL (proxy requires pk_live_)"
+}
 
 $envContent = @(
     "DATABASE_URL=$DatabaseUrl",

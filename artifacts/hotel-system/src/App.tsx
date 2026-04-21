@@ -56,6 +56,10 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 function resolveClerkProxyUrl(): string | undefined {
   const raw = import.meta.env.VITE_CLERK_PROXY_URL;
   if (!raw) return undefined;
+  // Clerk proxy ONLY works with live production keys (pk_live_).
+  // Dev/test instances (pk_test_) do not support proxying — using a proxy URL
+  // with a test key causes Clerk to silently fail and the sign-in UI never renders.
+  if (!clerkPubKey || clerkPubKey.startsWith("pk_test_")) return undefined;
   try {
     const { hostname } = new URL(raw);
     if (!hostname || hostname === "YOUR_SERVER_IP" || hostname === "localhost") return undefined;
