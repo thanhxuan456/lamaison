@@ -32,47 +32,22 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ============================================================
-# CONFIGURATION
+# CONFIGURATION - load tu install.config.ps1 (gitignored)
 # ============================================================
-$Config = @{
-    InstallDir      = "C:\MaisonDeluxe"
-    ApiPort         = 8080
-
-    Domain          = "maisondeluxehotel.com"
-    Email           = "tthanhxuan456@gmail.com"
-
-    # Database (Neon by default)
-    UseLocalPg      = $false
-    NeonDatabaseUrl = "postgresql://neondb_owner:npg_YCEZLyV6gwi7@ep-fragrant-sunset-a18l1eva-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-    PgSuperPassword = "ZeroCode123#!!"
-    PgDbName        = "maisondeluxe"
-    PgDbUser        = "maisondeluxe"
-    PgDbPassword    = "ZeroCode123#!!"
-
-    # Clerk (production keys)
-    ClerkPublishableKey = "pk_live_Y2xlcmsubWFpc29uZGVsdXhlaG90ZWwuY29tJA"
-    ClerkSecretKey      = "sk_live_EyvwhwIk0n04frReYRDEi5rGb55vqwbzEuKbh1dqdn"
-
-    # Momo
-    MomoPartnerCode = "MOMO"
-    MomoAccessKey   = "F8BBA842ECF85"
-    MomoSecretKey   = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
-    MomoEndpoint    = "https://test-payment.momo.vn/v2/gateway/api/create"
-
-    # Superadmin auto-seed: chen 1 dong vao bang user_roles tren Neon
-    # de tai khoan Clerk nay co quyen vao admin (middleware requireAdmin).
-    # De trong (chuoi rong) -> bo qua buoc seed.
-    SuperAdminClerkId = "user_3CfK8RPnSR1EMJXWYbD6s2Zy3Xf"
-    SuperAdminEmail   = "tthanhxuan456@gmail.com"
-    SuperAdminName    = "Thanh Xuan"
-
-    NodeVersion     = "22.14.0"
-    NodeMinMajor    = 20
-    PgVersion       = "16"
-    NginxVersion    = "1.26.3"
-    MinRamGB        = 2
-    MinDiskGB       = 10
+$ConfigFile = Join-Path $PSScriptRoot "install.config.ps1"
+if (-not (Test-Path $ConfigFile)) {
+    Write-Host ""
+    Write-Host "  LOI: Khong tim thay $ConfigFile" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Cach khac phuc:" -ForegroundColor Yellow
+    Write-Host "    1. Copy-Item install.config.example.ps1 install.config.ps1"
+    Write-Host "    2. notepad install.config.ps1   # dien thong tin that"
+    Write-Host "    3. Chay lai: powershell -ExecutionPolicy Bypass -File .\install.ps1"
+    Write-Host ""
+    exit 1
 }
+. $ConfigFile
+if (-not $Config) { Write-Host "  LOI: install.config.ps1 khong dinh nghia $Config" -ForegroundColor Red; exit 1 }
 
 $LogFile  = Join-Path $env:TEMP ("MaisonDeluxe_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".log")
 $TempDir  = Join-Path $env:TEMP "MaisonDeluxeSetup"

@@ -48,3 +48,6 @@ Thumbs.db
 .cache/
 .local/
 .env
+
+# Local install config (chua secrets - KHONG commit)
+install.config.ps1
