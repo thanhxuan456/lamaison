@@ -21,6 +21,88 @@ const AUTO_REPLY_TEXT =
   "Chúng tôi sẽ phản hồi sớm nhất có thể qua khung chat này. " +
   "Trong lúc chờ, quý khách có thể liên hệ Hotline +84 1800 9999 hoặc email contact@maisondeluxe.vn để được hỗ trợ trực tiếp.";
 
+// Smart keyword-based auto-replies. Triggered IMMEDIATELY (no 30s delay) when
+// the user's message matches one of these patterns. The 30s fallback still
+// runs in case nothing matches and no admin is online.
+const SMART_REPLIES: Array<{ patterns: RegExp[]; reply: string }> = [
+  {
+    patterns: [/giá|gia\s*phòng|bao\s*nhiêu|giá\s*ph[òo]ng|price|cost|rate/i],
+    reply: "💰 Giá phòng MAISON DELUXE:\n• Deluxe: từ 2.500.000đ/đêm\n• Suite: từ 4.800.000đ/đêm\n• Presidential: từ 12.000.000đ/đêm\nGiá đã gồm bữa sáng buffet & VAT. Xem chi tiết tại trang **Phòng**.",
+  },
+  {
+    patterns: [/đặt\s*ph[òo]ng|đặt\s*chỗ|book|booking|reserve|d[aă]t\s*ph[oò]ng/i],
+    reply: "📅 Để đặt phòng nhanh nhất, vui lòng:\n1. Chọn chi nhánh & ngày tại trang **Đặt Phòng**\n2. Hoặc gọi Hotline +84 1800 9999 (24/7)\n3. Hoặc email reservations@maisondeluxe.vn\nQuý khách muốn em hỗ trợ đặt phòng ngay bây giờ?",
+  },
+  {
+    patterns: [/check[\s-]?in|nhận\s*ph[òo]ng|trả\s*ph[òo]ng|check[\s-]?out/i],
+    reply: "🕒 Giờ nhận/trả phòng:\n• Check-in: từ 14:00\n• Check-out: trước 12:00\nNhận phòng sớm/trả phòng muộn vui lòng báo trước, có thể tính phí 50% giá phòng tuỳ tình trạng.",
+  },
+  {
+    patterns: [/wifi|wi[\s-]?fi|internet|m[aạ]ng/i],
+    reply: "📶 Wifi tốc độ cao MIỄN PHÍ ở tất cả phòng & khu vực công cộng. Mật khẩu được cung cấp khi check-in.",
+  },
+  {
+    patterns: [/h[ồo]\s*b[ơo]i|swimming|pool|bể\s*b[ơo]i/i],
+    reply: "🏊 Hồ bơi vô cực tầng thượng tầm nhìn 360°.\n⏰ Mở cửa: 06:00 – 22:00 hằng ngày\nMiễn phí cho khách lưu trú. Có khu trẻ em & jacuzzi nước ấm.",
+  },
+  {
+    patterns: [/spa|massage|m[aá]t[\s-]?xa|sauna/i],
+    reply: "💆 MAISON DELUXE Spa — không gian thư giãn 5 sao.\n⏰ 09:00 – 21:00\n• Massage truyền thống: 850.000đ/60 phút\n• Trị liệu đá nóng: 1.250.000đ/90 phút\nĐặt lịch trước 2h tại lễ tân hoặc nhắn em tên dịch vụ.",
+  },
+  {
+    patterns: [/nhà\s*hàng|restaurant|ăn|dining|buffet|bữa/i],
+    reply: "🍽 Nhà hàng **La Vue** — ẩm thực Á-Âu fusion.\n⏰ 06:00 – 23:00\n• Buffet sáng: 6h-10h (gồm trong giá phòng)\n• Trưa & tối: à la carte + set menu từ 650.000đ/người\nGọi 1900 9999 ext.5 để đặt bàn.",
+  },
+  {
+    patterns: [/đỗ\s*xe|parking|gửi\s*xe|bãi\s*xe/i],
+    reply: "🚗 Bãi đỗ xe ngầm rộng rãi:\n• Khách lưu trú: MIỄN PHÍ\n• Khách vãng lai: 30.000đ/giờ, 200.000đ/ngày\nCó cổng tự động & bảo vệ 24/7.",
+  },
+  {
+    patterns: [/địa\s*ch[ỉi]|address|chi\s*nhánh|where|ở\s*đâu/i],
+    reply: "📍 Hệ thống MAISON DELUXE Hotels:\n• **Hà Nội**: 36 Hai Bà Trưng, Hoàn Kiếm\n• **Đà Nẵng**: 88 Võ Nguyên Giáp, Sơn Trà\n• **Phú Quốc**: Resort tại Bãi Trường\nXem bản đồ & hình ảnh tại trang **Chi Nhánh**.",
+  },
+  {
+    patterns: [/khuyến\s*mại|ưu\s*đãi|gi[ảa]m\s*giá|promo|discount|sale|voucher/i],
+    reply: "🎁 Ưu đãi đang diễn ra:\n• **Sớm 30 ngày**: giảm 25%\n• **Honeymoon Package**: 4N3Đ từ 9.900.000đ\n• **Family Stay 2+1**: trẻ dưới 12t miễn phí\nXem tất cả tại trang **Ưu Đãi** hoặc nhắn em mã ưu đãi để áp dụng.",
+  },
+  {
+    patterns: [/hotline|liên\s*hệ|s[ốo]\s*điện|phone|email|gọi/i],
+    reply: "☎️ Liên hệ MAISON DELUXE:\n• Hotline 24/7: **+84 1800 9999** (miễn phí)\n• Đặt phòng: reservations@maisondeluxe.vn\n• Hỗ trợ khách: contact@maisondeluxe.vn\n• Zalo OA: zalo.me/maisondeluxe",
+  },
+  {
+    patterns: [/cảm\s*ơn|thanks?|thank\s*you|tks/i],
+    reply: "💛 Dạ, MAISON DELUXE rất vui được phục vụ quý khách. Chúc quý khách một ngày tốt lành! Nếu cần thêm bất kỳ điều gì, đừng ngại nhắn em nhé.",
+  },
+  {
+    patterns: [/chào|xin\s*chào|hello|hi|hey|halo/i],
+    reply: "👋 Xin chào quý khách! Em là trợ lý ảo MAISON DELUXE. Em có thể hỗ trợ:\n• Thông tin phòng & giá\n• Đặt phòng nhanh\n• Tiện ích (spa, hồ bơi, nhà hàng)\n• Khuyến mại đang chạy\nQuý khách cần em giúp việc gì ạ?",
+  },
+];
+
+function findSmartReply(message: string): string | null {
+  const text = message.trim();
+  if (!text) return null;
+  for (const rule of SMART_REPLIES) {
+    if (rule.patterns.some((re) => re.test(text))) return rule.reply;
+  }
+  return null;
+}
+
+async function sendBotMessage(sessionId: string, text: string) {
+  try {
+    const [auto] = await db
+      .insert(chatMessagesTable)
+      .values({
+        sessionId,
+        senderType: "bot",
+        senderName: AUTO_REPLY_NAME,
+        message: text,
+      })
+      .returning();
+    broadcast(sessionId, auto);
+  } catch { /* ignore */ }
+}
+
 function hasAdminOnline(sessionId: string): boolean {
   const set = adminPresence.get(sessionId);
   if (!set || set.size === 0) return false;
@@ -56,18 +138,7 @@ async function scheduleAutoReply(sessionId: string) {
   const timer = setTimeout(async () => {
     pendingAutoReplies.delete(sessionId);
     if (hasAdminOnline(sessionId)) return; // someone joined, no need
-    try {
-      const [auto] = await db
-        .insert(chatMessagesTable)
-        .values({
-          sessionId,
-          senderType: "bot",
-          senderName: AUTO_REPLY_NAME,
-          message: AUTO_REPLY_TEXT,
-        })
-        .returning();
-      broadcast(sessionId, auto);
-    } catch { /* ignore */ }
+    await sendBotMessage(sessionId, AUTO_REPLY_TEXT);
   }, AUTO_REPLY_DELAY_MS);
   pendingAutoReplies.set(sessionId, timer);
 }
@@ -124,10 +195,19 @@ router.post("/chat/sessions/:id/messages", async (req, res) => {
 
     broadcast(req.params.id, msg);
 
-    // Auto-reply trigger: only when an end-user posts AND no admin is currently
-    // attending the session. Wait AUTO_REPLY_DELAY_MS to let an admin join first.
+    // Auto-reply logic: only when an end-user posts AND no admin is online.
     if ((senderType ?? "user") === "user" && !hasAdminOnline(req.params.id)) {
-      scheduleAutoReply(req.params.id);
+      const smart = findSmartReply(message);
+      if (smart) {
+        // Immediate intelligent reply based on keywords (with small typing delay
+        // for natural feel). Cancel any pending fallback reply.
+        const pending = pendingAutoReplies.get(req.params.id);
+        if (pending) { clearTimeout(pending); pendingAutoReplies.delete(req.params.id); }
+        setTimeout(() => sendBotMessage(req.params.id, smart), 800);
+      } else {
+        // Unknown question -> wait 30s for human, then fallback message.
+        scheduleAutoReply(req.params.id);
+      }
     }
 
     res.json(msg);

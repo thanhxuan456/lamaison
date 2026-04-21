@@ -606,87 +606,17 @@ for ($i = 1; $i -le 15; $i++) {
 if ($apiReady) { Write-OK "API responding" } else { Write-Warn "API did not respond within 75s -- check $LogDir\MaisonDeluxeAPI-err.log" }
 
 # ============================================================
-# STEP 12 -- LET'S ENCRYPT SSL via win-acme
+# STEP 12 -- SSL (su dung cert co san, KHONG xin Let's Encrypt nua)
 # ============================================================
+# Neu 2 file PEM da ton tai trong $SslDir thi reload nginx voi cau hinh HTTPS.
+# Neu khong, chay HTTP-only va in huong dan dat cert thu cong.
 if ($SkipSsl) {
     Write-Step "12/12" "SSL skipped (-SkipSsl)"
     Write-Warn "Site dang chay HTTP-only tren cong 80."
 } else {
-    Write-Step "12/12" "Let's Encrypt SSL"
-
-    # Verify HTTP reachable
-    Write-Info "Kiem tra HTTP-01 challenge path co lam viec khong..."
-    $testFile = Join-Path $AcmeRoot ".well-known\acme-challenge\test.txt"
-    New-Item -ItemType Directory -Force -Path (Split-Path $testFile) | Out-Null
-    "ok" | Out-File -Encoding ASCII -FilePath $testFile -Force
-    try {
-        $localTest = Invoke-WebRequest -Uri "http://127.0.0.1/.well-known/acme-challenge/test.txt" -UseBasicParsing -TimeoutSec 5
-        if ($localTest.StatusCode -eq 200 -and $localTest.Content.Trim() -eq "ok") {
-            Write-OK "ACME challenge path serving correctly"
-        } else { Write-Warn "ACME local test status=$($localTest.StatusCode)" }
-    } catch { Write-Warn "ACME local test failed: $($_.Exception.Message)" }
-
-    # Download win-acme
-    if (-not (Test-Path (Join-Path $WacsDir "wacs.exe"))) {
-        $wacsZip = Join-Path $TempDir "wacs.zip"
-        Invoke-Download "https://github.com/win-acme/win-acme/releases/download/v2.2.9.1701/win-acme.v2.2.9.1701.x64.pluggable.zip" $wacsZip
-        if (Test-Path $WacsDir) { Remove-Item $WacsDir -Recurse -Force }
-        Expand-Archive -Path $wacsZip -DestinationPath $WacsDir -Force
-    }
-    $wacsExe = Join-Path $WacsDir "wacs.exe"
-    if (-not (Test-Path $wacsExe)) { Fail "wacs.exe khong tim thay sau giai nen" }
-
-    Write-Info "Yeu cau cert cho $($Config.Domain) (va www.$($Config.Domain))..."
-    New-Item -ItemType Directory -Force -Path $SslDir | Out-Null
-
-    $hostList = if ($NoWww) { $Config.Domain } else { "$($Config.Domain),www.$($Config.Domain)" }
-    Write-Info "Domains for cert: $hostList"
-    $wacsArgs = @(
-        "--source", "manual",
-        "--host", $hostList,
-        "--validation", "filesystem",
-        "--webroot", $AcmeRoot,
-        "--store", "pemfiles",
-        "--pemfilespath", $SslDir,
-        "--installation", "none",
-        "--accepttos",
-        "--emailaddress", $Config.Email,
-        "--force"
-    )
-
-    # Run win-acme via Start-Process with stdin redirected from NUL to prevent any
-    # interactive prompt from hanging the installer. Also enforce a hard timeout.
-    $wacsStdout = Join-Path $TempDir "wacs.stdout.log"
-    $wacsStderr = Join-Path $TempDir "wacs.stderr.log"
-    $wacsStdin  = Join-Path $TempDir "wacs.stdin.empty"
-    Remove-Item $wacsStdout, $wacsStderr -Force -EA SilentlyContinue
-    # Tao file stdin rong de Start-Process redirect (PowerShell khong ho tro "NUL")
-    Set-Content -Path $wacsStdin -Value "" -NoNewline -Encoding ASCII
-
-    Write-Info "Chay win-acme (toi da 5 phut, output: $wacsStdout)..."
-    $wacsProc = Start-Process -FilePath $wacsExe -ArgumentList $wacsArgs `
-        -RedirectStandardInput $wacsStdin `
-        -RedirectStandardOutput $wacsStdout `
-        -RedirectStandardError  $wacsStderr `
-        -NoNewWindow -PassThru
-
-    if (-not $wacsProc.WaitForExit(300000)) {
-        Write-Warn "win-acme bi treo > 5 phut, kill process..."
-        try { $wacsProc.Kill() } catch {}
-        Start-Sleep -Seconds 2
-    }
-
-    $wacsExitCode = if ($wacsProc.HasExited) { $wacsProc.ExitCode } else { -1 }
-    $wacsOutLines = @()
-    if (Test-Path $wacsStdout) { $wacsOutLines += Get-Content $wacsStdout }
-    if (Test-Path $wacsStderr) { $wacsOutLines += Get-Content $wacsStderr }
-    $wacs = [pscustomobject]@{ Output = $wacsOutLines; ExitCode = $wacsExitCode }
-
-    Write-Host "  --- win-acme output (exit=$wacsExitCode) ---" -ForegroundColor DarkGray
-    $wacs.Output | Select-Object -Last 60 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
-
-    if ($wacs.ExitCode -eq 0 -and (Test-Path $sslChain) -and (Test-Path $sslKey)) {
-        Write-OK "SSL cert da lay duoc!"
+    Write-Step "12/12" "SSL (cert co san)"
+    if ((Test-Path $sslChain) -and (Test-Path $sslKey)) {
+        Write-OK "Tim thay cert da co tren server:"
         Write-OK "  Chain: $sslChain"
         Write-OK "  Key  : $sslKey"
 
@@ -696,9 +626,7 @@ if ($SkipSsl) {
         $ng2 = Invoke-NativeSafe $nginxExe @("-t", "-c", $nginxConfPath, "-p", $NginxDir)
         if ($ng2.ExitCode -ne 0) { Fail "nginx SSL config test failed:`n$($ng2.Output -join "`n")" }
         Write-OK "nginx SSL config OK"
-        $ng2.Output | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
 
-        # Reload bang cach restart service de chac chan dung config moi
         Restart-Service MaisonDeluxeNginx -Force
         Start-Sleep -Seconds 3
         $s = Get-Service MaisonDeluxeNginx
@@ -708,13 +636,13 @@ if ($SkipSsl) {
             Write-Warn "nginx restart failed -- check log"
         }
     } else {
-        Write-Warn "Khong xin duoc SSL (exit $($wacs.ExitCode))."
-        Write-Warn "Nguyen nhan thuong gap:"
-        Write-Warn "  - DNS A-record cua $($Config.Domain) chua tro ve IP server nay"
-        Write-Warn "  - Port 80 bi chan boi firewall/router/ISP"
-        Write-Warn "  - Le's Encrypt rate limit (5 cert/domain/tuan)"
-        Write-Warn "Site dang chay HTTP. Sau khi sua, chay lai:"
-        Write-Warn "  powershell -ExecutionPolicy Bypass -File .\install.ps1 -SkipBuild"
+        Write-Warn "Khong tim thay cert tai $SslDir. Site se chay HTTP-only."
+        Write-Warn "De bat HTTPS, dat 2 file vao $SslDir voi ten:"
+        Write-Warn "  $($Config.Domain)-chain.pem  (full chain certificate)"
+        Write-Warn "  $($Config.Domain)-key.pem    (private key)"
+        Write-Warn "Sau do chay lai: install.ps1 -SkipBuild"
+        Write-Warn ""
+        Write-Warn "  powershell -ExecutionPolicy Bypass -File .\install.ps1 -SkipBuild -SkipSsl"
     }
 }
 

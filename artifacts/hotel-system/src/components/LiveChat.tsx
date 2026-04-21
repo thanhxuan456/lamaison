@@ -1,18 +1,48 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useUser } from "@clerk/react";
 import { Link } from "wouter";
-import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn } from "lucide-react";
+import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn, Sparkles } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface Message {
-  id: string;
+  id: string | number;
   senderType: "user" | "admin" | "system" | "bot";
   senderName: string;
   message: string;
-  createdAt: string;
+  createdAt?: string | null;
 }
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+// Quick-reply chips shown at conversation start to drive engagement.
+const QUICK_REPLIES = [
+  { icon: "💰", label: "Giá phòng", text: "Cho em hỏi giá phòng?" },
+  { icon: "📅", label: "Đặt phòng", text: "Em muốn đặt phòng" },
+  { icon: "🏊", label: "Tiện ích", text: "Khách sạn có hồ bơi không?" },
+  { icon: "📍", label: "Địa chỉ", text: "Cho em xin địa chỉ chi nhánh" },
+  { icon: "🎁", label: "Khuyến mại", text: "Có ưu đãi gì không?" },
+  { icon: "☎️", label: "Hotline", text: "Số hotline liên hệ?" },
+];
+
+// Safely format a timestamp; returns "" for missing/invalid dates so we never
+// render the literal text "Invalid Date" in the UI.
+function formatTime(value?: string | null): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Convert simple **bold** markdown markers to <strong> spans inline.
+function renderMessageText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 
 export function LiveChat() {
   const { user } = useUser();
@@ -26,15 +56,24 @@ export function LiveChat() {
   const [unread, setUnread] = useState(0);
   const [wsConnected, setWsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
+  const [botTyping, setBotTyping] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionInitialized = useRef(false);
+  const botTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages, botTyping]);
+
+  // Show typing indicator briefly while waiting for the bot's reply.
+  const triggerBotTyping = useCallback(() => {
+    setBotTyping(true);
+    if (botTypingTimer.current) clearTimeout(botTypingTimer.current);
+    botTypingTimer.current = setTimeout(() => setBotTyping(false), 4000);
+  }, []);
 
   const connectWs = useCallback((sid: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -57,11 +96,16 @@ export function LiveChat() {
           return;
         }
         const msg: Message = data;
+        // Stop typing indicator when bot/admin reply arrives.
+        if (msg.senderType === "bot" || msg.senderType === "admin") {
+          setBotTyping(false);
+          if (botTypingTimer.current) clearTimeout(botTypingTimer.current);
+        }
         setMessages((prev) => [...prev, msg]);
         if (!open || minimized) setUnread((u) => u + 1);
       } catch { }
     };
-  }, [open, minimized, API_URL]);
+  }, [open, minimized]);
 
   const initSession = useCallback(async () => {
     if (sessionInitialized.current) return;
@@ -96,7 +140,7 @@ export function LiveChat() {
       }]);
       connectWs(String(session.id));
     }
-  }, [user, t, connectWs, API_URL]);
+  }, [user, t, connectWs]);
 
   useEffect(() => {
     if (open && !sessionId) initSession();
@@ -104,14 +148,18 @@ export function LiveChat() {
   }, [open, sessionId, initSession]);
 
   useEffect(() => {
-    return () => { wsRef.current?.close(); };
+    return () => {
+      wsRef.current?.close();
+      if (botTypingTimer.current) clearTimeout(botTypingTimer.current);
+    };
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() || !sessionId || sending) return;
-    const text = input.trim();
-    setInput("");
+  const sendMessage = useCallback(async (text?: string) => {
+    const payload = (text ?? input).trim();
+    if (!payload || !sessionId || sending) return;
+    if (!text) setInput("");
     setSending(true);
+    triggerBotTyping();
     try {
       await fetch(`${API_URL}/api/chat/sessions/${sessionId}/messages`, {
         method: "POST",
@@ -119,152 +167,284 @@ export function LiveChat() {
         body: JSON.stringify({
           senderType: "user",
           senderName: user?.firstName ?? "Khách",
-          message: text,
+          message: payload,
         }),
       });
     } catch { } finally {
       setSending(false);
     }
-  };
+  }, [input, sessionId, sending, user, triggerBotTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
+  // Show quick-reply chips only when the conversation is fresh (welcome only).
+  const showQuickReplies = useMemo(
+    () => messages.length <= 1 && messages.every((m) => m.senderType === "system"),
+    [messages]
+  );
+
   return (
     <>
-      {/* Floating button */}
+      {/* ─────────── Floating launcher ─────────── */}
       <button
         onClick={() => { setOpen(true); setMinimized(false); }}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary text-primary-foreground shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 ${open && !minimized ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`fixed bottom-6 right-6 z-50 group transition-all duration-300 ${
+          open && !minimized ? "opacity-0 pointer-events-none scale-50" : "opacity-100 scale-100"
+        }`}
         aria-label={t("chat.open")}
       >
-        <MessageSquare size={24} />
+        <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" />
+        <span className="relative flex items-center justify-center w-16 h-16 rounded-full
+                         bg-gradient-to-br from-primary via-amber-500 to-amber-700
+                         shadow-[0_8px_30px_-8px_rgba(217,160,69,0.7)]
+                         group-hover:shadow-[0_12px_40px_-8px_rgba(217,160,69,0.9)]
+                         group-hover:scale-110 transition-transform">
+          <MessageSquare size={26} className="text-white drop-shadow" />
+        </span>
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-            {unread}
+          <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 bg-red-500 text-white
+                           text-[11px] font-bold rounded-full flex items-center justify-center
+                           ring-2 ring-background shadow-lg">
+            {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
 
-      {/* Chat window */}
+      {/* ─────────── Chat window ─────────── */}
       {open && (
-        <div className={`fixed bottom-6 right-6 z-50 w-[360px] shadow-2xl border border-primary/50 bg-card flex flex-col transition-all duration-300 ${minimized ? "h-14" : "h-[520px]"}`}>
-          {/* Corner accents */}
-          <span className="pointer-events-none absolute -top-px -left-px w-3 h-3 border-t-2 border-l-2 border-primary z-10" />
-          <span className="pointer-events-none absolute -top-px -right-px w-3 h-3 border-t-2 border-r-2 border-primary z-10" />
-          <span className="pointer-events-none absolute -bottom-px -left-px w-3 h-3 border-b-2 border-l-2 border-primary z-10" />
-          <span className="pointer-events-none absolute -bottom-px -right-px w-3 h-3 border-b-2 border-r-2 border-primary z-10" />
+        <div
+          className={`fixed bottom-6 right-6 z-50 w-[min(92vw,400px)] flex flex-col
+                      bg-card/95 backdrop-blur-xl
+                      shadow-[0_25px_60px_-15px_rgba(0,0,0,0.45)]
+                      border border-primary/30 rounded-2xl overflow-hidden
+                      transition-[height,transform,opacity] duration-300 ease-out
+                      ${minimized ? "h-16" : "h-[600px] max-h-[80vh]"}`}
+        >
+          {/* Decorative top bar */}
+          <div className="absolute top-0 inset-x-0 h-[3px]
+                          bg-gradient-to-r from-amber-700 via-primary to-amber-700" />
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border-b border-primary/20 shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-8 h-8 bg-primary/20 border border-primary flex items-center justify-center">
-                  <MessageSquare size={14} className="text-primary" />
-                </div>
-                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-card ${wsConnected ? "bg-green-400" : "bg-yellow-400"}`} />
+          {/* ─── Header ─── */}
+          <div className="relative flex items-center gap-3 px-4 py-3 shrink-0
+                          bg-gradient-to-br from-amber-50 via-amber-50/50 to-amber-100/30
+                          dark:from-amber-950/40 dark:via-amber-900/20 dark:to-amber-950/30
+                          border-b border-primary/20">
+            <div className="relative">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-amber-700
+                              flex items-center justify-center shadow-md ring-2 ring-background">
+                <Sparkles size={18} className="text-white" />
               </div>
-              <div>
-                <div className="font-serif text-sm text-foreground">{t("chat.title")}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {!wsConnected
-                    ? t("chat.connecting")
-                    : adminOnline
-                      ? <span className="text-green-500">● Tư vấn viên đang trực</span>
-                      : <span>○ Tự động trả lời</span>}
-                </div>
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full ring-2 ring-card
+                            ${wsConnected ? (adminOnline ? "bg-green-500" : "bg-amber-400") : "bg-zinc-400"}`}
+              >
+                {wsConnected && (
+                  <span className={`absolute inset-0 rounded-full animate-ping
+                                    ${adminOnline ? "bg-green-500/70" : "bg-amber-400/70"}`} />
+                )}
+              </span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="font-serif text-[15px] text-foreground leading-tight">
+                {t("chat.title")}
+              </div>
+              <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                {!wsConnected ? (
+                  <span>{t("chat.connecting")}</span>
+                ) : adminOnline ? (
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    Tư vấn viên đang trực · phản hồi nhanh
+                  </span>
+                ) : (
+                  <span>Trợ lý ảo · phản hồi tức thì 24/7</span>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setMinimized((m) => !m)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                {minimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-              </button>
-              <button onClick={() => setOpen(false)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                <X size={14} />
-              </button>
-            </div>
+
+            <button
+              onClick={() => setMinimized((m) => !m)}
+              className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10
+                         rounded-lg transition-colors"
+              aria-label={minimized ? "Mở rộng" : "Thu nhỏ"}
+            >
+              {minimized ? <Maximize2 size={15} /> : <Minimize2 size={15} />}
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10
+                         rounded-lg transition-colors"
+              aria-label="Đóng"
+            >
+              <X size={15} />
+            </button>
           </div>
 
           {!minimized && (
             <>
               {/* Login hint for guests */}
               {!user && (
-                <div className="px-3 py-2 bg-primary/5 border-b border-primary/10 text-[11px] text-muted-foreground flex items-center gap-2">
+                <div className="px-4 py-2 bg-primary/5 border-b border-primary/10
+                                text-[11px] text-muted-foreground flex items-center gap-2 shrink-0">
                   <LogIn size={12} className="text-primary shrink-0" />
                   <span>
                     Đang trò chuyện với tư cách khách.{" "}
-                    <Link href="/sign-in" className="text-primary hover:underline">Đăng nhập</Link>
-                    {" "}để lưu lịch sử & nhận hỗ trợ ưu tiên.
+                    <Link href="/sign-in" className="text-primary font-medium hover:underline">
+                      Đăng nhập
+                    </Link>{" "}
+                    để lưu lịch sử & hỗ trợ ưu tiên.
                   </span>
                 </div>
               )}
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* ─── Messages ─── */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3
+                              bg-gradient-to-b from-transparent via-amber-50/10 to-transparent
+                              dark:via-amber-950/5">
                 {messages.map((msg) => {
-                  if (msg.senderType === "system") return (
-                    <div key={msg.id} className="text-center">
-                      <span className="text-[11px] text-muted-foreground bg-muted px-3 py-1 inline-block">{msg.message}</span>
-                    </div>
-                  );
+                  if (msg.senderType === "system") {
+                    return (
+                      <div key={msg.id} className="text-center py-1">
+                        <span className="text-[12px] text-muted-foreground italic
+                                         bg-muted/40 px-3 py-1.5 rounded-full inline-block
+                                         border border-primary/10">
+                          {msg.message}
+                        </span>
+                      </div>
+                    );
+                  }
                   const isUser = msg.senderType === "user";
                   const isBot = msg.senderType === "bot";
+                  const time = formatTime(msg.createdAt);
                   return (
-                    <div key={msg.id} className={`flex ${isUser ? "justify-end" : "justify-start"} gap-2`}>
+                    <div key={msg.id} className={`flex gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
                       {!isUser && (
-                        <div className={`w-7 h-7 shrink-0 border flex items-center justify-center mt-1 ${
-                          isBot ? "bg-muted border-muted-foreground/30" : "bg-primary/20 border-primary"
-                        }`}>
+                        <div
+                          className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center mt-1
+                                      ring-1 ring-primary/20 shadow-sm
+                                      ${isBot
+                                        ? "bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800"
+                                        : "bg-gradient-to-br from-primary to-amber-700"}`}
+                        >
                           {isBot
-                            ? <Bot size={12} className="text-muted-foreground" />
-                            : <span className="text-[9px] font-serif text-primary font-bold">MD</span>}
+                            ? <Bot size={14} className="text-zinc-600 dark:text-zinc-300" />
+                            : <span className="text-[10px] font-serif text-white font-bold">MD</span>}
                         </div>
                       )}
-                      <div className={`max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col gap-0.5`}>
+                      <div className={`max-w-[78%] flex flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
                         {!isUser && (
-                          <div className="text-[10px] text-muted-foreground/80 px-1">{msg.senderName}</div>
+                          <div className="text-[10px] text-muted-foreground/80 px-1">
+                            {msg.senderName}
+                          </div>
                         )}
-                        <div className={`px-3 py-2 text-sm leading-relaxed ${
-                          isUser
-                            ? "bg-primary text-primary-foreground"
-                            : isBot
-                              ? "bg-muted/60 text-foreground border border-dashed border-muted-foreground/30 italic"
-                              : "bg-muted text-foreground border border-primary/15"
-                        }`}>
-                          {msg.message}
+                        <div
+                          className={`px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line
+                                      shadow-sm transition-transform
+                                      ${isUser
+                                        ? "bg-gradient-to-br from-primary to-amber-700 text-white rounded-2xl rounded-br-md"
+                                        : isBot
+                                          ? "bg-amber-50 dark:bg-amber-950/30 text-foreground rounded-2xl rounded-bl-md border border-amber-200/40 dark:border-amber-800/40"
+                                          : "bg-muted text-foreground rounded-2xl rounded-bl-md border border-primary/10"}`}
+                        >
+                          {renderMessageText(msg.message)}
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {new Date(msg.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
-                        </div>
+                        {time && (
+                          <div className="text-[10px] text-muted-foreground/70 px-1">{time}</div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
+
+                {/* Typing indicator */}
+                {botTyping && (
+                  <div className="flex gap-2 justify-start">
+                    <div className="w-8 h-8 shrink-0 rounded-full mt-1 ring-1 ring-primary/20
+                                    bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-700 dark:to-zinc-800
+                                    flex items-center justify-center">
+                      <Bot size={14} className="text-zinc-600 dark:text-zinc-300" />
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-950/30 rounded-2xl rounded-bl-md px-4 py-3
+                                    border border-amber-200/40 dark:border-amber-800/40
+                                    flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+                            style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+                            style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+                            style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick replies */}
+                {showQuickReplies && (
+                  <div className="pt-2">
+                    <div className="text-[11px] text-muted-foreground mb-2 px-1">
+                      Gợi ý câu hỏi:
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_REPLIES.map((q) => (
+                        <button
+                          key={q.label}
+                          onClick={() => sendMessage(q.text)}
+                          disabled={sending}
+                          className="px-3 py-1.5 text-xs bg-card hover:bg-primary/10
+                                     border border-primary/30 hover:border-primary/60
+                                     rounded-full transition-all duration-200
+                                     hover:scale-105 hover:shadow-sm
+                                     text-foreground flex items-center gap-1.5
+                                     disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span>{q.icon}</span>
+                          <span>{q.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
-              <div className="border-t border-primary/15 p-3 shrink-0">
-                <div className="flex gap-2">
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t("chat.placeholder")}
-                    rows={1}
-                    className="flex-1 bg-background border border-primary/20 focus:border-primary text-foreground text-sm px-3 py-2 resize-none outline-none transition-colors placeholder:text-muted-foreground"
-                    style={{ minHeight: "36px", maxHeight: "100px" }}
-                  />
+              {/* ─── Input ─── */}
+              <div className="border-t border-primary/15 p-3 shrink-0
+                              bg-gradient-to-b from-transparent to-amber-50/20 dark:to-amber-950/10">
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={t("chat.placeholder")}
+                      rows={1}
+                      className="w-full bg-background border border-primary/25
+                                 focus:border-primary focus:ring-2 focus:ring-primary/20
+                                 text-foreground text-sm px-3.5 py-2.5 resize-none outline-none
+                                 transition-all rounded-xl placeholder:text-muted-foreground/70"
+                      style={{ minHeight: "42px", maxHeight: "100px" }}
+                    />
+                  </div>
                   <button
-                    onClick={sendMessage}
+                    onClick={() => sendMessage()}
                     disabled={!input.trim() || sending}
-                    className="bg-primary text-primary-foreground px-3 disabled:opacity-50 hover:bg-primary/90 transition-colors flex items-center justify-center"
+                    className="bg-gradient-to-br from-primary to-amber-700
+                               text-white w-[42px] h-[42px] rounded-xl shrink-0
+                               disabled:opacity-40 disabled:cursor-not-allowed
+                               hover:shadow-lg hover:shadow-primary/30 hover:scale-105
+                               active:scale-95
+                               flex items-center justify-center transition-all"
+                    aria-label="Gửi"
                   >
-                    {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
                   </button>
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-1.5 text-center">{t("chat.enter")}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-1.5 text-center flex items-center justify-center gap-1">
+                  <Sparkles size={9} />
+                  <span>Phản hồi tự động ngay · Tư vấn viên trả lời trong 30 giây</span>
+                </div>
               </div>
             </>
           )}
