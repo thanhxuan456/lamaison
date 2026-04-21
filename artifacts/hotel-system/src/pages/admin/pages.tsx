@@ -108,8 +108,8 @@ function PagesTab() {
             {pages.map(p => (
               <tr key={p.id} className="hover:bg-primary/5 transition-colors">
                 <td className="px-4 py-3 font-medium text-foreground">
-                  <Link href={`/admin/content/pages/${p.id}`}>
-                    <a className="hover:text-primary transition-colors">{p.title}</a>
+                  <Link href={`/admin/content/pages/${p.id}`} className="hover:text-primary transition-colors">
+                    {p.title}
                   </Link>
                   {p.metaTitle && <div className="text-[10px] text-muted-foreground/60 mt-0.5">SEO: {p.metaTitle.slice(0, 40)}{p.metaTitle.length > 40 ? "…" : ""}</div>}
                 </td>
@@ -221,8 +221,8 @@ function PostsTab() {
               {filtered.map(p => (
                 <tr key={p.id} className="border-t border-border hover:bg-foreground/5 transition-colors">
                   <td className="p-3">
-                    <Link href={`/admin/content/posts/${p.id}`}>
-                      <a className="font-medium text-foreground hover:text-primary transition-colors">{p.title}</a>
+                    <Link href={`/admin/content/posts/${p.id}`} className="font-medium text-foreground hover:text-primary transition-colors">
+                      {p.title}
                     </Link>
                     <div className="text-xs text-muted-foreground mt-0.5">/{p.slug}</div>
                   </td>

@@ -101,7 +101,7 @@ function PostEditorContent() {
     (async () => {
       setLoading(true);
       try {
-        const r = await fetch(`${API}/api/blog-posts/${id}`);
+        const r = await fetch(`${API}/api/blog-posts/${id}?all=true`);
         if (!r.ok) throw new Error("Không tải được bài viết");
         const data = await r.json();
         if (!aborted) setForm(data);
