@@ -4,7 +4,9 @@ import { AdminGuard } from "./guard";
 import {
   MessageSquare, Loader2, Send, User, ShieldCheck, RefreshCw,
   Trash2, Download, CheckSquare, Square, X, FileText, FileJson,
+  Layers, ChevronUp,
 } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,6 +18,14 @@ interface ChatSession {
   guestEmail?: string | null;
   status?: string;
   updatedAt?: string;
+}
+interface ReplyTemplate {
+  id: number;
+  label: string;
+  body: string;
+  category: string;
+  shortcut?: string | null;
+  isActive: boolean;
 }
 interface ChatMessage {
   id: number | string;
@@ -45,6 +55,8 @@ export default function AdminChat() {
   const [wsConnected, setWsConnected] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [exportOpen, setExportOpen] = useState(false);
+  const [templates, setTemplates] = useState<ReplyTemplate[]>([]);
+  const [tplOpen, setTplOpen] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +70,24 @@ export default function AdminChat() {
   };
 
   useEffect(() => { loadSessions(); }, []);
+
+  // Load reply templates once for the quick-pick popover above the input.
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API}/api/chat/templates`);
+        if (r.ok) {
+          const data = await r.json();
+          setTemplates(Array.isArray(data) ? data.filter((t: ReplyTemplate) => t.isActive) : []);
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const insertTemplate = (t: ReplyTemplate) => {
+    setReply(prev => prev ? `${prev}\n${t.body}` : t.body);
+    setTplOpen(false);
+  };
 
   const selectSession = async (session: ChatSession) => {
     setSelectedSession(session);
@@ -324,16 +354,63 @@ export default function AdminChat() {
                   <div ref={endRef} />
                 </div>
 
-                <div className="flex gap-2 p-4 border-t border-primary/15">
-                  <input
-                    className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none"
-                    value={reply} onChange={(e) => setReply(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendReply())}
-                    placeholder="Trả lời với tư cách MAISON DELUXE Support..."
-                  />
-                  <Button onClick={sendReply} disabled={sending || !reply.trim()} className="rounded-none bg-primary text-primary-foreground h-9 px-4">
-                    {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  </Button>
+                <div className="border-t border-primary/15 p-3 space-y-2 relative">
+                  {/* Template quick-pick popover */}
+                  {tplOpen && (
+                    <div className="absolute bottom-full left-3 right-3 mb-2 bg-card border border-primary/30 shadow-xl max-h-72 overflow-y-auto z-30">
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-primary/15 bg-primary/5 text-[10px] uppercase tracking-wider text-primary font-serif">
+                        <span>Mẫu trả lời nhanh ({templates.length})</span>
+                        <button onClick={() => setTplOpen(false)} className="text-muted-foreground hover:text-primary"><X size={12} /></button>
+                      </div>
+                      {templates.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                          Chưa có mẫu nào.{" "}
+                          <Link href="/admin/chat/templates" className="text-primary hover:underline">Tạo mẫu</Link>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-primary/10">
+                          {templates.map(t => (
+                            <button key={t.id} onClick={() => insertTemplate(t)}
+                              className="w-full text-left px-3 py-2 hover:bg-primary/10 transition-colors">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[12px] font-medium text-foreground">{t.label}</span>
+                                {t.shortcut && <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400">/{t.shortcut}</span>}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground line-clamp-2 whitespace-pre-line">{t.body}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTplOpen(o => !o)}
+                      className={`flex items-center gap-1 text-[11px] px-2 py-1 border transition-colors ${
+                        tplOpen ? "border-primary bg-primary/10 text-primary" : "border-primary/20 text-muted-foreground hover:text-primary"
+                      }`}
+                      title="Mẫu trả lời nhanh"
+                    >
+                      <Layers size={11} /> Mẫu trả lời <ChevronUp size={10} className={tplOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                    </button>
+                    <Link href="/admin/chat/templates" className="text-[10px] text-muted-foreground hover:text-primary">
+                      Quản lý mẫu →
+                    </Link>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <textarea
+                      rows={2}
+                      className="flex-1 border border-primary/25 focus:border-primary bg-background px-3 py-2 text-sm text-foreground outline-none resize-y rounded"
+                      value={reply} onChange={(e) => setReply(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendReply())}
+                      placeholder="Trả lời với tư cách MAISON DELUXE Support... (Enter để gửi, Shift+Enter xuống dòng)"
+                    />
+                    <Button onClick={sendReply} disabled={sending || !reply.trim()} className="rounded-none bg-primary text-primary-foreground h-auto px-4 self-stretch">
+                      {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}

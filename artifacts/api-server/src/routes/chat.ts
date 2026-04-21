@@ -1,8 +1,16 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { chatSessionsTable, chatMessagesTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { chatSessionsTable, chatMessagesTable, chatReplyTemplatesTable } from "@workspace/db";
+import { eq, inArray, asc, desc } from "drizzle-orm";
 import { WebSocketServer, WebSocket } from "ws";
+
+// Auto-generate a human-friendly ticket number: MD-YYYYMMDD-<6 chars>
+function generateTicketNumber(): string {
+  const d = new Date();
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `MD-${ymd}-${rand}`;
+}
 
 const router = Router();
 
@@ -143,17 +151,141 @@ async function scheduleAutoReply(sessionId: string) {
   pendingAutoReplies.set(sessionId, timer);
 }
 
-// POST /api/chat/sessions — start a new chat session
+// POST /api/chat/sessions — start a new chat session.
+// Auto-generates a ticket number so every conversation can be tracked as a ticket.
 router.post("/chat/sessions", async (req, res) => {
   try {
-    const { guestName, guestEmail, clerkUserId } = req.body;
+    const { guestName, guestEmail, guestPhone, clerkUserId } = req.body;
     const [session] = await db
       .insert(chatSessionsTable)
-      .values({ guestName: guestName ?? "Guest", guestEmail: guestEmail ?? null, clerkUserId: clerkUserId ?? null })
+      .values({
+        guestName: guestName ?? "Guest",
+        guestEmail: guestEmail ?? null,
+        guestPhone: guestPhone ?? null,
+        clerkUserId: clerkUserId ?? null,
+        ticketNumber: generateTicketNumber(),
+        status: "open",
+      })
       .returning();
     res.json(session);
   } catch (err) {
     req.log.error({ err }, "Failed to create chat session");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /api/chat/sessions/:id — update status / priority / assignee fields.
+// Used by admin UI to assign sessions and update ticket status.
+router.patch("/chat/sessions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const {
+      status, priority, assigneeUserId, assigneeName, assigneeRole,
+      guestName, guestEmail, guestPhone,
+    } = req.body ?? {};
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (status !== undefined) {
+      patch.status = status;
+      if (status === "resolved" || status === "closed") patch.resolvedAt = new Date();
+    }
+    if (priority !== undefined) patch.priority = priority;
+    if (assigneeUserId !== undefined) {
+      patch.assigneeUserId = assigneeUserId;
+      patch.assignedAt = assigneeUserId ? new Date() : null;
+      if (assigneeUserId && (status === undefined)) patch.status = "assigned";
+      // Clear stale display fields when unassigning so the UI doesn't keep
+      // showing the previous assignee's name/role.
+      if (!assigneeUserId) {
+        patch.assigneeName = null;
+        patch.assigneeRole = null;
+      }
+    }
+    if (assigneeName !== undefined) patch.assigneeName = assigneeName;
+    if (assigneeRole !== undefined) patch.assigneeRole = assigneeRole;
+    if (guestName !== undefined) patch.guestName = guestName;
+    if (guestEmail !== undefined) patch.guestEmail = guestEmail;
+    if (guestPhone !== undefined) patch.guestPhone = guestPhone;
+    const [updated] = await db
+      .update(chatSessionsTable)
+      .set(patch as never)
+      .where(eq(chatSessionsTable.id, id))
+      .returning();
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update chat session");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ─────────────────── Reply Templates (canned responses) ─────────────────── */
+
+// GET /api/chat/templates
+router.get("/chat/templates", async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(chatReplyTemplatesTable)
+      .orderBy(asc(chatReplyTemplatesTable.sortOrder), asc(chatReplyTemplatesTable.id));
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/chat/templates
+router.post("/chat/templates", async (req, res) => {
+  try {
+    const { label, body, category, shortcut, sortOrder, isActive } = req.body ?? {};
+    if (!label || !body) { res.status(400).json({ error: "label & body required" }); return; }
+    const [row] = await db
+      .insert(chatReplyTemplatesTable)
+      .values({
+        label, body,
+        category: category ?? "general",
+        shortcut: shortcut ?? null,
+        sortOrder: typeof sortOrder === "number" ? sortOrder : 0,
+        isActive: isActive ?? true,
+      })
+      .returning();
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /api/chat/templates/:id
+router.put("/chat/templates/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    const { label, body, category, shortcut, sortOrder, isActive } = req.body ?? {};
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (label !== undefined) patch.label = label;
+    if (body !== undefined) patch.body = body;
+    if (category !== undefined) patch.category = category;
+    if (shortcut !== undefined) patch.shortcut = shortcut;
+    if (sortOrder !== undefined) patch.sortOrder = sortOrder;
+    if (isActive !== undefined) patch.isActive = isActive;
+    const [row] = await db
+      .update(chatReplyTemplatesTable)
+      .set(patch as never)
+      .where(eq(chatReplyTemplatesTable.id, id))
+      .returning();
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/chat/templates/:id
+router.delete("/chat/templates/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+    await db.delete(chatReplyTemplatesTable).where(eq(chatReplyTemplatesTable.id, id));
+    res.json({ ok: true, id });
+  } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
 });

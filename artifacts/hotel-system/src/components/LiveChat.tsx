@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Link } from "wouter";
-import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn, Sparkles } from "lucide-react";
+import { MessageSquare, X, Send, Minimize2, Maximize2, Loader2, Bot, LogIn, Sparkles, User as UserIcon, Mail, Phone, ArrowRight } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 interface Message {
@@ -57,6 +57,11 @@ export function LiveChat() {
   const [wsConnected, setWsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
+  // Pre-chat form: collect identity before opening a real session.
+  // Skipped automatically when the user is signed in (Clerk).
+  const [preForm, setPreForm] = useState({ name: "", email: "", phone: "" });
+  const [preFormError, setPreFormError] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionInitialized = useRef(false);
@@ -107,45 +112,104 @@ export function LiveChat() {
     };
   }, [open, minimized]);
 
-  const initSession = useCallback(async () => {
+  // Restore an existing session from sessionStorage when the chat opens.
+  // Logged-in Clerk users get auto-created sessions (no pre-form needed).
+  // Guests must fill the pre-chat form first (handled by submitPreForm).
+  const restoreOrAutoStart = useCallback(async () => {
     if (sessionInitialized.current) return;
-    sessionInitialized.current = true;
-
-    const guestName = user?.fullName ?? user?.firstName ?? "Khách";
-    const guestEmail = user?.primaryEmailAddress?.emailAddress;
     const stored = sessionStorage.getItem("chat_session_id");
     if (stored) {
+      sessionInitialized.current = true;
       setSessionId(stored);
-      const res = await fetch(`${API_URL}/api/chat/sessions/${stored}/messages`);
-      if (res.ok) setMessages(await res.json());
+      try {
+        const res = await fetch(`${API_URL}/api/chat/sessions/${stored}/messages`);
+        if (res.ok) setMessages(await res.json());
+      } catch {}
       connectWs(stored);
       return;
     }
+    if (user) {
+      // Authenticated user: auto-create using Clerk profile.
+      sessionInitialized.current = true;
+      const guestName = user.fullName ?? user.firstName ?? "Khách";
+      const guestEmail = user.primaryEmailAddress?.emailAddress;
+      const guestPhone = user.primaryPhoneNumber?.phoneNumber ?? null;
+      const res = await fetch(`${API_URL}/api/chat/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guestName, guestEmail, guestPhone, clerkUserId: user.id }),
+      });
+      if (res.ok) {
+        const session = await res.json();
+        sessionStorage.setItem("chat_session_id", String(session.id));
+        setSessionId(String(session.id));
+        setMessages([{
+          id: "welcome",
+          senderType: "system",
+          senderName: "MAISON DELUXE",
+          message: t("chat.welcome"),
+          createdAt: new Date().toISOString(),
+        }]);
+        connectWs(String(session.id));
+      }
+    }
+  }, [user, t, connectWs]);
 
-    const res = await fetch(`${API_URL}/api/chat/sessions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestName, guestEmail, clerkUserId: user?.id ?? null }),
-    });
-    if (res.ok) {
+  // Submit handler for the pre-chat form (guest path).
+  const submitPreForm = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (sessionInitialized.current || creatingSession) return;
+    const name = preForm.name.trim();
+    const email = preForm.email.trim();
+    const phone = preForm.phone.trim();
+    if (name.length < 2) { setPreFormError("Vui lòng nhập họ tên (tối thiểu 2 ký tự)."); return; }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const phoneOk = /^[+()\-\s\d]{8,20}$/.test(phone);
+    if (!emailOk && !phoneOk) {
+      setPreFormError("Vui lòng nhập email hợp lệ hoặc số điện thoại để chúng tôi liên hệ lại.");
+      return;
+    }
+    setPreFormError(null);
+    setCreatingSession(true);
+    try {
+      const res = await fetch(`${API_URL}/api/chat/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestName: name,
+          guestEmail: email || null,
+          guestPhone: phone || null,
+          clerkUserId: null,
+        }),
+      });
+      if (!res.ok) throw new Error("create failed");
       const session = await res.json();
+      sessionInitialized.current = true;
       sessionStorage.setItem("chat_session_id", String(session.id));
       setSessionId(String(session.id));
       setMessages([{
         id: "welcome",
         senderType: "system",
         senderName: "MAISON DELUXE",
-        message: t("chat.welcome"),
+        message: t("chat.welcome") + (session.ticketNumber ? `\nMã ticket: ${session.ticketNumber}` : ""),
         createdAt: new Date().toISOString(),
       }]);
       connectWs(String(session.id));
+    } catch {
+      setPreFormError("Không thể bắt đầu phiên chat, vui lòng thử lại.");
+    } finally {
+      setCreatingSession(false);
     }
-  }, [user, t, connectWs]);
+  }, [preForm, creatingSession, t, connectWs]);
 
   useEffect(() => {
-    if (open && !sessionId) initSession();
+    if (open && !sessionId) restoreOrAutoStart();
     if (open) setUnread(0);
-  }, [open, sessionId, initSession]);
+  }, [open, sessionId, restoreOrAutoStart]);
+
+  // True when we should show the pre-chat form: chat opened, no session yet,
+  // user is a guest (not signed in via Clerk), and no stored session restoring.
+  const needsPreForm = open && !sessionId && !user && !sessionStorage.getItem("chat_session_id");
 
   useEffect(() => {
     return () => {
@@ -282,7 +346,91 @@ export function LiveChat() {
             </button>
           </div>
 
-          {!minimized && (
+          {!minimized && needsPreForm && (
+            <form
+              onSubmit={submitPreForm}
+              className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-gradient-to-b from-amber-50/30 via-transparent to-amber-50/20 dark:from-amber-950/15 dark:to-amber-950/10"
+            >
+              <div>
+                <h3 className="font-serif text-base text-foreground leading-snug">
+                  Trước khi bắt đầu
+                </h3>
+                <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">
+                  Vui lòng để lại thông tin để tư vấn viên MAISON DELUXE có thể hỗ trợ &
+                  liên hệ lại với quý khách nhanh nhất.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <UserIcon size={11} className="text-primary" /> Họ và tên <span className="text-red-500">*</span>
+                  </span>
+                  <input
+                    type="text"
+                    value={preForm.name}
+                    onChange={(e) => setPreForm((p) => ({ ...p, name: e.target.value }))}
+                    autoFocus
+                    placeholder="Nguyễn Văn A"
+                    className="mt-1 w-full bg-background border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg px-3 py-2 text-sm outline-none transition-all"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Mail size={11} className="text-primary" /> Email
+                  </span>
+                  <input
+                    type="email"
+                    value={preForm.email}
+                    onChange={(e) => setPreForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="email@example.com"
+                    className="mt-1 w-full bg-background border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg px-3 py-2 text-sm outline-none transition-all"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Phone size={11} className="text-primary" /> Số điện thoại
+                  </span>
+                  <input
+                    type="tel"
+                    value={preForm.phone}
+                    onChange={(e) => setPreForm((p) => ({ ...p, phone: e.target.value }))}
+                    placeholder="+84 ..."
+                    className="mt-1 w-full bg-background border border-primary/25 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-lg px-3 py-2 text-sm outline-none transition-all"
+                  />
+                </label>
+                <p className="text-[10px] text-muted-foreground/80">
+                  * Bắt buộc nhập <strong>email</strong> hoặc <strong>số điện thoại</strong> để chúng tôi có thể liên hệ lại nếu cuộc trò chuyện bị gián đoạn.
+                </p>
+                {preFormError && (
+                  <div className="text-[12px] text-red-500 bg-red-500/5 border border-red-300/40 rounded px-3 py-2">
+                    {preFormError}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={creatingSession}
+                className="w-full bg-gradient-to-br from-primary to-amber-700 text-white py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50"
+              >
+                {creatingSession ? (
+                  <><Loader2 size={14} className="animate-spin" /> Đang khởi tạo...</>
+                ) : (
+                  <>Bắt đầu trò chuyện <ArrowRight size={14} /></>
+                )}
+              </button>
+
+              <div className="text-[11px] text-center text-muted-foreground">
+                Đã có tài khoản?{" "}
+                <Link href="/sign-in" className="text-primary font-medium hover:underline">
+                  Đăng nhập
+                </Link>{" "}để bỏ qua bước này.
+              </div>
+            </form>
+          )}
+
+          {!minimized && !needsPreForm && (
             <>
               {/* Login hint for guests */}
               {!user && (

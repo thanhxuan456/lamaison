@@ -76,10 +76,14 @@ const NAV: NavEntry[] = [
     ],
   },
   {
-    kind: "item",
+    kind: "group",
     icon: MessageSquare,
-    label: "admin.nav.chat",
-    path: "/admin/chat",
+    label: "Live Chat",
+    children: [
+      { kind: "item", icon: MessageSquare, label: "Phiên Hoạt Động",   path: "/admin/chat" },
+      { kind: "item", icon: FileText,      label: "Quản Lý Tickets",   path: "/admin/chat/tickets" },
+      { kind: "item", icon: Layers,        label: "Mẫu Trả Lời Nhanh", path: "/admin/chat/templates" },
+    ],
   },
   {
     kind: "group",
