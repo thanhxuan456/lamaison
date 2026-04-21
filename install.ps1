@@ -14,19 +14,17 @@
 # OPTIONAL FLAGS:
 #   -Reinstall   Force clean reinstall
 #   -SkipBuild   Bo qua npm build (chi update config)
-#   -SkipSsl     Cai nginx HTTP-only (port 80, khong xin SSL)
-#   -RequestSsl  Chay win-acme xin Let's Encrypt cert (mac dinh TAT — chi dung khi can xin cert moi)
+#   -SkipSsl     Cai nginx HTTP-only (port 80, khong cai HTTPS)
 #   -Uninstall   Stop + xoa toan bo services
 # ============================================================
-# Mac dinh script SE GIU NGUYEN cert SSL hien co tai $SslDir va chi reload nginx.
-# Chi truyen -RequestSsl khi muon yeu cau cap cert moi tu Let's Encrypt.
+# SSL: Script CHI dung cert da cai san tai $SslDir (Positive SSL tu VPS).
+# Khong tich hop Let's Encrypt — moi cap nhat cert do nha cung cap VPS xu ly.
 
 param(
     [switch]$Reinstall,
     [switch]$SkipBuild,
     [switch]$SkipSsl,
     [switch]$NoWww,
-    [switch]$RequestSsl,
     [switch]$Uninstall
 )
 
@@ -646,105 +644,8 @@ if ($SkipSsl) {
         Write-Warn "  $($Config.Domain)-key.pem    (private key)"
         Write-Warn "Sau do chay lai: install.ps1 -SkipBuild"
         Write-Warn ""
-        Write-Warn "Hoac dung -SkipSsl de chay HTTP-only (vi du khi dung Cloudflare proxy):"
+        Write-Warn "Hoac dung -SkipSsl de chay HTTP-only:"
         Write-Warn "  powershell -ExecutionPolicy Bypass -File .\install.ps1 -SkipBuild -SkipSsl"
-        Write-Warn ""
-        Write-Warn "Hoac dung -RequestSsl de tu dong xin cert moi tu Let's Encrypt:"
-        Write-Warn "  powershell -ExecutionPolicy Bypass -File .\install.ps1 -SkipBuild -RequestSsl"
-    }
-}
-
-# ============================================================
-# STEP 12B (OPT-IN) -- Xin cert moi tu Let's Encrypt qua win-acme
-# Chi chay khi -RequestSsl duoc bat va chua co cert hop le.
-# Code nay duoc giu lai (khong xoa) de co the xin cert lai khi can.
-# ============================================================
-if ($RequestSsl -and -not $SkipSsl -and -not ((Test-Path $sslChain) -and (Test-Path $sslKey))) {
-    Write-Step "12B"  "Xin Let's Encrypt SSL (win-acme)"
-
-    # Verify HTTP reachable
-    Write-Info "Kiem tra HTTP-01 challenge path..."
-    $testFile = Join-Path $AcmeRoot ".well-known\acme-challenge\test.txt"
-    New-Item -ItemType Directory -Force -Path (Split-Path $testFile) | Out-Null
-    "ok" | Out-File -Encoding ASCII -FilePath $testFile -Force
-    try {
-        $localTest = Invoke-WebRequest -Uri "http://127.0.0.1/.well-known/acme-challenge/test.txt" -UseBasicParsing -TimeoutSec 5
-        if ($localTest.StatusCode -eq 200 -and $localTest.Content.Trim() -eq "ok") {
-            Write-OK "ACME challenge path serving correctly"
-        } else { Write-Warn "ACME local test status=$($localTest.StatusCode)" }
-    } catch { Write-Warn "ACME local test failed: $($_.Exception.Message)" }
-
-    # Download win-acme neu chua co
-    if (-not (Test-Path (Join-Path $WacsDir "wacs.exe"))) {
-        $wacsZip = Join-Path $TempDir "wacs.zip"
-        Invoke-Download "https://github.com/win-acme/win-acme/releases/download/v2.2.9.1701/win-acme.v2.2.9.1701.x64.pluggable.zip" $wacsZip
-        if (Test-Path $WacsDir) { Remove-Item $WacsDir -Recurse -Force }
-        Expand-Archive -Path $wacsZip -DestinationPath $WacsDir -Force
-    }
-    $wacsExe = Join-Path $WacsDir "wacs.exe"
-    if (-not (Test-Path $wacsExe)) { Fail "wacs.exe khong tim thay sau giai nen" }
-
-    Write-Info "Yeu cau cert cho $($Config.Domain)..."
-    New-Item -ItemType Directory -Force -Path $SslDir | Out-Null
-
-    $hostList = if ($NoWww) { $Config.Domain } else { "$($Config.Domain),www.$($Config.Domain)" }
-    Write-Info "Domains for cert: $hostList"
-    $wacsArgs = @(
-        "--source", "manual",
-        "--host", $hostList,
-        "--validation", "filesystem",
-        "--webroot", $AcmeRoot,
-        "--store", "pemfiles",
-        "--pemfilespath", $SslDir,
-        "--installation", "none",
-        "--accepttos",
-        "--emailaddress", $Config.Email,
-        "--force"
-    )
-
-    # Stdin redirect tu file rong + 5 phut timeout de tranh treo
-    $wacsStdout = Join-Path $TempDir "wacs.stdout.log"
-    $wacsStderr = Join-Path $TempDir "wacs.stderr.log"
-    $wacsStdin  = Join-Path $TempDir "wacs.stdin.empty"
-    Remove-Item $wacsStdout, $wacsStderr -Force -EA SilentlyContinue
-    Set-Content -Path $wacsStdin -Value "" -NoNewline -Encoding ASCII
-
-    Write-Info "Chay win-acme (toi da 5 phut, output: $wacsStdout)..."
-    $wacsProc = Start-Process -FilePath $wacsExe -ArgumentList $wacsArgs `
-        -RedirectStandardInput $wacsStdin `
-        -RedirectStandardOutput $wacsStdout `
-        -RedirectStandardError  $wacsStderr `
-        -NoNewWindow -PassThru
-
-    if (-not $wacsProc.WaitForExit(300000)) {
-        Write-Warn "win-acme bi treo > 5 phut, kill process..."
-        try { $wacsProc.Kill() } catch {}
-        Start-Sleep -Seconds 2
-    }
-
-    $wacsExitCode = if ($wacsProc.HasExited) { $wacsProc.ExitCode } else { -1 }
-    Write-Host "  --- win-acme output (exit=$wacsExitCode) ---" -ForegroundColor DarkGray
-    if (Test-Path $wacsStdout) {
-        Get-Content $wacsStdout | Select-Object -Last 60 | ForEach-Object {
-            Write-Host "    $_" -ForegroundColor DarkGray
-        }
-    }
-
-    if ($wacsExitCode -eq 0 -and (Test-Path $sslChain) -and (Test-Path $sslKey)) {
-        Write-OK "SSL cert da lay duoc!"
-        Write-Info "Reload nginx voi cert moi..."
-        Write-NginxConf -includeSsl $true
-        $ng2 = Invoke-NativeSafe $nginxExe @("-t", "-c", $nginxConfPath, "-p", $NginxDir)
-        if ($ng2.ExitCode -ne 0) { Fail "nginx SSL config test failed:`n$($ng2.Output -join "`n")" }
-        Restart-Service MaisonDeluxeNginx -Force
-        Start-Sleep -Seconds 3
-        Write-OK "nginx reloaded -- truy cap https://$($Config.Domain)"
-    } else {
-        Write-Warn "Khong xin duoc SSL (exit $wacsExitCode). Site van chay HTTP."
-        Write-Warn "Nguyen nhan thuong gap:"
-        Write-Warn "  - DNS A-record cua $($Config.Domain) chua tro ve IP server nay"
-        Write-Warn "  - Port 80 bi chan boi firewall/router/ISP"
-        Write-Warn "  - Le's Encrypt rate limit (5 cert/domain/tuan)"
     }
 }
 
