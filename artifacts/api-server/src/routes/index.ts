@@ -15,6 +15,7 @@ import contactMessagesRouter from "./contact-messages";
 import blogPostsRouter from "./blog-posts";
 import paymentsRouter from "./payments";
 import integrationsRouter from "./integrations";
+import socialRouter from "./social";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(invoicesRouter);
 router.use(settingsRouter);
 router.use(contactMessagesRouter);
 router.use(blogPostsRouter);
+router.use(socialRouter);
 
 export default router;

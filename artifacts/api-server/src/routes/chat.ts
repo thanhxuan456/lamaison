@@ -28,6 +28,14 @@ function hasAdminOnline(sessionId: string): boolean {
   return false;
 }
 
+function purgeSession(sessionId: string) {
+  const t = pendingAutoReplies.get(sessionId);
+  if (t) { clearTimeout(t); pendingAutoReplies.delete(sessionId); }
+  const clients = sessions.get(sessionId);
+  if (clients) { for (const ws of clients) try { ws.close(); } catch {} sessions.delete(sessionId); }
+  adminPresence.delete(sessionId);
+}
+
 function broadcast(sessionId: string, data: object) {
   const clients = sessions.get(sessionId);
   if (!clients) return;
@@ -150,9 +158,7 @@ router.delete("/chat/sessions/:id", async (req, res) => {
     if (Number.isNaN(sessionId)) { res.status(400).json({ error: "Invalid id" }); return; }
     await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, String(sessionId)));
     await db.delete(chatSessionsTable).where(eq(chatSessionsTable.id, sessionId));
-    // disconnect any active WS clients for this session
-    const clients = sessions.get(String(sessionId));
-    if (clients) { for (const ws of clients) try { ws.close(); } catch {} sessions.delete(String(sessionId)); }
+    purgeSession(String(sessionId));
     res.json({ ok: true, id: sessionId });
   } catch (err) {
     req.log.error({ err }, "Failed to delete chat session");
@@ -170,10 +176,7 @@ router.post("/chat/sessions/bulk-delete", async (req, res) => {
     if (numericIds.length === 0) { res.status(400).json({ error: "no valid ids" }); return; }
     await db.delete(chatMessagesTable).where(inArray(chatMessagesTable.sessionId, numericIds.map(String)));
     await db.delete(chatSessionsTable).where(inArray(chatSessionsTable.id, numericIds));
-    for (const id of numericIds) {
-      const clients = sessions.get(String(id));
-      if (clients) { for (const ws of clients) try { ws.close(); } catch {} sessions.delete(String(id)); }
-    }
+    for (const id of numericIds) purgeSession(String(id));
     res.json({ ok: true, count: numericIds.length });
   } catch (err) {
     req.log.error({ err }, "Failed to bulk-delete chat sessions");
@@ -209,9 +212,11 @@ export function setupChatWebSocket(wss: WebSocketServer) {
     }
 
     ws.on("close", () => {
-      sessions.get(sessionId)?.delete(ws);
+      const s = sessions.get(sessionId);
+      if (s) { s.delete(ws); if (s.size === 0) sessions.delete(sessionId); }
       if (role === "admin") {
-        adminPresence.get(sessionId)?.delete(ws);
+        const a = adminPresence.get(sessionId);
+        if (a) { a.delete(ws); if (a.size === 0) adminPresence.delete(sessionId); }
         broadcastPresence(sessionId);
       }
     });

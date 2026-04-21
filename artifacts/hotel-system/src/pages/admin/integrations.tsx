@@ -14,7 +14,7 @@ import {
   Receipt, FileText, Shield, Save, Upload, CheckCircle2, XCircle,
   AlertCircle, Loader2, RefreshCw, Eye, EyeOff, Zap, Lock, Globe, Building,
   Sparkles, LayoutTemplate, Image as ImageIcon, Link2, FileCheck, Database,
-  Wifi, WifiOff, Share2,
+  Wifi, WifiOff, Share2, Send, MapPin, MessageCircle,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -641,6 +641,273 @@ function SocialMediaPanel() {
   );
 }
 
+// ─── Auto-Post to Social Networks ──────────────────────────────────────────
+
+interface SocialAutoConfig {
+  autoPublish: boolean;
+  publicBaseUrl: string;
+  facebook: { enabled: boolean; accessToken: string; pageId: string; groupId?: string };
+  instagram: { enabled: boolean; accessToken: string; igUserId: string };
+  threads: { enabled: boolean; accessToken: string; threadsUserId: string };
+  google: { enabled: boolean; accessToken: string; accountId: string; locationId: string };
+  zalo: { enabled: boolean; accessToken: string; oaId?: string };
+}
+
+const EMPTY_AUTO: SocialAutoConfig = {
+  autoPublish: false,
+  publicBaseUrl: "",
+  facebook: { enabled: false, accessToken: "", pageId: "", groupId: "" },
+  instagram: { enabled: false, accessToken: "", igUserId: "" },
+  threads: { enabled: false, accessToken: "", threadsUserId: "" },
+  google: { enabled: false, accessToken: "", accountId: "", locationId: "" },
+  zalo: { enabled: false, accessToken: "", oaId: "" },
+};
+
+function PlatformCard({ icon: Icon, title, hint, docUrl, enabled, onToggle, children }: {
+  icon: any; title: string; hint: string; docUrl: string;
+  enabled: boolean; onToggle: (v: boolean) => void; children: React.ReactNode;
+}) {
+  return (
+    <Card className={enabled ? "border-primary/40" : ""}>
+      <CardHeader className="flex-row items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className={`w-10 h-10 border flex items-center justify-center shrink-0 ${enabled ? "bg-primary/10 border-primary/40" : "bg-muted border-border"}`}>
+            <Icon size={18} className={enabled ? "text-primary" : "text-muted-foreground"} />
+          </div>
+          <div>
+            <CardTitle className="text-base">{title}</CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              {hint}{" "}
+              <a href={docUrl} target="_blank" rel="noreferrer" className="text-primary underline">
+                Hướng dẫn lấy token
+              </a>
+            </CardDescription>
+          </div>
+        </div>
+        <Switch checked={enabled} onCheckedChange={onToggle} />
+      </CardHeader>
+      {enabled && <CardContent className="pt-0 space-y-3">{children}</CardContent>}
+    </Card>
+  );
+}
+
+function AutoPostPanel() {
+  const { toast } = useToast();
+  const [cfg, setCfg] = useState<SocialAutoConfig>(EMPTY_AUTO);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${API}/api/integrations/social`);
+        if (r.ok) setCfg({ ...EMPTY_AUTO, ...(await r.json()) });
+      } catch { toast({ title: "Không tải được cấu hình", variant: "destructive" }); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/api/integrations/social`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cfg),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      setCfg({ ...EMPTY_AUTO, ...(await r.json()) });
+      toast({ title: "Đã lưu cấu hình", description: "Token được mã hóa lưu trong Neon PostgreSQL" });
+    } catch (err: any) {
+      toast({ title: "Lưu thất bại", description: err.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const tokenInput = (key: string, value: string, onChange: (v: string) => void, ph = "Access Token") => (
+    <div className="relative">
+      <Input
+        type={showTokens[key] ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={ph}
+        className="pr-10 font-mono text-xs"
+      />
+      <button type="button" onClick={() => setShowTokens(s => ({ ...s, [key]: !s[key] }))}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+        {showTokens[key] ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
+      <Loader2 size={20} className="animate-spin" /> Đang tải...
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* Master switch */}
+      <Card className="border-primary/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Send size={18} className="text-primary" /> Tự động đăng bài lên mạng xã hội</CardTitle>
+          <CardDescription>
+            Khi bài viết blog được xuất bản, hệ thống sẽ tự động đẩy tiêu đề, mô tả, ảnh & link sang các nền tảng được bật.
+            Token lưu mã hóa trong Neon PostgreSQL.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3 p-3 border border-primary/20 bg-primary/5">
+            <Switch checked={cfg.autoPublish} onCheckedChange={(v) => setCfg({ ...cfg, autoPublish: v })} />
+            <div>
+              <div className="text-sm font-medium">Bật tự động đăng khi xuất bản bài</div>
+              <p className="text-xs text-muted-foreground">Bài viết mới khi chuyển sang trạng thái "Đã xuất bản" sẽ tự đẩy lên các kênh đang bật bên dưới.</p>
+            </div>
+          </div>
+          <div>
+            <Label>URL công khai của website</Label>
+            <Input
+              value={cfg.publicBaseUrl}
+              onChange={(e) => setCfg({ ...cfg, publicBaseUrl: e.target.value })}
+              placeholder="https://maisondeluxehotel.com"
+              className="mt-1 font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Dùng để tạo link bài viết đầy đủ khi đăng. Để trống sẽ dùng host của request hiện tại.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Facebook */}
+      <PlatformCard
+        icon={Share2}
+        title="Facebook Page / Group"
+        hint="Cần Long-Lived Page Access Token có quyền pages_manage_posts."
+        docUrl="https://developers.facebook.com/docs/pages-api/posts"
+        enabled={cfg.facebook.enabled}
+        onToggle={(v) => setCfg({ ...cfg, facebook: { ...cfg.facebook, enabled: v } })}
+      >
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <Label>Page ID</Label>
+            <Input value={cfg.facebook.pageId} onChange={(e) => setCfg({ ...cfg, facebook: { ...cfg.facebook, pageId: e.target.value } })} placeholder="123456789" className="mt-1 font-mono text-xs" />
+          </div>
+          <div>
+            <Label>Group ID (tùy chọn)</Label>
+            <Input value={cfg.facebook.groupId ?? ""} onChange={(e) => setCfg({ ...cfg, facebook: { ...cfg.facebook, groupId: e.target.value } })} placeholder="987654321" className="mt-1 font-mono text-xs" />
+          </div>
+        </div>
+        <div>
+          <Label>Page Access Token</Label>
+          <div className="mt-1">{tokenInput("fb", cfg.facebook.accessToken, (v) => setCfg({ ...cfg, facebook: { ...cfg.facebook, accessToken: v } }))}</div>
+        </div>
+      </PlatformCard>
+
+      {/* Instagram */}
+      <PlatformCard
+        icon={ImageIcon}
+        title="Instagram Business"
+        hint="Cần IG Business Account đã liên kết FB Page + token với instagram_content_publish."
+        docUrl="https://developers.facebook.com/docs/instagram-api/guides/content-publishing"
+        enabled={cfg.instagram.enabled}
+        onToggle={(v) => setCfg({ ...cfg, instagram: { ...cfg.instagram, enabled: v } })}
+      >
+        <div>
+          <Label>IG Business User ID</Label>
+          <Input value={cfg.instagram.igUserId} onChange={(e) => setCfg({ ...cfg, instagram: { ...cfg.instagram, igUserId: e.target.value } })} placeholder="17841400000000" className="mt-1 font-mono text-xs" />
+        </div>
+        <div>
+          <Label>Access Token</Label>
+          <div className="mt-1">{tokenInput("ig", cfg.instagram.accessToken, (v) => setCfg({ ...cfg, instagram: { ...cfg.instagram, accessToken: v } }))}</div>
+        </div>
+        <p className="text-[11px] text-yellow-700 dark:text-yellow-400">⚠ Bài viết phải có ảnh cover https công khai mới đăng được lên IG.</p>
+      </PlatformCard>
+
+      {/* Threads */}
+      <PlatformCard
+        icon={MessageCircle}
+        title="Threads"
+        hint="Cần Threads User ID + token từ Meta Threads API."
+        docUrl="https://developers.facebook.com/docs/threads"
+        enabled={cfg.threads.enabled}
+        onToggle={(v) => setCfg({ ...cfg, threads: { ...cfg.threads, enabled: v } })}
+      >
+        <div>
+          <Label>Threads User ID</Label>
+          <Input value={cfg.threads.threadsUserId} onChange={(e) => setCfg({ ...cfg, threads: { ...cfg.threads, threadsUserId: e.target.value } })} placeholder="123456789" className="mt-1 font-mono text-xs" />
+        </div>
+        <div>
+          <Label>Access Token</Label>
+          <div className="mt-1">{tokenInput("th", cfg.threads.accessToken, (v) => setCfg({ ...cfg, threads: { ...cfg.threads, accessToken: v } }))}</div>
+        </div>
+      </PlatformCard>
+
+      {/* Google Business Profile */}
+      <PlatformCard
+        icon={MapPin}
+        title="Google Business Profile (hiển thị trên Maps)"
+        hint="Cần OAuth token có scope business.manage + Account ID + Location ID."
+        docUrl="https://developers.google.com/my-business/reference/rest/v4/accounts.locations.localPosts/create"
+        enabled={cfg.google.enabled}
+        onToggle={(v) => setCfg({ ...cfg, google: { ...cfg.google, enabled: v } })}
+      >
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <Label>Account ID</Label>
+            <Input value={cfg.google.accountId} onChange={(e) => setCfg({ ...cfg, google: { ...cfg.google, accountId: e.target.value } })} placeholder="accounts/1234567890" className="mt-1 font-mono text-xs" />
+          </div>
+          <div>
+            <Label>Location ID</Label>
+            <Input value={cfg.google.locationId} onChange={(e) => setCfg({ ...cfg, google: { ...cfg.google, locationId: e.target.value } })} placeholder="locations/9876543210" className="mt-1 font-mono text-xs" />
+          </div>
+        </div>
+        <div>
+          <Label>OAuth Access Token</Label>
+          <div className="mt-1">{tokenInput("g", cfg.google.accessToken, (v) => setCfg({ ...cfg, google: { ...cfg.google, accessToken: v } }))}</div>
+        </div>
+        <p className="text-[11px] text-muted-foreground">Bài đăng sẽ xuất hiện trong tab "Cập nhật" của Hồ sơ Doanh nghiệp & trên Google Maps.</p>
+      </PlatformCard>
+
+      {/* Zalo OA */}
+      <PlatformCard
+        icon={MessageCircle}
+        title="Zalo Official Account"
+        hint="Cần OA Access Token (refresh được). Broadcast cần OA đã được duyệt promotion message."
+        docUrl="https://developers.zalo.me/docs/api/official-account-api/tin-truyen-thong/gui-tin-truyen-thong"
+        enabled={cfg.zalo.enabled}
+        onToggle={(v) => setCfg({ ...cfg, zalo: { ...cfg.zalo, enabled: v } })}
+      >
+        <div>
+          <Label>OA ID (tùy chọn)</Label>
+          <Input value={cfg.zalo.oaId ?? ""} onChange={(e) => setCfg({ ...cfg, zalo: { ...cfg.zalo, oaId: e.target.value } })} placeholder="1234567890" className="mt-1 font-mono text-xs" />
+        </div>
+        <div>
+          <Label>OA Access Token</Label>
+          <div className="mt-1">{tokenInput("z", cfg.zalo.accessToken, (v) => setCfg({ ...cfg, zalo: { ...cfg.zalo, accessToken: v } }))}</div>
+        </div>
+      </PlatformCard>
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <Button onClick={save} disabled={saving} className="bg-primary text-primary-foreground rounded-none uppercase tracking-widest text-xs gap-2">
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+          {saving ? "Đang lưu..." : "Lưu vào Database"}
+        </Button>
+      </div>
+
+      <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+        <div className="font-medium">📌 Lưu ý quan trọng</div>
+        <ul className="list-disc pl-5 space-y-0.5">
+          <li>Bạn cần tự tạo App trên Meta for Developers / Google Cloud / Zalo Business để lấy access token.</li>
+          <li>Token sau khi nhập sẽ được mask (••••) ở UI nhưng vẫn được dùng nguyên bản khi gọi API.</li>
+          <li>Khi xuất bản 1 bài viết blog, lịch sử đẩy lên từng nền tảng được lưu trong bảng <code className="font-mono">social_publish_log</code> để bạn audit.</li>
+          <li>Nếu một nền tảng lỗi, các nền tảng khác vẫn tiếp tục được đẩy độc lập.</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 function IntegrationsContent() {
@@ -650,7 +917,7 @@ function IntegrationsContent() {
   const search = useSearch();
   const [, navigate] = useLocation();
   const tabParam = new URLSearchParams(search).get("tab") ?? "invoice";
-  const allowed = new Set(["invoice", "einvoice", "social", "security"]);
+  const allowed = new Set(["invoice", "einvoice", "social", "auto-post", "security"]);
   const currentTab = allowed.has(tabParam) ? tabParam : "invoice";
   const setTab = (next: string) => {
     const sp = new URLSearchParams(search);
@@ -679,6 +946,7 @@ function IntegrationsContent() {
           <TabsTrigger value="invoice" className="gap-2"><Receipt size={14} /> Hóa Đơn</TabsTrigger>
           <TabsTrigger value="einvoice" className="gap-2"><FileText size={14} /> Hóa Đơn Điện Tử</TabsTrigger>
           <TabsTrigger value="social" className="gap-2"><Share2 size={14} /> Mạng Xã Hội</TabsTrigger>
+          <TabsTrigger value="auto-post" className="gap-2"><Send size={14} /> Đăng Bài Tự Động</TabsTrigger>
           <TabsTrigger value="security" className="gap-2"><Shield size={14} /> Bảo Mật</TabsTrigger>
         </TabsList>
 
@@ -827,6 +1095,11 @@ function IntegrationsContent() {
         {/* ════ SOCIAL MEDIA ════ */}
         <TabsContent value="social" className="mt-6">
           <SocialMediaPanel />
+        </TabsContent>
+
+        {/* ════ AUTO-POST TO SOCIAL ════ */}
+        <TabsContent value="auto-post" className="mt-6">
+          <AutoPostPanel />
         </TabsContent>
 
         {/* ════ SECURITY ════ */}

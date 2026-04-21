@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, isNull } from "drizzle-orm";
 import { db, blogPostsTable } from "@workspace/db";
+import { readSocialConfig, publishPostToSocial } from "./social";
 
 const router: IRouter = Router();
 
@@ -81,6 +82,7 @@ router.post("/blog-posts", async (req, res) => {
     const [row] = await db.insert(blogPostsTable).values({
       ...data, slug, publishedAt,
     }).returning();
+    if (row.published) await maybeAutoPublishSocial(row.id, req);
     res.status(201).json(row);
   } catch (e: any) {
     if (e?.code === "23505") { res.status(409).json({ error: "Slug đã tồn tại" }); return; }
@@ -93,17 +95,38 @@ router.patch("/blog-posts/:id", async (req, res) => {
     const id = Number(req.params.id);
     const data = parseBody(req.body, true);
     const patch: any = { ...data, updatedAt: new Date() };
+    let firstPublishRow: { id: number } | undefined;
     if (data.published === true) {
-      const [cur] = await db.select().from(blogPostsTable).where(eq(blogPostsTable.id, id)).limit(1);
-      if (cur && !cur.publishedAt) patch.publishedAt = new Date();
+      // Atomic claim: only one concurrent PATCH wins the "first publish" transition.
+      const [claimed] = await db
+        .update(blogPostsTable)
+        .set({ ...patch, publishedAt: new Date() })
+        .where(and(eq(blogPostsTable.id, id), isNull(blogPostsTable.publishedAt)))
+        .returning();
+      if (claimed) firstPublishRow = claimed;
     }
-    const [row] = await db.update(blogPostsTable).set(patch).where(eq(blogPostsTable.id, id)).returning();
+    const [row] = firstPublishRow
+      ? [firstPublishRow as any]
+      : await db.update(blogPostsTable).set(patch).where(eq(blogPostsTable.id, id)).returning();
     if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    if (firstPublishRow) await maybeAutoPublishSocial(row.id, req);
     res.json(row);
   } catch (e: any) {
     res.status(400).json({ error: e.message ?? "invalid" });
   }
 });
+
+/** If autoPublish is on, fire-and-forget social publish in the background. */
+async function maybeAutoPublishSocial(postId: number, req: any) {
+  try {
+    const cfg = await readSocialConfig();
+    if (!cfg.autoPublish) return;
+    const host = `${req.protocol}://${req.get("host")}`;
+    publishPostToSocial(postId, host).catch((err) => {
+      req.log?.error?.({ err, postId }, "auto social publish failed");
+    });
+  } catch { /* never block the user response */ }
+}
 
 router.delete("/blog-posts/:id", async (req, res) => {
   try {
