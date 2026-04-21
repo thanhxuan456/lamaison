@@ -290,7 +290,7 @@ try {
 
 # Resolve built paths
 $apiDistPath = Join-Path $dstRoot "artifacts\api-server\dist\index.js"
-$frontendDistPath = Join-Path $dstRoot "artifacts\hotel-system\dist"
+$frontendDistPath = Join-Path $dstRoot "artifacts\hotel-system\dist\public"
 if (-not (Test-Path $apiDistPath)) { Fail "API dist not found: $apiDistPath" }
 if (-not (Test-Path $frontendDistPath)) { Fail "Frontend dist not found: $frontendDistPath" }
 
