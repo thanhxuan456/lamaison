@@ -331,18 +331,20 @@ try {
         }
         $env:SEED_EMAIL    = $Config.SuperAdminEmail
         $env:SEED_NAME     = $Config.SuperAdminName
-        # Chay node tu thu muc lib/db de tim duoc package "pg" da cai trong workspace.
         if ($seedFile) {
-        Push-Location (Join-Path $dstRoot "lib\db")
-        try {
-            & node $seedFile
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warn "Seed admin failed — neu can chay tay:"
-                Write-Warn "  cd $dstRoot\lib\db; node $seedFile"
-            } else {
-                Write-OK "Superadmin role da duoc seed/cap nhat"
+            # Chay node tu thu muc lib/db de tim duoc package "pg" da cai trong workspace.
+            Push-Location (Join-Path $dstRoot "lib\db")
+            try {
+                & node $seedFile
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Warn "Seed admin failed - neu can chay tay:"
+                    Write-Warn "  cd $dstRoot\lib\db; node $seedFile"
+                } else {
+                    Write-OK "Superadmin role da duoc seed/cap nhat"
+                }
+            } finally {
+                Pop-Location
             }
-        } finally { Pop-Location }
         }
     } else {
         Write-Info "Bo qua seed admin (SuperAdminClerkId trong Config bi trong)"
