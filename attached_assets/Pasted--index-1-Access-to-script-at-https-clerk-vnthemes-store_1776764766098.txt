@@ -1,0 +1,36 @@
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+(index):1 Access to script at 'https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js' from origin 'http://maisondeluxehotel.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+clerk.browser.js:1  Failed to load resource: net::ERR_FAILED
+index-ep0rOsOQ.js:142 Uncaught (in promise) vD: Clerk: Failed to load Clerk JS, failed to load script: https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js
+
+(code="failed_to_load_clerk_js")
+
+
+    at n (index-ep0rOsOQ.js:142:3400)
+    at index-ep0rOsOQ.js:142:3874Caused by: Error: failed to load script: https://clerk.vnthemes.store/npm/@clerk/clerk-js@6/dist/clerk.browser.js
+    at HTMLScriptElement.<anonymous> (index-ep0rOsOQ.js:142:2091)
+index-ep0rOsOQ.js:142 vD: Clerk: Failed to load Clerk JS
+
+(code="failed_to_load_clerk_js")
+
+
+    at n (index-ep0rOsOQ.js:142:3400)
+    at DY (index-ep0rOsOQ.js:142:3770)
+    at JD.getClerkJsEntryChunk (index-ep0rOsOQ.js:142:40383)
+    at JD.getEntryChunks (index-ep0rOsOQ.js:142:39846)
+    at new JD (index-ep0rOsOQ.js:142:37619)
+    at JD.getOrCreateInstance (index-ep0rOsOQ.js:142:38034)
+    at XY (index-ep0rOsOQ.js:142:42896)
+    at GY (index-ep0rOsOQ.js:142:42661)
+    at gb (index-ep0rOsOQ.js:8:34185)
+    at Pb (index-ep0rOsOQ.js:8:62416)
+getEntryChunks @ index-ep0rOsOQ.js:142
