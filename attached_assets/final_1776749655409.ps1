@@ -808,25 +808,9 @@ $httpsBlock
     # Write initial HTTP-only config (nginx starts for ACME challenge before cert exists)
     Write-NginxConf -includeSsl $false
     Write-Info "Testing nginx configuration..."
-    # nginx ghi ca thong bao thanh cong ra stderr -> voi $ErrorActionPreference='Stop'
-    # PowerShell se nem NativeCommandError du lenh chay dung. Bao Continue + dua vao $LASTEXITCODE.
-    $prevEAP_ng = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    $LASTEXITCODE = 0
-    try {
-        $testResult = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1 |
-                      ForEach-Object { "$_" }
-    } catch {
-        $testResult = $_.Exception.Message
-    }
-    $nginxExit_t = $LASTEXITCODE
-    $ErrorActionPreference = $prevEAP_ng
-
-    if ($nginxExit_t -ne 0) {
-        Fail "nginx config test failed (exit $nginxExit_t):`n$($testResult -join "`n")"
-    }
+    $testResult = & $nginxExe -t -c $nginxConfPath -p $NginxDir 2>&1
+    if ($LASTEXITCODE -ne 0) { Fail "nginx config test failed:`n$testResult" }
     Write-OK "nginx configuration OK"
-    $testResult | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
 }
 
 # ===========================================================
@@ -1032,30 +1016,10 @@ if (-not $SkipNginx -and -not $SkipSsl) {
                 Write-OK "  Key   : $certKey"
                 Write-Info "Updating nginx.conf with SSL and reloading..."
                 Write-NginxConf -includeSsl $true
-
-                $prevEAP_ng2 = $ErrorActionPreference
-                $ErrorActionPreference = 'Continue'
-                $LASTEXITCODE = 0
-                try {
-                    $testResult2 = & $nginxExeLocal -t -c $nginxConfPath -p $NginxDir 2>&1 |
-                                   ForEach-Object { "$_" }
-                } catch {
-                    $testResult2 = $_.Exception.Message
-                }
-                $nginxExit_t2 = $LASTEXITCODE
-                $ErrorActionPreference = $prevEAP_ng2
-
-                if ($nginxExit_t2 -ne 0) {
-                    Fail "nginx SSL config test failed (exit $nginxExit_t2):`n$($testResult2 -join "`n")"
-                }
+                $testResult2 = & $nginxExeLocal -t -c $nginxConfPath -p $NginxDir 2>&1
+                if ($LASTEXITCODE -ne 0) { Fail "nginx SSL config test failed:`n$testResult2" }
                 Write-OK "nginx SSL config valid"
-                $testResult2 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
-
-                # reload cung co the ghi stderr -> bao Continue
-                $prevEAP_ng3 = $ErrorActionPreference
-                $ErrorActionPreference = 'Continue'
-                try { & $nginxExeLocal -s reload -c $nginxConfPath -p $NginxDir 2>&1 | Out-Null } catch {}
-                $ErrorActionPreference = $prevEAP_ng3
+                & $nginxExeLocal -s reload -c $nginxConfPath -p $NginxDir 2>&1 | Out-Null
                 Start-Sleep -Seconds 2
                 Write-OK "nginx reloaded with SSL -- auto-renewal scheduled by win-acme"
                 # Update .env + service registry to use https:// URL now that cert is live
