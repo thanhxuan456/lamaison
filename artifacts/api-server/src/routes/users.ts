@@ -1,10 +1,87 @@
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { requireAuth } from "../middlewares/requireAuth";
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { userRolesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { userRolesTable, hotelsTable } from "@workspace/db";
+import { eq, inArray, sql } from "drizzle-orm";
 
 const router = Router();
+
+// ===== /api/me — endpoints cua chinh user dang dang nhap (KHONG can admin) =====
+
+// GET /api/me — tra ve user_roles row + thong tin chi nhanh user dang dang nhap
+router.get("/me", requireAuth(), async (req, res) => {
+  try {
+    const userId = (req as any).authUserId as string;
+    const [row] = await db.select().from(userRolesTable).where(eq(userRolesTable.clerkUserId, userId));
+    if (!row) { res.json({ user: null, signupHotel: null, lastLoginHotel: null }); return; }
+
+    const hotelIds = Array.from(new Set([row.signupHotelId, row.lastLoginHotelId].filter((id): id is number => typeof id === "number")));
+    const hotels = hotelIds.length
+      ? await db.select().from(hotelsTable).where(inArray(hotelsTable.id, hotelIds))
+      : [];
+    const byId = new Map(hotels.map(h => [h.id, h]));
+
+    res.json({
+      user: row,
+      signupHotel: row.signupHotelId ? byId.get(row.signupHotelId) ?? null : null,
+      lastLoginHotel: row.lastLoginHotelId ? byId.get(row.lastLoginHotelId) ?? null : null,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "Failed to fetch profile" });
+  }
+});
+
+// POST /api/me/branch — sync chi nhanh user vua dang nhap qua URL chi nhanh
+// Body: { slug, email?, name? }  (email/name lay tu Clerk user phia FE de upsert lan dau)
+// Atomic upsert dung ON CONFLICT, tranh race khi user mo nhieu tab cung dang nhap.
+router.post("/me/branch", requireAuth(), async (req, res) => {
+  try {
+    const userId = (req as any).authUserId as string;
+    const { slug, email, name } = req.body ?? {};
+    if (!slug || typeof slug !== "string") { res.status(400).json({ error: "slug is required" }); return; }
+    if (!email) { res.status(400).json({ error: "email is required" }); return; }
+
+    const [hotel] = await db.select().from(hotelsTable).where(eq(hotelsTable.slug, slug));
+    if (!hotel) { res.status(404).json({ error: "Hotel not found" }); return; }
+
+    const now = new Date();
+    // Atomic upsert. Khi insert va co conflict tren clerk_user_id thi update.
+    // signupHotel* dung COALESCE de KHONG ghi de neu da co (chi set lan dau).
+    // lastLoginHotel*/lastLoginAt LUON ghi de.
+    const [row] = await db
+      .insert(userRolesTable)
+      .values({
+        clerkUserId: userId,
+        email,
+        name: name ?? null,
+        role: "guest",
+        signupHotelId: hotel.id,
+        signupHotelSlug: hotel.slug,
+        lastLoginHotelId: hotel.id,
+        lastLoginHotelSlug: hotel.slug,
+        lastLoginAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userRolesTable.clerkUserId,
+        set: {
+          email,
+          ...(name ? { name } : {}),
+          signupHotelId: sql`coalesce(${userRolesTable.signupHotelId}, ${hotel.id})`,
+          signupHotelSlug: sql`coalesce(${userRolesTable.signupHotelSlug}, ${hotel.slug})`,
+          lastLoginHotelId: hotel.id,
+          lastLoginHotelSlug: hotel.slug,
+          lastLoginAt: now,
+          updatedAt: now,
+        },
+      })
+      .returning();
+
+    res.json({ user: row, hotel });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "Failed to sync branch" });
+  }
+});
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genCode(prefix = "GP") {

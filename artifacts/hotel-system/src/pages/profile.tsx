@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { useT } from "@/lib/i18n";
 import { useListBookings } from "@workspace/api-client-react";
+import { useMe } from "@/lib/use-me";
+import { Link } from "wouter";
 import {
   LogOut, User, Mail, Calendar, Star, Crown, ShieldCheck,
   Camera, Pencil, Lock, CheckCircle2, XCircle, KeyRound,
@@ -474,6 +476,7 @@ function ProfileContent() {
   const { t } = useT();
   const [, setLocation] = useLocation();
   const { data: bookings } = useListBookings();
+  const { data: me } = useMe();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
@@ -570,6 +573,38 @@ function ProfileContent() {
                 </button>
               ))}
             </div>
+
+            {/* Branch info card — chi nhanh user dang dang nhap */}
+            {me?.lastLoginHotel || me?.signupHotel ? (
+              <div className="relative bg-card border border-primary/30 p-5 mb-6 shadow-sm">
+                <span className="pointer-events-none absolute -top-px -left-px w-3 h-3 border-t-2 border-l-2 border-primary" />
+                <span className="pointer-events-none absolute -top-px -right-px w-3 h-3 border-t-2 border-r-2 border-primary" />
+                <span className="pointer-events-none absolute -bottom-px -left-px w-3 h-3 border-b-2 border-l-2 border-primary" />
+                <span className="pointer-events-none absolute -bottom-px -right-px w-3 h-3 border-b-2 border-r-2 border-primary" />
+                <div className="text-[10px] tracking-[0.3em] uppercase text-primary mb-3 font-serif">Chi nhánh của tôi</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {me.lastLoginHotel && (
+                    <Link href={`/hotels/${me.lastLoginHotel.slug}`} className="block group">
+                      <div className="text-[10px] tracking-widest uppercase text-muted-foreground mb-1">Đăng nhập gần nhất</div>
+                      <div className="font-serif text-base text-foreground group-hover:text-primary transition-colors">{me.lastLoginHotel.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{me.lastLoginHotel.city} · {me.lastLoginHotel.location}</div>
+                      {me.user?.lastLoginAt && (
+                        <div className="text-[10px] text-muted-foreground/70 mt-1">
+                          Lần cuối: {new Date(me.user.lastLoginAt).toLocaleString("vi-VN")}
+                        </div>
+                      )}
+                    </Link>
+                  )}
+                  {me.signupHotel && (
+                    <Link href={`/hotels/${me.signupHotel.slug}`} className="block group">
+                      <div className="text-[10px] tracking-widest uppercase text-muted-foreground mb-1">Đăng ký lần đầu</div>
+                      <div className="font-serif text-base text-foreground group-hover:text-primary transition-colors">{me.signupHotel.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{me.signupHotel.city} · {me.signupHotel.location}</div>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* Tab content */}
             {activeTab === "overview" && (

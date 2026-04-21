@@ -52,6 +52,8 @@ import NewsList from "@/pages/news";
 import NewsDetail from "@/pages/news-detail";
 import InvoiceView from "@/pages/invoice-view";
 import { CancellationPage, MembershipBuilderPage, PrivacyBuilderPage, TermsBuilderPage, FaqPage } from "@/pages/builder-page";
+import BranchAuth from "@/pages/branch-auth";
+import { useSyncBranchOnSignIn } from "@/lib/use-me";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -184,6 +186,11 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function BranchSyncRunner() {
+  useSyncBranchOnSignIn();
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -207,6 +214,8 @@ function Router() {
       <Route path="/terms" component={TermsBuilderPage} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/register/*?" component={RegisterPage} />
+      <Route path="/hotels/:slug/sign-in/*?" component={() => <BranchAuth mode="sign-in" />} />
+      <Route path="/hotels/:slug/register/*?" component={() => <BranchAuth mode="register" />} />
       <Route path="/profile/*?" component={Profile} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/hotels" component={AdminHotels} />
@@ -256,6 +265,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <BranchSyncRunner />
         <TooltipProvider>
           <Router />
         </TooltipProvider>

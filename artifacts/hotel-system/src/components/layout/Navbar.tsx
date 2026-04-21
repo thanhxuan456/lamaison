@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
-import { Menu, X, ShieldCheck, User, ChevronDown, LogOut, Calendar } from "lucide-react";
+import { Menu, X, ShieldCheck, User, ChevronDown, LogOut, Calendar, MapPin } from "lucide-react";
+import { useMe } from "@/lib/use-me";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
@@ -23,10 +24,12 @@ function UserMenu() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const { t } = useT();
+  const { data: me } = useMe();
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const isAdmin = email === ADMIN_EMAIL;
   const name = user?.firstName ?? user?.fullName ?? "Guest";
   const initials = (user?.fullName ?? name).split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+  const branch = me?.lastLoginHotel ?? me?.signupHotel ?? null;
 
   return (
     <DropdownMenu>
@@ -63,6 +66,20 @@ function UserMenu() {
               <ShieldCheck size={10} className="text-primary" />
               <span className="text-[10px] tracking-widest text-primary uppercase">Administrator</span>
             </div>
+          )}
+          {branch && (
+            <Link
+              href={`/hotels/${branch.slug}`}
+              className="mt-2 -mx-1 px-2 py-1.5 flex items-start gap-1.5 bg-primary/10 hover:bg-primary/15 transition-colors group"
+              title="Mở trang chi nhánh"
+            >
+              <MapPin size={11} className="text-primary mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] tracking-[0.2em] uppercase text-primary/80 leading-tight">Chi nhánh</div>
+                <div className="text-[11px] text-foreground font-medium truncate group-hover:text-primary transition-colors">{branch.name}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{branch.city} · {branch.location}</div>
+              </div>
+            </Link>
           )}
         </div>
 

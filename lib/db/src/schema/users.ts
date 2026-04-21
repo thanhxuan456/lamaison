@@ -14,6 +14,13 @@ export const userRolesTable = pgTable("user_roles", {
   affiliateCode: text("affiliate_code"),
   commissionRate: integer("commission_rate").default(5),
   notes: text("notes"),
+  // Chi nhanh user dang ky lan dau (set 1 lan, khong doi)
+  signupHotelId: integer("signup_hotel_id"),
+  signupHotelSlug: text("signup_hotel_slug"),
+  // Chi nhanh user vua dang nhap gan nhat (cap nhat moi lan login qua URL chi nhanh)
+  lastLoginHotelId: integer("last_login_hotel_id"),
+  lastLoginHotelSlug: text("last_login_hotel_slug"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useRoute } from "wouter";
 import { useGetHotel, useGetHotelSummary, useListHotelRooms } from "@workspace/api-client-react";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -6,12 +7,17 @@ import { Link } from "wouter";
 import { useT } from "@/lib/i18n";
 import { useFormatPrice } from "@/lib/branding";
 import { getHotelTemplate } from "@/lib/hotel-templates";
+import { setBranchContext } from "@/lib/branch-context";
 
 export default function HotelDetail() {
   const [, params] = useRoute("/hotels/:slug");
   const slug = params?.slug ?? "";
   const { t } = useT();
   const fmtPrice = useFormatPrice();
+
+  // Ghi nho chi nhanh user dang ghe tham — neu user bam Sign In tu navbar binh thuong,
+  // hook auto-sync van biet duoc chi nhanh nay de luu vao DB.
+  useEffect(() => { if (slug) setBranchContext(slug); }, [slug]);
 
   const { data: hotel, isLoading: loadingHotel } = useGetHotel(slug as any);
   const { data: summary, isLoading: loadingSummary } = useGetHotelSummary(slug as any);
