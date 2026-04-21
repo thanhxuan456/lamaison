@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { useFormatPrice } from "@/lib/branding";
 import { getHotelTemplate } from "@/lib/hotel-templates";
 import { setBranchContext } from "@/lib/branch-context";
+import { BranchLoader } from "@/components/BranchLoader";
 
 export default function HotelDetail() {
   const [, params] = useRoute("/hotels/:slug");
@@ -24,13 +25,13 @@ export default function HotelDetail() {
   const { data: rooms, isLoading: loadingRooms } = useListHotelRooms(slug as any);
 
   if (loadingHotel) {
-    return (
-      <PageLayout>
-        <div className="h-screen flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </PageLayout>
-    );
+    // Loading screen toan man hinh — chua co thong tin hotel nen dung default theme,
+    // nhung neu user da xem chi nhanh nay roi (slug trong URL), co the doan thanh pho tu slug.
+    const guessCity = slug.includes("hanoi") || slug.includes("ha-noi") ? "Hà Nội"
+      : slug.includes("danang") || slug.includes("da-nang") ? "Đà Nẵng"
+      : slug.includes("hcm") || slug.includes("ho-chi-minh") || slug.includes("saigon") ? "Hồ Chí Minh"
+      : null;
+    return <BranchLoader city={guessCity} />;
   }
 
   if (!hotel) {

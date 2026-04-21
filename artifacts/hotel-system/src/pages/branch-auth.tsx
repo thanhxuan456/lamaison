@@ -5,6 +5,7 @@ import { useGetHotel } from "@workspace/api-client-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { MapPin, Star, ChevronLeft } from "lucide-react";
 import { setBranchContext } from "@/lib/branch-context";
+import { BranchLoader } from "@/components/BranchLoader";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -20,6 +21,15 @@ function BranchAuthShell({ slug, mode }: { slug: string; mode: "sign-in" | "regi
   useEffect(() => {
     if (slug) setBranchContext(slug);
   }, [slug]);
+
+  // Hien BranchLoader animation trong khi tai thong tin chi nhanh
+  if (isLoading) {
+    const guessCity = slug.includes("hanoi") || slug.includes("ha-noi") ? "Hà Nội"
+      : slug.includes("danang") || slug.includes("da-nang") ? "Đà Nẵng"
+      : slug.includes("hcm") || slug.includes("ho-chi-minh") || slug.includes("saigon") ? "Hồ Chí Minh"
+      : null;
+    return <BranchLoader city={guessCity} message={mode === "sign-in" ? "Đang chuẩn bị trang đăng nhập..." : "Đang chuẩn bị trang đăng ký..."} />;
+  }
 
   let heroImage = "/images/hero.png";
   if (hotel?.city.includes("Hà Nội") || hotel?.city.includes("Ha Noi")) heroImage = "/images/hotel-hanoi.png";

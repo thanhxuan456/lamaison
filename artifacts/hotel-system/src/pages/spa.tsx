@@ -47,8 +47,8 @@ export default function SpaPage() {
 
   return (
     <PageLayout>
-      {/* HERO */}
-      <section className="relative h-[65vh] min-h-[500px] flex items-end overflow-hidden">
+      {/* HERO — pt-24 md:pt-32 de tieu de KHONG bi navbar/logo che khuat */}
+      <section className="relative min-h-[65vh] md:min-h-[600px] flex items-end overflow-hidden pt-32 md:pt-40">
         <div className="absolute inset-0">
           <img
             src="/images/hotel-hanoi.png"
@@ -58,10 +58,10 @@ export default function SpaPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/50 to-secondary/10" />
         </div>
 
-        <div aria-hidden className="absolute top-10 left-10 w-24 h-24 border-l border-t border-primary/30 hidden md:block" />
-        <div aria-hidden className="absolute top-10 right-10 w-24 h-24 border-r border-t border-primary/30 hidden md:block" />
+        <div aria-hidden className="absolute top-28 left-10 w-24 h-24 border-l border-t border-primary/30 hidden md:block" />
+        <div aria-hidden className="absolute top-28 right-10 w-24 h-24 border-r border-t border-primary/30 hidden md:block" />
 
-        <div className="relative z-10 container mx-auto px-4 md:px-8 pb-20 mt-24">
+        <div className="relative z-10 container mx-auto px-4 md:px-8 pb-20">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-3 mb-5">
               <span className="w-10 h-px bg-primary" />
