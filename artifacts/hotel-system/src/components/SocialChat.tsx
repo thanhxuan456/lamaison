@@ -71,6 +71,14 @@ interface Message {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
+// Format thoi gian an toan: tra ve "" neu thieu/khong hop le de tranh "Invalid Date".
+function formatTime(value?: string | null): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function SocialChat() {
   const { user } = useUser();
   const { t } = useT();
@@ -85,6 +93,11 @@ export function SocialChat() {
   const [unread, setUnread] = useState(0);
   const [wsConnected, setWsConnected] = useState(false);
   const [socials, setSocials] = useState<SocialLink[]>(DEFAULT_SOCIALS);
+
+  // Pre-chat form cho khach chua dang nhap. User da dang nhap se bo qua buoc nay.
+  const [preForm, setPreForm] = useState({ name: "", email: "", phone: "" });
+  const [preFormError, setPreFormError] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -109,11 +122,12 @@ export function SocialChat() {
     };
   }, [chatOpen, minimized]);
 
-  const initSession = useCallback(async () => {
+  const initSession = useCallback(async (guest?: { name: string; email: string; phone: string }) => {
     if (sessionInitialized.current) return;
     sessionInitialized.current = true;
-    const guestName = user?.fullName ?? user?.firstName ?? "Khách";
-    const guestEmail = user?.primaryEmailAddress?.emailAddress;
+    const guestName  = guest?.name  || user?.fullName || user?.firstName || "Khách";
+    const guestEmail = guest?.email || user?.primaryEmailAddress?.emailAddress || null;
+    const guestPhone = guest?.phone || null;
     const stored = sessionStorage.getItem("chat_session_id");
     if (stored) {
       setSessionId(stored);
@@ -122,24 +136,52 @@ export function SocialChat() {
       connectWs(stored);
       return;
     }
-    const r = await fetch(`${API_URL}/api/chat/sessions`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestName, guestEmail }),
-    });
-    if (r.ok) {
-      const s = await r.json();
-      sessionStorage.setItem("chat_session_id", String(s.id));
-      setSessionId(String(s.id));
-      setMessages([{ id: "w", senderType: "system", senderName: "GP", message: t("chat.welcome"), createdAt: new Date().toISOString() }]);
-      connectWs(String(s.id));
+    setCreatingSession(true);
+    try {
+      const r = await fetch(`${API_URL}/api/chat/sessions`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guestName, guestEmail, guestPhone }),
+      });
+      if (r.ok) {
+        const s = await r.json();
+        sessionStorage.setItem("chat_session_id", String(s.id));
+        setSessionId(String(s.id));
+        setMessages([{ id: "w", senderType: "system", senderName: "GP", message: t("chat.welcome"), createdAt: new Date().toISOString() }]);
+        connectWs(String(s.id));
+      } else {
+        sessionInitialized.current = false; // cho phep thu lai
+        setPreFormError("Khong khoi tao duoc cuoc tro chuyen. Vui long thu lai.");
+      }
+    } catch {
+      sessionInitialized.current = false;
+      setPreFormError("Loi ket noi. Vui long thu lai.");
+    } finally {
+      setCreatingSession(false);
     }
   }, [user, t, connectWs]);
 
   const openChat = () => {
     setChatOpen(true); setMinimized(false); setHubOpen(false);
-    if (!sessionId) initSession();
     setUnread(0);
+    // Da co session hoac da dang nhap → khoi tao luon. Khach chua login → cho dien form.
+    const stored = sessionStorage.getItem("chat_session_id");
+    if (sessionId || stored || user) {
+      if (!sessionId) initSession();
+    }
   };
+
+  const submitPreForm = async () => {
+    setPreFormError(null);
+    const name  = preForm.name.trim();
+    const email = preForm.email.trim();
+    const phone = preForm.phone.trim();
+    if (!name)  { setPreFormError("Vui long nhap ho ten."); return; }
+    if (!email && !phone) { setPreFormError("Vui long nhap email hoac so dien thoai de chung toi lien lac lai."); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setPreFormError("Email khong hop le."); return; }
+    await initSession({ name, email, phone });
+  };
+
+  const needsPreForm = chatOpen && !sessionId && !user;
 
   useEffect(() => { if (chatOpen) setUnread(0); }, [chatOpen]);
   useEffect(() => () => { wsRef.current?.close(); }, []);
@@ -192,7 +234,59 @@ export function SocialChat() {
             </div>
           </div>
 
-          {!minimized && (
+          {!minimized && needsPreForm && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="text-[11px] text-muted-foreground leading-relaxed">
+                Vui lòng để lại thông tin để chúng tôi liên hệ hỗ trợ bạn nhanh hơn.
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Họ tên *</label>
+                  <input
+                    type="text"
+                    value={preForm.name}
+                    onChange={(e) => setPreForm((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Nguyễn Văn A"
+                    className="w-full bg-background border border-primary/20 focus:border-primary text-foreground text-sm px-3 py-2 outline-none transition-colors placeholder:text-muted-foreground/60 mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Email</label>
+                  <input
+                    type="email"
+                    value={preForm.email}
+                    onChange={(e) => setPreForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="ban@example.com"
+                    className="w-full bg-background border border-primary/20 focus:border-primary text-foreground text-sm px-3 py-2 outline-none transition-colors placeholder:text-muted-foreground/60 mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Số điện thoại</label>
+                  <input
+                    type="tel"
+                    value={preForm.phone}
+                    onChange={(e) => setPreForm((p) => ({ ...p, phone: e.target.value }))}
+                    placeholder="0900 000 000"
+                    className="w-full bg-background border border-primary/20 focus:border-primary text-foreground text-sm px-3 py-2 outline-none transition-colors placeholder:text-muted-foreground/60 mt-1"
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">* Bắt buộc nhập họ tên và ít nhất email hoặc số điện thoại.</p>
+                {preFormError && (
+                  <p className="text-[11px] text-red-500">{preFormError}</p>
+                )}
+                <button
+                  onClick={submitPreForm}
+                  disabled={creatingSession}
+                  className="w-full bg-primary text-primary-foreground text-sm py-2 hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {creatingSession ? <Loader2 size={14} className="animate-spin" /> : null}
+                  Bắt đầu trò chuyện
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!minimized && !needsPreForm && (
             <>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((msg) => {
@@ -214,7 +308,7 @@ export function SocialChat() {
                           {msg.message}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
-                          {new Date(msg.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                          {formatTime(msg.createdAt)}
                         </div>
                       </div>
                     </div>
