@@ -63,7 +63,7 @@ function getSocials(): SocialLink[] {
 /* ── Live chat types ── */
 interface Message {
   id: string;
-  senderType: "user" | "admin" | "system";
+  senderType: "user" | "admin" | "system" | "bot";
   senderName: string;
   message: string;
   createdAt: string;
@@ -115,8 +115,13 @@ export function SocialChat() {
     ws.onclose = () => { setWsConnected(false); setTimeout(() => connectWs(sid), 3000); };
     ws.onmessage = (e) => {
       try {
-        const msg: Message = JSON.parse(e.data);
-        setMessages((p) => [...p, msg]);
+        const data = JSON.parse(e.data);
+        // Loc cac frame khong phai chat message (vd: {type: "presence", adminOnline}).
+        // Mot chat message hop le luon co .id va .message.
+        if (data && typeof data === "object" && "type" in data) return;
+        if (!data || typeof data !== "object" || !("id" in data) || !("message" in data)) return;
+        const msg = data as Message;
+        setMessages((p) => (p.some((m) => String(m.id) === String(msg.id)) ? p : [...p, msg]));
         if (!chatOpen || minimized) setUnread((u) => u + 1);
       } catch {}
     };
@@ -146,7 +151,13 @@ export function SocialChat() {
         const s = await r.json();
         sessionStorage.setItem("chat_session_id", String(s.id));
         setSessionId(String(s.id));
-        setMessages([{ id: "w", senderType: "system", senderName: "GP", message: t("chat.welcome"), createdAt: new Date().toISOString() }]);
+        setMessages([{
+          id: "w",
+          senderType: "bot",
+          senderName: "Lễ tân MAISON DELUXE",
+          message: t("chat.welcome"),
+          createdAt: new Date().toISOString(),
+        }]);
         connectWs(String(s.id));
       } else {
         sessionInitialized.current = false; // cho phep thu lai
