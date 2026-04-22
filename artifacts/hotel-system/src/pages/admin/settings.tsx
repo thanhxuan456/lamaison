@@ -9,7 +9,7 @@ import {
   XCircle, Loader2, Wifi, WifiOff, Shield, QrCode, Copy, Download,
   Sparkles,
 } from "lucide-react";
-import { BrandingPanel } from "./builder";
+import { BrandingPanel } from "./branding-panel";
 
 const PAYMENT_KEY = "grand-palace-payment-settings";
 const GENERAL_KEY  = "grand-palace-general-settings";
