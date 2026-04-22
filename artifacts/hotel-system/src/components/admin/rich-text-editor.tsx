@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -11,7 +11,9 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, Quote, Minus,
   Link2, Image as ImageIcon, Undo2, Redo2,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  LayoutGrid, ChevronDown,
 } from "lucide-react";
+import { EDITOR_BLOCKS, type EditorBlock } from "./editor-blocks";
 
 interface Props {
   value: string;
@@ -38,6 +40,43 @@ function ToolBtn({
 }
 
 function Sep() { return <span className="self-stretch w-px bg-border mx-0.5" />; }
+
+function BlockMenu({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const insert = (b: EditorBlock) => {
+    editor.chain().focus().insertContent(b.html + "<p></p>").run();
+    setOpen(false);
+  };
+  const groups = EDITOR_BLOCKS.reduce<Record<string, EditorBlock[]>>((acc, b) => {
+    (acc[b.group] = acc[b.group] || []).push(b); return acc;
+  }, {});
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="h-8 px-2 inline-flex items-center gap-1 text-xs uppercase tracking-widest text-primary border border-primary/40 hover:bg-primary/10">
+        <LayoutGrid size={13} /> Khối <ChevronDown size={11} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-50 w-72 max-h-[60vh] overflow-y-auto bg-background border border-border shadow-lg p-2">
+            {Object.entries(groups).map(([g, items]) => (
+              <div key={g} className="mb-2 last:mb-0">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 py-1">{g}</div>
+                {items.map(b => (
+                  <button key={b.id} type="button" onClick={() => insert(b)}
+                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-primary/10 hover:text-primary">
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function Toolbar({ editor }: { editor: Editor }) {
   const setLink = () => {
@@ -80,6 +119,8 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Sep />
       <ToolBtn title="Chèn link" active={editor.isActive("link")} onClick={setLink}><Link2 size={14} /></ToolBtn>
       <ToolBtn title="Chèn ảnh" onClick={insertImage}><ImageIcon size={14} /></ToolBtn>
+      <Sep />
+      <BlockMenu editor={editor} />
     </div>
   );
 }
