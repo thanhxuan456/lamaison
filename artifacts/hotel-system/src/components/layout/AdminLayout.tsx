@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { BackToTop } from "@/components/BackToTop";
+import { BookingNotificationBell } from "@/components/admin/BookingNotificationBell";
 import {
   LayoutDashboard, Hotel, BedDouble, Users, MessageSquare,
   Palette, ChevronRight, ChevronDown, Menu, FileText, ArrowLeft,
@@ -319,6 +320,7 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
         </main>
       </div>
 
+      <BookingNotificationBell />
       <BackToTop />
     </>
   );

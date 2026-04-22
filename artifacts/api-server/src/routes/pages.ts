@@ -28,6 +28,34 @@ function parseBody(b: any, partial = false) {
   if (b.metaTitle !== undefined) out.metaTitle = String(b.metaTitle ?? "").slice(0, 300);
   if (b.metaDesc !== undefined)  out.metaDesc  = String(b.metaDesc ?? "").slice(0, 5000);
   if (b.ogImage !== undefined)   out.ogImage   = String(b.ogImage ?? "").slice(0, 2000);
+  // puckData la JSON tu trinh keo-tha. Cho phep null de xoa, hoac object {content[], root, zones?}.
+  // Validation: chan payload qua lon, ep shape co ban, gioi han do sau cay JSON.
+  if (b.puckData !== undefined) {
+    if (b.puckData === null) {
+      out.puckData = null;
+    } else if (typeof b.puckData === "object" && !Array.isArray(b.puckData)) {
+      const json = JSON.stringify(b.puckData);
+      if (json.length > 1_000_000) throw new Error("puckData qua lon (>1MB)");
+      // Ham do sau de chan JSON cuc loi long.
+      const depth = (() => {
+        let max = 0;
+        const walk = (v: any, d: number) => {
+          if (d > max) max = d;
+          if (d > 50) throw new Error("puckData lồng quá sâu (>50)");
+          if (v && typeof v === "object") for (const k of Object.keys(v)) walk(v[k], d + 1);
+        };
+        walk(b.puckData, 0);
+        return max;
+      })();
+      void depth;
+      const pd = b.puckData;
+      if (pd.content !== undefined && !Array.isArray(pd.content)) throw new Error("puckData.content phai la mang");
+      if (pd.root !== undefined && (typeof pd.root !== "object" || pd.root === null)) throw new Error("puckData.root phai la object");
+      out.puckData = pd;
+    } else {
+      throw new Error("puckData phai la object hoac null");
+    }
+  }
   return out;
 }
 

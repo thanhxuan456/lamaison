@@ -9,7 +9,7 @@ import {
   normalizeEmail,
   normalizePhone,
 } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, gt } from "drizzle-orm";
 import { CreateBookingBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -72,6 +72,33 @@ router.get("/bookings", requireAdmin(), async (req, res) => {
     res.json(enriched);
   } catch (err) {
     req.log.error({ err }, "Failed to list bookings");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/bookings/recent?since=<iso> - lay don dat phong moi cho chuong thong bao admin.
+// Mac dinh: 10 don gan nhat. Neu co `since`, chi lay don tao sau moc do.
+router.get("/bookings/recent", requireAdmin(), async (req, res) => {
+  try {
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+    const sinceParam = req.query.since ? new Date(String(req.query.since)) : null;
+    const sinceValid = sinceParam && !Number.isNaN(sinceParam.getTime()) ? sinceParam : null;
+    const baseQ = db.select({
+      id: bookingsTable.id,
+      guestName: bookingsTable.guestName,
+      checkInDate: bookingsTable.checkInDate,
+      checkOutDate: bookingsTable.checkOutDate,
+      status: bookingsTable.status,
+      totalPrice: bookingsTable.totalPrice,
+      createdAt: bookingsTable.createdAt,
+      hotelId: bookingsTable.hotelId,
+    }).from(bookingsTable);
+    const rows = sinceValid
+      ? await baseQ.where(gt(bookingsTable.createdAt, sinceValid)).orderBy(desc(bookingsTable.createdAt)).limit(limit)
+      : await baseQ.orderBy(desc(bookingsTable.createdAt)).limit(limit);
+    res.json(rows.map((r) => ({ ...r, totalPrice: parseFloat(r.totalPrice) })));
+  } catch (err: any) {
+    req.log.error({ err }, "Failed to list recent bookings");
     res.status(500).json({ error: "Internal server error" });
   }
 });

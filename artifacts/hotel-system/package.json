@@ -76,6 +76,7 @@
   },
   "dependencies": {
     "@clerk/react": "^6.4.1",
+    "@measured/puck": "^0.20.2",
     "@tiptap/extension-image": "^3.22.4",
     "@tiptap/extension-link": "^3.22.4",
     "@tiptap/extension-placeholder": "^3.22.4",

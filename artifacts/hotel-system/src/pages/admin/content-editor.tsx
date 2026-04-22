@@ -633,6 +633,17 @@ function PageEditorContent() {
               <Trash2 size={13} /> Xoá
             </Button>
           )}
+          {!isNew && (
+            <Button
+              onClick={() => navigate(`/admin/pages/${encodeURIComponent(id!)}/builder`)}
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-primary/40 text-primary"
+              title="Tuỳ chỉnh giao diện bằng trình kéo-thả"
+            >
+              ✦ Trình kéo-thả
+            </Button>
+          )}
           <Button onClick={() => persist(false)} size="sm" className="gap-1.5 text-xs"><Save size={13} /> Lưu</Button>
           <Button onClick={() => persist(true)} size="sm" variant="secondary" className="gap-1.5 text-xs">Lưu &amp; đóng</Button>
         </>
@@ -652,8 +663,21 @@ function PageEditorContent() {
                 <Input className="font-mono" value={form.slug} onChange={e => set("slug", e.target.value)} placeholder="/about" />
               </div>
             </div>
+            {!isNew && (
+              <div className="border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-foreground/80 flex items-center justify-between">
+                <span>
+                  Mẹo: dùng <strong>Trình kéo-thả</strong> để tuỳ chỉnh giao diện trang bằng các block (Hero, Cột, Card...).
+                </span>
+                <button
+                  onClick={() => navigate(`/admin/pages/${encodeURIComponent(id!)}/builder`)}
+                  className="ml-3 text-primary underline whitespace-nowrap"
+                >
+                  Mở ngay →
+                </button>
+              </div>
+            )}
             <div>
-              <Label>Nội dung trang</Label>
+              <Label>Nội dung trang (rich text — dùng khi không bật trình kéo-thả)</Label>
               <RichTextEditor
                 value={form.content}
                 onChange={html => set("content", html)}
