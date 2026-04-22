@@ -3,9 +3,11 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminGuard } from "./guard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useListHotels } from "@workspace/api-client-react";
+import { useMyRole } from "@/lib/use-my-role";
 import {
   Users, Loader2, BookOpen, DollarSign, Shield, Star, Edit,
-  Trash2, X, Save, Link2, Copy, Check, UserPlus, TrendingUp,
+  Trash2, X, Save, Link2, Copy, Check, UserPlus, TrendingUp, Building2,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -18,6 +20,7 @@ interface UserRoleRow {
   email: string;
   name?: string;
   role: UserRole;
+  branchId?: number | null;
   affiliateCode?: string;
   commissionRate?: number;
   notes?: string;
@@ -45,7 +48,15 @@ const ROLE_META: Record<UserRole, { label: string; color: string; bg: string }> 
 /* ─── Edit Modal ─── */
 function EditModal({ user, onClose, onSaved }: { user: UserRoleRow; onClose: () => void; onSaved: (u: UserRoleRow) => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ role: user.role, commissionRate: user.commissionRate ?? 5, notes: user.notes ?? "" });
+  const { data: hotels } = useListHotels();
+  const { data: myRole } = useMyRole();
+  const canEditRole = myRole?.isSuper ?? true; // chi superadmin/admin moi doi vai tro & chi nhanh
+  const [form, setForm] = useState({
+    role: user.role,
+    branchId: user.branchId ?? null as number | null,
+    commissionRate: user.commissionRate ?? 5,
+    notes: user.notes ?? "",
+  });
   const [saving, setSaving] = useState(false);
   const [genning, setGenning] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -54,9 +65,15 @@ function EditModal({ user, onClose, onSaved }: { user: UserRoleRow; onClose: () 
 
   const save = async () => {
     setSaving(true);
+    const isStaffRole = form.role === "manager" || form.role === "staff";
+    const payload = {
+      ...form,
+      // Manager/staff phai co chi nhanh; super/admin/khach cho null
+      branchId: isStaffRole ? form.branchId : null,
+    };
     const r = await fetch(`${API}/api/users/${user.id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     if (r.ok) { onSaved(await r.json()); toast({ title: "Đã cập nhật người dùng" }); }
@@ -105,13 +122,39 @@ function EditModal({ user, onClose, onSaved }: { user: UserRoleRow; onClose: () 
             <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">Vai trò / Quyền hạn</label>
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(ROLE_META) as UserRole[]).map((r) => (
-                <button key={r} onClick={() => set("role", r)}
-                  className={`px-3 py-2 border text-xs font-medium transition-all ${form.role === r ? "border-primary bg-primary/15 text-primary" : "border-primary/20 text-muted-foreground hover:border-primary/40"}`}>
+                <button key={r} disabled={!canEditRole} onClick={() => set("role", r)}
+                  className={`px-3 py-2 border text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${form.role === r ? "border-primary bg-primary/15 text-primary" : "border-primary/20 text-muted-foreground hover:border-primary/40"}`}>
                   {ROLE_META[r].label}
                 </button>
               ))}
             </div>
+            {!canEditRole && <p className="text-[10px] text-muted-foreground mt-2 italic">Chỉ super admin mới được đổi vai trò.</p>}
           </div>
+
+          {/* Branch assignment — chi hien khi role la manager/staff */}
+          {(form.role === "manager" || form.role === "staff") && (
+            <div>
+              <label className="block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Building2 size={11} className="text-primary" /> Chi nhánh được phân công
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {(hotels ?? []).map((h) => (
+                  <button key={h.id} disabled={!canEditRole} onClick={() => set("branchId", h.id)}
+                    className={`px-3 py-2 border text-xs text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between ${form.branchId === h.id ? "border-primary bg-primary/15 text-primary" : "border-primary/20 text-muted-foreground hover:border-primary/40"}`}>
+                    <span><span className="font-medium">{h.name}</span> <span className="text-muted-foreground">— {h.city}</span></span>
+                    {form.branchId === h.id && <Check size={12} className="text-primary" />}
+                  </button>
+                ))}
+                {form.branchId != null && (
+                  <button disabled={!canEditRole} onClick={() => set("branchId", null)}
+                    className="px-3 py-2 text-[11px] text-muted-foreground hover:text-red-500 disabled:opacity-50 text-left">Bỏ phân công</button>
+                )}
+              </div>
+              {!form.branchId && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2">⚠ Manager/Staff chưa phân công chi nhánh sẽ không xem được dữ liệu.</p>
+              )}
+            </div>
+          )}
 
           {/* Affiliate section */}
           <div className="border border-primary/20 bg-purple-50/30 dark:bg-purple-950/20 p-4 space-y-3">

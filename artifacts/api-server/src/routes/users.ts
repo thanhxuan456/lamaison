@@ -1,4 +1,4 @@
-import { requireAdmin } from "../middlewares/requireAdmin";
+import { requireAdmin, requireSuperAdmin, SUPER_ROLES, BOOTSTRAP_SUPER_EMAIL, clearRoleCache, resolveUserRole } from "../middlewares/requireAdmin";
 import { requireAuth } from "../middlewares/requireAuth";
 import { Router } from "express";
 import { db } from "@workspace/db";
@@ -29,6 +29,23 @@ router.get("/me", requireAuth(), async (req, res) => {
     });
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? "Failed to fetch profile" });
+  }
+});
+
+// GET /api/me/role — tra ve { role, branchId, isSuper } cho frontend AdminGuard.
+// Bootstrap email luon duoc nang superadmin du DB chua co row (resolve qua Clerk).
+router.get("/me/role", requireAuth(), async (req, res) => {
+  try {
+    const userId = (req as any).authUserId as string;
+    const { role, branchId } = await resolveUserRole(userId);
+    const isSuper = SUPER_ROLES.has(role);
+    res.json({
+      role,
+      branchId: isSuper ? null : branchId,
+      isSuper,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "Failed to fetch role" });
   }
 });
 
@@ -101,7 +118,8 @@ router.get("/users", requireAdmin(), async (_req, res) => {
 });
 
 // POST /api/users — upsert (create or update) a user role entry
-router.post("/users", requireAdmin(), async (req, res) => {
+// Chi super admin moi duoc set role/branch khi tao moi.
+router.post("/users", requireSuperAdmin(), async (req, res) => {
   try {
     const { clerkUserId, email, name, role, notes } = req.body ?? {};
     if (!clerkUserId || !email) { res.status(400).json({ error: "clerkUserId and email are required" }); return; }
@@ -128,17 +146,31 @@ router.post("/users", requireAdmin(), async (req, res) => {
   }
 });
 
-// PUT /api/users/:id — update role / commission / notes
+// PUT /api/users/:id — update role / commission / notes / branch
+// Manager/staff (admin-level nhung khong phai super) chi sua duoc commissionRate/notes/name.
+// Chi super admin moi duoc doi role va branchId — chong privilege escalation.
 router.put("/users/:id", requireAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-    const { role, commissionRate, notes, name } = req.body ?? {};
+    const callerRole = (req as any).adminRole as string;
+    const isSuperCaller = SUPER_ROLES.has(callerRole);
+    const { role, commissionRate, notes, name, branchId } = req.body ?? {};
+
+    // Chan privilege escalation: non-super gui role/branchId -> 403.
+    if (!isSuperCaller && (role !== undefined || branchId !== undefined)) {
+      res.status(403).json({ error: "Forbidden — only super admin can change role or branch assignment" });
+      return;
+    }
+
     const patch: Record<string, unknown> = { updatedAt: new Date() };
-    if (role !== undefined) patch.role = role;
     if (commissionRate !== undefined) patch.commissionRate = Number(commissionRate);
     if (notes !== undefined) patch.notes = notes;
     if (name !== undefined) patch.name = name;
+    if (isSuperCaller) {
+      if (role !== undefined) patch.role = role;
+      if (branchId !== undefined) patch.branchId = branchId === null || branchId === "" ? null : Number(branchId);
+    }
 
     const [updated] = await db.update(userRolesTable)
       .set(patch)
@@ -146,14 +178,15 @@ router.put("/users/:id", requireAdmin(), async (req, res) => {
       .returning();
 
     if (!updated) { res.status(404).json({ error: "User not found" }); return; }
+    clearRoleCache(updated.clerkUserId);
     res.json(updated);
   } catch (e: any) {
     res.status(400).json({ error: e.message ?? "Invalid data" });
   }
 });
 
-// DELETE /api/users/:id — remove role entry
-router.delete("/users/:id", requireAdmin(), async (req, res) => {
+// DELETE /api/users/:id — remove role entry (chi super admin)
+router.delete("/users/:id", requireSuperAdmin(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }

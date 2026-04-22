@@ -14,6 +14,8 @@ export const userRolesTable = pgTable("user_roles", {
   affiliateCode: text("affiliate_code"),
   commissionRate: integer("commission_rate").default(5),
   notes: text("notes"),
+  // Chi nhanh duoc phan cong (cho manager/staff). Null = khong rang buoc (superadmin/admin/khach).
+  branchId: integer("branch_id"),
   // Chi nhanh user dang ky lan dau (set 1 lan, khong doi)
   signupHotelId: integer("signup_hotel_id"),
   signupHotelSlug: text("signup_hotel_slug"),

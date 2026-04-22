@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, ShieldCheck, User, ChevronDown, LogOut, Calendar, MapPin, Building2, Check } from "lucide-react";
 import { useMe } from "@/lib/use-me";
 import { useAdminBranch, isStaffUser } from "@/lib/admin-branch";
+import { useMyRole } from "@/lib/use-my-role";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
@@ -27,21 +28,32 @@ function UserMenu() {
   const { t } = useT();
   const { data: me } = useMe();
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
-  const isAdmin = email === ADMIN_EMAIL;
+  const { data: myRole } = useMyRole();
+  // isAdmin: hien link "Bang quan tri". Cong nhan moi vai tro admin-level + bootstrap email.
+  const isAdmin = (myRole && (myRole.isSuper || myRole.role === "manager" || myRole.role === "staff")) || email === ADMIN_EMAIL;
   const isStaff = isStaffUser(me?.user?.role, email);
+  // Super admin (superadmin/admin) duoc tu do chuyen chi nhanh.
+  // Manager/staff: bi khoa vao branchId duoc phan cong (neu co).
+  const canSwitchBranch = isStaff && (myRole?.isSuper ?? (email === ADMIN_EMAIL));
+  const lockedBranchId = !myRole?.isSuper ? (myRole?.branchId ?? null) : null;
   const name = user?.firstName ?? user?.fullName ?? "Guest";
   const initials = (user?.fullName ?? name).split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
   // User thuong: hien chi nhanh da dang ky.
   // Admin/staff: dung admin-branch context (chon thu cong tu switcher ben duoi).
   const userBranch = me?.signupHotel ?? null;
   const { hotels: adminHotels, branch: adminBranch, activeId: adminActiveId, setActive: setAdminBranch } = useAdminBranch();
-  // Khi staff vao lan dau ma chua chon -> mac dinh lay signupHotel hoac hotel dau tien
+  // Manager/staff: ep activeBranch = branchId duoc phan cong, khong cho doi.
+  // Super admin: cho tu chon, mac dinh lay signupHotel hoac hotel dau tien.
   useEffect(() => {
     if (!isStaff) return;
+    if (lockedBranchId != null) {
+      if (adminActiveId !== lockedBranchId) setAdminBranch(lockedBranchId);
+      return;
+    }
     if (adminActiveId != null) return;
     const def = me?.signupHotel?.id ?? adminHotels[0]?.id ?? null;
     if (def != null) setAdminBranch(def);
-  }, [isStaff, adminActiveId, me?.signupHotel?.id, adminHotels, setAdminBranch]);
+  }, [isStaff, lockedBranchId, adminActiveId, me?.signupHotel?.id, adminHotels, setAdminBranch]);
 
   return (
     <DropdownMenu>
@@ -111,7 +123,7 @@ function UserMenu() {
           )}
         </div>
 
-        {isStaff && adminHotels.length > 0 && (
+        {isStaff && canSwitchBranch && adminHotels.length > 0 && (
           <div className="border-b border-primary/15 bg-card">
             <div className="px-4 py-2 text-[9px] tracking-[0.2em] uppercase text-muted-foreground border-b border-primary/10">
               Chuyển chi nhánh đang quản lý
