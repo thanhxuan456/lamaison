@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
-import { Menu, X, ShieldCheck, User, ChevronDown, LogOut, Calendar, MapPin } from "lucide-react";
+import { Menu, X, ShieldCheck, User, ChevronDown, LogOut, Calendar, MapPin, Building2, Check } from "lucide-react";
 import { useMe } from "@/lib/use-me";
+import { useAdminBranch, isStaffUser } from "@/lib/admin-branch";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
@@ -27,9 +28,20 @@ function UserMenu() {
   const { data: me } = useMe();
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const isAdmin = email === ADMIN_EMAIL;
+  const isStaff = isStaffUser(me?.user?.role, email);
   const name = user?.firstName ?? user?.fullName ?? "Guest";
   const initials = (user?.fullName ?? name).split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
-  const branch = me?.lastLoginHotel ?? me?.signupHotel ?? null;
+  // User thuong: hien chi nhanh da dang ky.
+  // Admin/staff: dung admin-branch context (chon thu cong tu switcher ben duoi).
+  const userBranch = me?.signupHotel ?? null;
+  const { hotels: adminHotels, branch: adminBranch, activeId: adminActiveId, setActive: setAdminBranch } = useAdminBranch();
+  // Khi staff vao lan dau ma chua chon -> mac dinh lay signupHotel hoac hotel dau tien
+  useEffect(() => {
+    if (!isStaff) return;
+    if (adminActiveId != null) return;
+    const def = me?.signupHotel?.id ?? adminHotels[0]?.id ?? null;
+    if (def != null) setAdminBranch(def);
+  }, [isStaff, adminActiveId, me?.signupHotel?.id, adminHotels, setAdminBranch]);
 
   return (
     <DropdownMenu>
@@ -67,21 +79,72 @@ function UserMenu() {
               <span className="text-[10px] tracking-widest text-primary uppercase">Administrator</span>
             </div>
           )}
-          {branch && (
+          {!isStaff && userBranch && (
             <Link
-              href={`/hotels/${branch.slug}`}
+              href={`/hotels/${userBranch.slug}`}
               className="mt-2 -mx-1 px-2 py-1.5 flex items-start gap-1.5 bg-primary/10 hover:bg-primary/15 transition-colors group"
-              title="Mở trang chi nhánh"
+              title="Mở trang chi nhánh đăng ký"
             >
               <MapPin size={11} className="text-primary mt-0.5 flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <div className="text-[9px] tracking-[0.2em] uppercase text-primary/80 leading-tight">Chi nhánh</div>
-                <div className="text-[11px] text-foreground font-medium truncate group-hover:text-primary transition-colors">{branch.name}</div>
-                <div className="text-[10px] text-muted-foreground truncate">{branch.city} · {branch.location}</div>
+                <div className="text-[9px] tracking-[0.2em] uppercase text-primary/80 leading-tight">Chi nhánh đăng ký</div>
+                <div className="text-[11px] text-foreground font-medium truncate group-hover:text-primary transition-colors">{userBranch.name}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{userBranch.city} · {userBranch.location}</div>
               </div>
             </Link>
           )}
+          {isStaff && (
+            <div className="mt-2 -mx-1 px-2 py-1.5 bg-primary/10">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Building2 size={11} className="text-primary flex-shrink-0" />
+                <div className="text-[9px] tracking-[0.2em] uppercase text-primary/80">Chi nhánh quản trị</div>
+              </div>
+              {adminBranch ? (
+                <div className="ml-[18px]">
+                  <div className="text-[11px] text-foreground font-medium truncate">{adminBranch.name}</div>
+                  <div className="text-[10px] text-muted-foreground truncate">{adminBranch.city} · {adminBranch.location}</div>
+                </div>
+              ) : (
+                <div className="ml-[18px] text-[10px] text-muted-foreground italic">Chưa chọn chi nhánh</div>
+              )}
+            </div>
+          )}
         </div>
+
+        {isStaff && adminHotels.length > 0 && (
+          <div className="border-b border-primary/15 bg-card">
+            <div className="px-4 py-2 text-[9px] tracking-[0.2em] uppercase text-muted-foreground border-b border-primary/10">
+              Chuyển chi nhánh đang quản lý
+            </div>
+            <div className="max-h-[180px] overflow-y-auto">
+              {adminHotels.map((h) => {
+                const active = h.id === adminActiveId;
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => setAdminBranch(h.id)}
+                    className={[
+                      "w-full text-left px-4 py-2 flex items-center gap-2 border-b border-primary/5 last:border-b-0 transition-colors",
+                      active ? "bg-primary/15" : "hover:bg-primary/10",
+                    ].join(" ")}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className={[
+                        "text-[12px] truncate",
+                        active ? "text-primary font-semibold" : "text-foreground",
+                      ].join(" ")}>
+                        {h.name}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">{h.city}</div>
+                    </div>
+                    {active && <Check size={12} className="text-primary flex-shrink-0" strokeWidth={2.5} />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <DropdownMenuItem asChild className="rounded-none cursor-pointer px-4 py-3 text-sm text-foreground focus:bg-primary/10 border-b border-primary/10">
           <Link href="/profile" className="flex items-center gap-2">
