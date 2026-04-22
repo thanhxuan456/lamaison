@@ -371,6 +371,10 @@ components:
           type: string
           enum: [classic, magazine, modern]
           default: classic
+        pageHtml:
+          type: string
+          description: Custom WYSIWYG HTML content rendered inside the chosen template.
+          default: ""
       required:
         - id
         - name

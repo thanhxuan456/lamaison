@@ -18,6 +18,9 @@ export const hotelsTable = pgTable("hotels", {
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   layoutTemplate: text("layout_template").notNull().default("classic"),
+  // Noi dung HTML tuy bien cua trang chi nhanh — admin soan bang Tiptap (WYSIWYG),
+  // luu duoi dang HTML thuan (KHONG phai JSON), san sang chen vao template + sanitize truoc khi render.
+  pageHtml: text("page_html").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

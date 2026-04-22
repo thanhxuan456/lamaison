@@ -236,7 +236,6 @@ function HotelsContent() {
   const qc = useQueryClient();
   const { data: hotels, isLoading } = useListHotels();
   const [addOpen, setAddOpen] = useState(false);
-  const [editHotel, setEditHotel] = useState<any>(null);
   const [deleteHotel, setDeleteHotel] = useState<any>(null);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["listHotels"] });
@@ -244,7 +243,6 @@ function HotelsContent() {
   return (
     <>
       {addOpen && <HotelModal onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); refresh(); }} />}
-      {editHotel && <HotelModal hotel={editHotel} onClose={() => setEditHotel(null)} onSaved={() => { setEditHotel(null); refresh(); }} />}
       {deleteHotel && <DeleteConfirm hotel={deleteHotel} onClose={() => setDeleteHotel(null)} onDeleted={() => { setDeleteHotel(null); refresh(); }} />}
 
       <div className="flex items-center justify-between mb-6">
@@ -288,7 +286,9 @@ function HotelsContent() {
                       <Link href={`/hotels/${h.slug || h.id}`}>
                         <button className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"><Eye size={12} /></button>
                       </Link>
-                      <button onClick={() => setEditHotel(h)} className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors"><Edit size={12} /></button>
+                      <Link href={`/admin/hotels/${h.id}/edit`}>
+                        <button className="p-1.5 border border-primary/20 text-primary hover:bg-primary/10 transition-colors" title="Mở trình chỉnh sửa"><Edit size={12} /></button>
+                      </Link>
                       <button onClick={() => setDeleteHotel(h)} className="p-1.5 border border-red-300/40 text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"><Trash2 size={12} /></button>
                     </div>
                   </td>

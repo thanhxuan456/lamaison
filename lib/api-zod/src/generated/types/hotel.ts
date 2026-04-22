@@ -23,4 +23,6 @@ export interface Hotel {
   phone: string;
   email: string;
   layoutTemplate: HotelLayoutTemplate;
+  /** Custom WYSIWYG HTML content rendered inside the chosen template. */
+  pageHtml?: string;
 }

@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { MapPin, Star, Check, Quote, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HotelTemplateProps } from "./index";
+import { HotelCustomHtml } from "./custom-html";
 
 export function MagazineTemplate({ hotel, summary, rooms, loadingRooms, fmtPrice, t, heroImage }: HotelTemplateProps) {
   return (
@@ -47,6 +48,8 @@ export function MagazineTemplate({ hotel, summary, rooms, loadingRooms, fmtPrice
           <div className="w-16 h-[2px] bg-primary mx-auto"></div>
         </div>
       </section>
+
+      <HotelCustomHtml html={hotel.pageHtml} className="py-16 bg-background border-y border-primary/10" />
 
       {/* Tiện nghi full-width strip */}
       <section className="py-16 bg-secondary/5 border-y border-primary/10">

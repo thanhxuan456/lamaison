@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { MapPin, Star, Wifi, Coffee, Wind, Monitor, ChevronRight, Check, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HotelTemplateProps } from "./index";
+import { HotelCustomHtml } from "./custom-html";
 
 const amenityIcons: Record<string, any> = {
   "Wi-Fi": Wifi,
@@ -86,6 +87,8 @@ export function ClassicTemplate({ hotel, summary, rooms, loadingSummary, loading
           </div>
         </div>
       </section>
+
+      <HotelCustomHtml html={hotel.pageHtml} />
 
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4 md:px-8">

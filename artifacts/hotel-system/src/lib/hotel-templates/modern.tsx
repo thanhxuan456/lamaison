@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { MapPin, Star, Check, Phone, Mail, User, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HotelTemplateProps } from "./index";
+import { HotelCustomHtml } from "./custom-html";
 
 export function ModernTemplate({ hotel, summary, rooms, loadingRooms, fmtPrice, t, heroImage }: HotelTemplateProps) {
   const [tab, setTab] = useState<"overview" | "amenities" | "rooms">("overview");
@@ -113,6 +114,8 @@ export function ModernTemplate({ hotel, summary, rooms, loadingRooms, fmtPrice, 
           )}
         </div>
       </section>
+
+      <HotelCustomHtml html={hotel.pageHtml} className="py-16 bg-background" />
 
       {/* CTA banner cuối */}
       <section className="py-16 bg-secondary text-white">

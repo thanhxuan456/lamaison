@@ -27,6 +27,7 @@ import ContractView from "@/pages/contract-view";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin/index";
 import AdminHotels from "@/pages/admin/hotels";
+import AdminHotelEditor from "@/pages/admin/hotel-editor";
 import AdminRooms from "@/pages/admin/rooms";
 import AdminUsers from "@/pages/admin/users";
 import AdminChat from "@/pages/admin/chat";
@@ -224,6 +225,7 @@ function Router() {
       <Route path="/profile/*?" component={Profile} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/hotels" component={AdminHotels} />
+      <Route path="/admin/hotels/:id/edit" component={AdminHotelEditor} />
       <Route path="/admin/rooms" component={AdminRooms} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/chat" component={AdminChat} />
