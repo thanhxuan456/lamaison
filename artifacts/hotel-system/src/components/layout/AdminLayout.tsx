@@ -62,7 +62,6 @@ const NAV: NavEntry[] = [
       { kind: "item", icon: FileText,  label: "Trang & Bài Viết",  path: "/admin/pages"   },
       { kind: "item", icon: Layers,    label: "Trình Tạo Trang",   path: "/admin/builder" },
       { kind: "item", icon: Layers,    label: "Trang Theo Chi Nhánh", path: "/admin/branch-pages" },
-      { kind: "item", icon: Palette,   label: "Thiết Lập Chi Nhánh",  path: "/admin/branch-themes" },
       { kind: "item", icon: Receipt,   label: "Xác Nhận TT Tự Động",  path: "/admin/payment-confirm" },
     ],
   },
