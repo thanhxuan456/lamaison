@@ -40,6 +40,7 @@ import AdminSettings from "@/pages/admin/settings";
 import AdminSeo from "@/pages/admin/seo";
 import AdminBuilder from "@/pages/admin/builder";
 import AdminPageBuilder from "@/pages/admin/page-builder";
+import CmsPagePublic from "@/pages/cms-page";
 import AdminMenu from "@/pages/admin/menu";
 import AdminInvoices from "@/pages/admin/invoices";
 import AdminBookings from "@/pages/admin/bookings";
@@ -241,6 +242,7 @@ function Router() {
       <Route path="/admin/seo" component={AdminSeo} />
       <Route path="/admin/builder" component={AdminBuilder} />
       <Route path="/admin/pages/:id/builder" component={AdminPageBuilder} />
+      <Route path="/p/:key" component={CmsPagePublic} />
       <Route path="/admin/menu" component={AdminMenu} />
       <Route path="/admin/invoices" component={AdminInvoices} />
       <Route path="/admin/bookings" component={AdminBookings} />
