@@ -65,18 +65,57 @@ function StatusBadge({ status, onClick }: { status: "published" | "draft"; onCli
  * ──────────────────────────────────────────────────────────────── */
 function PagesTab() {
   const { toast } = useToast();
-  const [pages, setPages] = useState<Page[]>(() => loadLS(PAGES_KEY, DEFAULT_PAGES));
+  const [pages, setPages] = useState<Page[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const persist = (p: Page[]) => { setPages(p); saveLS(PAGES_KEY, p); };
+  const refresh = async () => {
+    try {
+      const r = await fetch(`${API}/api/pages/admin/all`, { credentials: "include" });
+      if (r.ok) {
+        const rows = await r.json();
+        setPages(rows);
+        // Cache fallback de offline van xem duoc danh sach.
+        saveLS(PAGES_KEY, rows);
+      } else {
+        setPages(loadLS(PAGES_KEY, DEFAULT_PAGES));
+      }
+    } catch {
+      setPages(loadLS(PAGES_KEY, DEFAULT_PAGES));
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { refresh(); }, []);
 
-  const del = (id: string) => {
+  const del = async (id: string) => {
     if (!confirm("Xóa trang này?")) return;
-    persist(pages.filter(p => p.id !== id));
-    toast({ title: "Đã xóa trang" });
+    try {
+      const r = await fetch(`${API}/api/pages/${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!r.ok) throw new Error(await r.text());
+      setPages(pages.filter(p => p.id !== id));
+      toast({ title: "Đã xóa trang" });
+    } catch (e: any) {
+      toast({ title: "Xóa thất bại", description: e.message, variant: "destructive" });
+    }
   };
 
-  const toggle = (id: string) =>
-    persist(pages.map(p => p.id === id ? { ...p, status: p.status === "published" ? "draft" : "published", updatedAt: new Date().toISOString() } : p));
+  const toggle = async (id: string) => {
+    const cur = pages.find(p => p.id === id);
+    if (!cur) return;
+    const newStatus = cur.status === "published" ? "draft" : "published";
+    try {
+      const r = await fetch(`${API}/api/pages/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const updated = await r.json();
+      setPages(pages.map(p => p.id === id ? updated : p));
+    } catch (e: any) {
+      toast({ title: "Cập nhật thất bại", description: e.message, variant: "destructive" });
+    }
+  };
 
   return (
     <>

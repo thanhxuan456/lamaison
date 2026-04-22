@@ -539,42 +539,79 @@ function PageEditorContent() {
 
   useEffect(() => {
     if (isNew) return;
-    const all = loadLS<CmsPage[]>(PAGES_KEY, DEFAULT_PAGES as CmsPage[]);
-    const found = all.find(p => p.id === id);
-    if (!found) {
-      toast({ title: "Không tìm thấy trang", variant: "destructive" });
-      navigate("/admin/pages?tab=pages", { replace: true });
-      return;
-    }
-    setForm(found);
-    setLoading(false);
+    (async () => {
+      try {
+        const r = await fetch(`${API}/api/pages/admin/${encodeURIComponent(id!)}`, { credentials: "include" });
+        if (r.ok) {
+          setForm(await r.json());
+        } else {
+          // Fallback: tim trong cache localStorage (truong hop API offline).
+          const all = loadLS<CmsPage[]>(PAGES_KEY, DEFAULT_PAGES as CmsPage[]);
+          const found = all.find(p => p.id === id);
+          if (!found) {
+            toast({ title: "Không tìm thấy trang", variant: "destructive" });
+            navigate("/admin/pages?tab=pages", { replace: true });
+            return;
+          }
+          setForm(found);
+        }
+      } catch {
+        const all = loadLS<CmsPage[]>(PAGES_KEY, DEFAULT_PAGES as CmsPage[]);
+        const found = all.find(p => p.id === id);
+        if (found) setForm(found);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [id, isNew]);
 
   const set = <K extends keyof CmsPage>(k: K, v: CmsPage[K]) => setForm(f => ({ ...f, [k]: v }));
 
-  const persist = (closeAfter = false) => {
+  const persist = async (closeAfter = false) => {
     if (!form.title || !form.slug) {
       toast({ title: "Vui lòng nhập tiêu đề và slug", variant: "destructive" });
       return;
     }
-    const all = loadLS<CmsPage[]>(PAGES_KEY, DEFAULT_PAGES as CmsPage[]);
-    const updated = { ...form, updatedAt: new Date().toISOString() };
-    const exists = all.some(p => p.id === updated.id);
-    const next = exists ? all.map(p => p.id === updated.id ? updated : p) : [...all, updated];
-    saveLS(PAGES_KEY, next);
-    setForm(updated);
-    toast({ title: exists ? "Trang đã cập nhật" : "Trang mới đã tạo", description: updated.title });
-    if (closeAfter) navigate("/admin/pages?tab=pages");
-    else if (isNew) navigate(`/admin/content/pages/${updated.id}`, { replace: true });
+    try {
+      let saved: CmsPage;
+      if (isNew) {
+        // Tao moi: POST /api/pages. Server tu sinh id tu title neu khong co.
+        const r = await fetch(`${API}/api/pages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        saved = await r.json();
+      } else {
+        const r = await fetch(`${API}/api/pages/${encodeURIComponent(id!)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        saved = await r.json();
+      }
+      setForm(saved);
+      toast({ title: isNew ? "Trang mới đã tạo" : "Trang đã cập nhật", description: saved.title });
+      if (closeAfter) navigate("/admin/pages?tab=pages");
+      else if (isNew) navigate(`/admin/content/pages/${saved.id}`, { replace: true });
+    } catch (e: any) {
+      toast({ title: "Lưu thất bại", description: e.message, variant: "destructive" });
+    }
   };
 
-  const onDelete = () => {
+  const onDelete = async () => {
     if (!id) return;
     if (!confirm("Xoá trang này?")) return;
-    const all = loadLS<CmsPage[]>(PAGES_KEY, DEFAULT_PAGES as CmsPage[]);
-    saveLS(PAGES_KEY, all.filter(p => p.id !== id));
-    toast({ title: "Đã xoá trang" });
-    navigate("/admin/pages?tab=pages");
+    try {
+      const r = await fetch(`${API}/api/pages/${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!r.ok) throw new Error(await r.text());
+      toast({ title: "Đã xoá trang" });
+      navigate("/admin/pages?tab=pages");
+    } catch (e: any) {
+      toast({ title: "Xoá thất bại", description: e.message, variant: "destructive" });
+    }
   };
 
   if (loading) return <AdminLayout title="Đang tải…"><div className="py-20 text-center text-muted-foreground text-sm">Đang tải…</div></AdminLayout>;
